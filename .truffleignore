@@ -1,0 +1,7 @@
+/**
+/venv/
+/usr/lib/**
+/usr/share/**
+/var/lib/apt/**
+/var/lib/dpkg/**
+site-packages/
