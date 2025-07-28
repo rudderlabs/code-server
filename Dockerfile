@@ -30,8 +30,10 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     echo "Downloading code-server for $TARGETARCH architecture" && \
     curl -L -H "Authorization: token $GITHUB_PAT" \
          -o /tmp/code-server.deb \
-         "$URL" && \
-    dpkg -i /tmp/code-server.deb && \
+         "$URL"
+
+# Install code-server from downloaded .deb package
+RUN dpkg -i /tmp/code-server.deb && \
     rm /tmp/code-server.deb
 
 # Switch to codeuser for extension installation and MCP setup
