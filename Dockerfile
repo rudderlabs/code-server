@@ -19,8 +19,20 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
-# Install code-server (VSCode in the browser)
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# Install code-server (VSCode in the browser) - detect architecture and install appropriate .deb
+ARG TARGETARCH
+ARG GITHUB_PAT
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        URL="https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_arm64.deb"; \
+    else \
+        URL="https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_amd64.deb"; \
+    fi && \
+    echo "Downloading code-server for $TARGETARCH architecture" && \
+    curl -L -H "Authorization: token $GITHUB_PAT" \
+         -o /tmp/code-server.deb \
+         "$URL" && \
+    dpkg -i /tmp/code-server.deb && \
+    rm /tmp/code-server.deb
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
