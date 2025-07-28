@@ -83,22 +83,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
-      - name: Download Artefacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: release-packages/*
-          github-token: ${{ secrets.PAT }}
-    
-      - name: Display structure of downloaded files
-        run: ls -R .
-
-      - name: Extract npm package
-        run: |
-          tar -xzf npm-release-package/package.tar.gz
-          ls -la npm-release-package/
-          mv npm-release-package/* .
-          rm -rf npm-release-package
 
       - name: docker build
         uses: rudderlabs/build-scan-push-action@v1.5.3
