@@ -87,11 +87,12 @@ jobs:
       - name: Download Artefacts
         uses: dawidd6/action-download-artifact@4c1e823582f43b179e2cbb49c3eade4e41f992e2 
         with:
-          branch: ${{ github.ref }}
+          branch: main
           workflow: release.yaml
           workflow_conclusion: completed
           check_artifacts: false
           if_no_artifact_found: fail
+          github_token: ${{ secrets.PAT }}
 
       - name: Extract npm package
         run: tar -xzf package.tar.gz
