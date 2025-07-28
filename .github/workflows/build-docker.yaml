@@ -85,21 +85,20 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
     
       - name: Download Artefacts
-        uses: dawidd6/action-download-artifact@4c1e823582f43b179e2cbb49c3eade4e41f992e2 
+        uses: actions/download-artifact@v4
         with:
-          branch: main
-          workflow: release.yaml
-          workflow_conclusion: completed
-          check_artifacts: false
-          if_no_artifact_found: fail
-          github_token: ${{ secrets.PAT }}
+          pattern: ./release-packages/*
+          github-token: ${{ secrets.PAT }}
+    
+      - name: Display structure of downloaded files
+        run: ls -R .
 
       - name: Extract npm package
         run: |
           tar -xzf npm-release-package/package.tar.gz
           ls -la npm-release-package/
           mv npm-release-package/* .
-          rm -rfnpm-release-package
+          rm -rf npm-release-package
 
       - name: docker build
         uses: rudderlabs/build-scan-push-action@v1.5.3
