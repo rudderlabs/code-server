@@ -19,21 +19,20 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
-# Install code-server (VSCode in the browser) - detect architecture and install appropriate .deb
-ARG TARGETARCH
-ARG GITHUB_PAT
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        URL="https://${GITHUB_PAT}:x-oauth-basic@github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_arm64.deb"; \
-    else \
-        URL="https://${GITHUB_PAT}:x-oauth-basic@github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_amd64.deb"; \
-    fi && \
-    echo "Downloading code-server for $TARGETARCH architecture" && \
-    curl -L -o /tmp/code-server.deb \
-         "$URL"
+# Copy code-server .deb files to container
+COPY code-server_0.1.0-alpha.2_amd64.deb /tmp/
+COPY code-server_0.1.0-alpha.2_arm64.deb /tmp/
 
-# Install code-server from downloaded .deb package
-RUN dpkg -i /tmp/code-server.deb && \
-    rm /tmp/code-server.deb
+# Install code-server (VSCode in the browser) - detect architecture and use appropriate .deb
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        DEB_FILE="code-server_0.1.0-alpha.3_arm64.deb"; \
+    else \
+        DEB_FILE="code-server_0.1.0-alpha.3_amd64.deb"; \
+    fi && \
+    echo "Installing code-server for $TARGETARCH architecture using $DEB_FILE" && \
+    dpkg -i "/tmp/$DEB_FILE" && \
+    rm /tmp/code-server_0.1.0-alpha.3_*.deb
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
@@ -70,4 +69,4 @@ WORKDIR /home/codeuser/project
 EXPOSE 8080
 
 # Start code-server when container runs, opening the project directory
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
+# CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
