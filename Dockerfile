@@ -23,12 +23,12 @@ RUN pip3 install profiles-rudderstack
 ARG TARGETARCH
 ARG GITHUB_PAT
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        URL="https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_arm64.deb"; \
+        URL="https://${GITHUB_PAT}:x-oauth-basic@github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_arm64.deb"; \
     else \
-        URL="https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_amd64.deb"; \
+        URL="https://${GITHUB_PAT}:x-oauth-basic@github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_amd64.deb"; \
     fi && \
     echo "Downloading code-server for $TARGETARCH architecture" && \
-    curl -L -H "Authorization: Bearer $GITHUB_PAT" \
+    curl -L 
          -o /tmp/code-server.deb \
          "$URL"
 
