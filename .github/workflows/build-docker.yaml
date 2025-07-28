@@ -87,7 +87,7 @@ jobs:
       - name: Download Artefacts
         uses: actions/download-artifact@v4
         with:
-          pattern: ./release-packages/*
+          pattern: release-packages/*
           github-token: ${{ secrets.PAT }}
     
       - name: Display structure of downloaded files
