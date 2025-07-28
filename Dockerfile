@@ -28,8 +28,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
         URL="https://${GITHUB_PAT}:x-oauth-basic@github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.2_amd64.deb"; \
     fi && \
     echo "Downloading code-server for $TARGETARCH architecture" && \
-    curl -L 
-         -o /tmp/code-server.deb \
+    curl -L -o /tmp/code-server.deb \
          "$URL"
 
 # Install code-server from downloaded .deb package
