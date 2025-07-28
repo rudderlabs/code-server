@@ -20,10 +20,6 @@ RUN mkdir -p /home/codeuser/.pb && \
 RUN pip3 install profiles-rudderstack
 
 # Copy code-server .deb files to container
-COPY code-server_0.1.0-alpha.3_amd64.deb /tmp/
-COPY code-server_0.1.0-alpha.3_arm64.deb /tmp/
-
-# Install code-server (VSCode in the browser) - detect architecture and use appropriate .deb
 ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         DEB_FILE="code-server_0.1.0-alpha.3_arm64.deb"; \
