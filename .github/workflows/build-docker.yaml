@@ -95,7 +95,11 @@ jobs:
           github_token: ${{ secrets.PAT }}
 
       - name: Extract npm package
-        run: tar -xzf package.tar.gz
+        run: |
+          tar -xzf npm-release-package/package.tar.gz
+          ls -la npm-release-package/
+          mv npm-release-package/* .
+          rm -rfnpm-release-package
 
       - name: docker build
         uses: rudderlabs/build-scan-push-action@v1.5.3
