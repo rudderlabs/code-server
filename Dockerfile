@@ -23,21 +23,14 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
+COPY artifacts/* .
+
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        ARCH_SUFFIX="arm64"; \
-    elif [ "$TARGETARCH" = "amd64" ]; then \
-        ARCH_SUFFIX="amd64"; \
+        dpkg -i code-server_0.1.0-alpha.4_arm64.deb || apt-get install -f -y; \
     else \
-        ARCH_SUFFIX="amd64"; \
-    fi && \
-    # Download the appropriate .deb package from GitHub releases
-    wget -O /tmp/code-server.deb \
-        "https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.3_${ARCH_SUFFIX}.deb" && \
-    # Install the package
-    dpkg -i /tmp/code-server.deb || apt-get install -f -y && \
-    # Clean up
-    rm /tmp/code-server.deb
+        dpkg -i code-server_0.1.0-alpha.4_amd64.deb || apt-get install -f -y; \
+    fi
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
