@@ -24,6 +24,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 RUN pip3 install profiles-rudderstack
 
 COPY release-packages/* .
+ADD custom-strings.json /home/codeuser/custom-strings.json
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
@@ -65,6 +66,5 @@ USER codeuser
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
-
 # Start code-server when container runs, opening the project directory
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
+CMD ["code-server" "--app-name", "Rudderstack Code Editor", "--i18n", "/home/codeuser/custom-strings.json", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
