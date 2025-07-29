@@ -1,6 +1,10 @@
 # Base image
 FROM ubuntu:22.04
 
+# Set build arguments for version and architecture
+ARG VERSION=v4.9.1
+ARG TARGETARCH=amd64
+
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
     apt-get install -y python3.10 python3-pip git curl wget sudo && \
@@ -19,8 +23,21 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
-# Install code-server (VSCode in the browser)
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# Download and install code-server from GitHub releases
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        ARCH_SUFFIX="arm64"; \
+    elif [ "$TARGETARCH" = "amd64" ]; then \
+        ARCH_SUFFIX="amd64"; \
+    else \
+        ARCH_SUFFIX="amd64"; \
+    fi && \
+    # Download the appropriate .deb package from GitHub releases
+    wget -O /tmp/code-server.deb \
+        "https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.3_${ARCH_SUFFIX}.deb" && \
+    # Install the package
+    dpkg -i /tmp/code-server.deb || apt-get install -f -y && \
+    # Clean up
+    rm /tmp/code-server.deb
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser

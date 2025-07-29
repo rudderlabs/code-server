@@ -118,11 +118,11 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: npm run package $PKG_ARCH
 
-      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #v1
+      - name: Upload release packages
+        uses: actions/upload-artifact@v4
         with:
-          draft: true
-          discussion_category_name: "📣 Announcements"
-          files: ./release-packages/*
+          name: release-packages-${{ matrix.prefix }}
+          path: ./release-packages/*
 
   package-macos-amd64:
     name: x86-64 macOS build
@@ -179,11 +179,11 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: npm run package
 
-      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #v1
+      - name: Upload release packages
+        uses: actions/upload-artifact@v4
         with:
-          draft: true
-          discussion_category_name: "📣 Announcements"
-          files: ./release-packages/*
+          name: release-packages-macos-amd64
+          path: ./release-packages/*
 
   package-macos-arm64:
     name: arm64 macOS build
@@ -240,11 +240,11 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: npm run package
 
-      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #v1
+      - name: Upload release packages
+        uses: actions/upload-artifact@v4
         with:
-          draft: true
-          discussion_category_name: "📣 Announcements"
-          files: ./release-packages/*
+          name: release-packages-macos-arm64
+          path: ./release-packages/*
 
   npm-package:
     name: Upload npm package
@@ -257,11 +257,11 @@ jobs:
         with:
           name: npm-release-package
 
-      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #v1
+      - name: Upload npm package
+        uses: actions/upload-artifact@v4
         with:
-          draft: true
-          discussion_category_name: "📣 Announcements"
-          files: ./package.tar.gz
+          name: npm-release-final
+          path: ./package.tar.gz
 
   npm-version:
     name: Modify package.json version
