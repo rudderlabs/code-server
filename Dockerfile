@@ -72,10 +72,13 @@ RUN chown -R codeuser:codeuser /home/codeuser
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
+RUN chmod 755 /home/codeuser/custom-strings.json
 
 # Switch back to codeuser
 USER codeuser
 WORKDIR /home/codeuser/project
+
+RUN pb init pb-project -o .
 
 EXPOSE 8080
 # Start code-server when container runs, opening the project directory
