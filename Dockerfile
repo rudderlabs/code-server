@@ -78,8 +78,8 @@ RUN chmod 755 /home/codeuser/custom-strings.json
 USER codeuser
 WORKDIR /home/codeuser/project
 
-# RUN pb init pb-project -o .
+RUN pb init pb-project -o .
 
 EXPOSE 8080
 # Start code-server when container runs, opening the project directory
-CMD ["code-server" "--app-name", "Rudderstack Code Editor", "--i18n", "/home/codeuser/custom-strings.json", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
+CMD ["code-server", "--app-name", "Rudderstack Code Editor", "--i18n", "/home/codeuser/custom-strings.json", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
