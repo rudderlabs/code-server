@@ -145,8 +145,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: code-server-packages
-          path: ./artifacts
+          path: .
         continue-on-error: false
+      - name: List downloaded files
+        run: |
+          pwd
+          ls -la
 
       - name: setup buildx
         uses: docker/setup-buildx-action@v3
