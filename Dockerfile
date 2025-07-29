@@ -19,7 +19,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
-COPY code-server_0.1.0-alpha.3_arm64.deb /tmp/code-server_0.1.0-alpha.3_arm64.deb
+COPY code-server_0.1.0-alpha.3_amd64.deb /tmp/code-server_0.1.0-alpha.3_amd64.deb
 
 # Copy code-server .deb files to container
 ARG TARGETARCH
