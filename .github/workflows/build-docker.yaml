@@ -6,6 +6,10 @@ on:
         description: The version to use (include "v", i.e. "v4.9.1"). If not provided, will try to download artifacts from main branch.
         type: string
         required: false
+      run_id:
+        description: The workflow run ID to download artifacts from (leave empty for current workflow or latest)
+        type: string
+        required: false
 
 permissions:
   id-token: write # allows the JWT to be requested from GitHub's OIDC provider
@@ -74,14 +78,38 @@ jobs:
             echo "version=v4.9.1" >> $GITHUB_OUTPUT
           fi
 
-      - name: Download release artifacts (if from workflow_run)
+      - name: Get latest release run ID (if no run_id provided)
+        if: ${{ !inputs.run_id }}
+        id: get-run-id
+        run: |
+          RUN_ID=$(gh run list --workflow=release.yaml --status=completed --limit=1 --json databaseId --jq '.[0].databaseId')
+          echo "run-id=$RUN_ID" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      - name: Download npm release package
         uses: actions/download-artifact@v4
         with:
           name: npm-release-package
+          run-id: ${{ inputs.run_id || steps.get-run-id.outputs.run-id }}
           github-token: ${{ secrets.PAT }}
 
+      - name: Download all release packages (optional)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-packages-*
+          path: ./release-packages/
+          merge-multiple: true
+          run-id: ${{ inputs.run_id || steps.get-run-id.outputs.run-id }}
+          github-token: ${{ secrets.PAT }}
+        continue-on-error: true
+      - name: List downloaded files
+        run: |
+          ls -la
+          ls -la release-packages/ || true
+
       - name: Upload artifacts for build job
-        if: github.event_name == 'workflow_disptach'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: code-server-packages
@@ -89,6 +117,7 @@ jobs:
             **/*.deb
             **/*.tar.gz
             package.tar.gz
+            release-packages/
 
   build:
     needs:
