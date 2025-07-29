@@ -62,7 +62,6 @@ jobs:
 
   download-artifacts:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
@@ -76,7 +75,6 @@ jobs:
           fi
       
       - name: Download release artifacts (if from workflow_run)
-        if: github.event_name == 'workflow_disptach'
         uses: actions/download-artifact@v4
         with:
           name: npm-release-package
