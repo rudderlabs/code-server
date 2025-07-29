@@ -24,7 +24,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 RUN pip3 install profiles-rudderstack
 
 COPY release-packages/* .
-ADD custom-strings.json /home/codeuser/custom-strings.json
+COPY custom-strings.json /home/codeuser/custom-strings.json
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
