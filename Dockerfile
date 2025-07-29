@@ -1,6 +1,10 @@
 # Base image
 FROM ubuntu:22.04
 
+# Set build arguments for version and architecture
+ARG VERSION=v4.9.1
+ARG TARGETARCH=amd64
+
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
     apt-get install -y python3.10 python3-pip git curl wget sudo && \
@@ -19,18 +23,21 @@ RUN mkdir -p /home/codeuser/.pb && \
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 
-COPY code-server_0.1.0-alpha.3_amd64.deb /tmp/code-server_0.1.0-alpha.3_amd64.deb
-
-# Copy code-server .deb files to container
-ARG TARGETARCH
+# Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        DEB_FILE="code-server_0.1.0-alpha.3_arm64.deb"; \
+        ARCH_SUFFIX="arm64"; \
+    elif [ "$TARGETARCH" = "amd64" ]; then \
+        ARCH_SUFFIX="amd64"; \
     else \
-        DEB_FILE="code-server_0.1.0-alpha.3_amd64.deb"; \
+        ARCH_SUFFIX="amd64"; \
     fi && \
-    echo "Installing code-server for $TARGETARCH architecture using $DEB_FILE" && \
-    dpkg -i "/tmp/$DEB_FILE" && \
-    rm /tmp/code-server_0.1.0-alpha.3_*.deb
+    # Download the appropriate .deb package from GitHub releases
+    wget -O /tmp/code-server.deb \
+        "https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.3_${ARCH_SUFFIX}.deb" && \
+    # Install the package
+    dpkg -i /tmp/code-server.deb || apt-get install -f -y && \
+    # Clean up
+    rm /tmp/code-server.deb
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
@@ -67,4 +74,4 @@ WORKDIR /home/codeuser/project
 EXPOSE 8080
 
 # Start code-server when container runs, opening the project directory
-# CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
+CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]
