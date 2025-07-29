@@ -76,14 +76,14 @@ jobs:
           fi
       
       - name: Download release artifacts (if from workflow_run)
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_disptach'
         uses: actions/download-artifact@v4
         with:
           name: npm-release-package
           github-token: ${{ secrets.PAT }}
       
       - name: Upload artifacts for build job
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_disptach'
         uses: actions/upload-artifact@v4
         with:
           name: code-server-packages
