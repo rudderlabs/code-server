@@ -24,7 +24,19 @@ RUN mkdir -p /home/codeuser/.pb && \
 RUN pip3 install profiles-rudderstack
 
 COPY release-packages/* .
-COPY custom-strings.json /home/codeuser/custom-strings.json
+
+# Create custom-strings.json directly in the container
+RUN cat > /home/codeuser/custom-strings.json << 'EOF'
+{
+  "WELCOME": "Welcome to {{app}}",
+  "LOGIN_TITLE": "{{app}} Access Portal",
+  "LOGIN_BELOW": "Please enter the code to continue",
+  "PASSWORD_PLACEHOLDER": "Enter Code",
+  "LOGIN_PASSWORD": "",
+  "LOGIN_USING_ENV_PASSWORD": "",
+  "LOGIN_USING_HASHED_PASSWORD": ""
+}
+EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
