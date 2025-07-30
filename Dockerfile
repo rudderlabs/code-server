@@ -22,29 +22,34 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
+COPY release-packages/* .
+
+# Create custom-strings.json directly in the container
+RUN cat > /home/codeuser/custom-strings.json << 'EOF'
+{
+  "WELCOME": "Welcome to {{app}}",
+  "LOGIN_TITLE": "{{app}} Access Portal",
+  "LOGIN_BELOW": "Please enter the code to continue",
+  "PASSWORD_PLACEHOLDER": "Enter Code",
+  "LOGIN_PASSWORD": "",
+  "LOGIN_USING_ENV_PASSWORD": "",
+  "LOGIN_USING_HASHED_PASSWORD": ""
+}
+EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        ARCH_SUFFIX="arm64"; \
-    elif [ "$TARGETARCH" = "amd64" ]; then \
-        ARCH_SUFFIX="amd64"; \
+        dpkg -i code-server_0.1.0-alpha.4_arm64.deb || apt-get install -f -y; \
     else \
-        ARCH_SUFFIX="amd64"; \
-    fi && \
-    # Download the appropriate .deb package from GitHub releases
-    wget -O /tmp/code-server.deb \
-        "https://github.com/rudderlabs/code-server/releases/download/untagged-73054e0d208425e0c31a/code-server_0.1.0-alpha.3_${ARCH_SUFFIX}.deb" && \
-    # Install the package
-    dpkg -i /tmp/code-server.deb || apt-get install -f -y && \
-    # Clean up
-    rm /tmp/code-server.deb
+        dpkg -i code-server_0.1.0-alpha.4_amd64.deb || apt-get install -f -y; \
+    fi
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
 WORKDIR /home/codeuser
 
 # Install extension as codeuser
-RUN code-server --install-extension saoudrizwan.claude-dev
+# RUN code-server --install-extension saoudrizwan.claude-dev
 
 # Clone profiles-mcp as codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
@@ -66,12 +71,10 @@ RUN chown -R codeuser:codeuser /home/codeuser
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
+RUN chmod 755 /home/codeuser/custom-strings.json
 
 # Switch back to codeuser
 USER codeuser
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
-
-# Start code-server when container runs, opening the project directory
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "/home/codeuser/project"]

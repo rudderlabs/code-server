@@ -1,0 +1,9 @@
+{
+  "WELCOME": "Welcome to {{app}}",
+  "LOGIN_TITLE": "{{app}} Access Portal",
+  "LOGIN_BELOW": "Please enter the code to continue",
+  "PASSWORD_PLACEHOLDER": "Enter Code",
+  "LOGIN_PASSWORD": "",
+  "LOGIN_USING_ENV_PASSWORD": "",
+  "LOGIN_USING_HASHED_PASSWORD": ""
+}
