@@ -22,7 +22,6 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
-
 COPY release-packages/* .
 
 # Create custom-strings.json directly in the container
