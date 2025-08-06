@@ -1,16 +1,3 @@
-Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
-===================================================================
---- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts
-+++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
-@@ -420,5 +420,8 @@ import './contrib/dropOrPasteInto/browse
- // Edit Telemetry
- import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
- 
-+// Rudderstack
-+import './contrib/rudderstack/browser/rudderstack.contribution.js';
-+
- 
- //#endregion
 Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media/rudderstack-icon.svg
 ===================================================================
 --- /dev/null
@@ -24,10 +11,9 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstack.contribution.ts
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +/* eslint-disable header/header */
-+import { ViewContainerLocation, Extensions as ViewExtensions } from '../../../common/views.js';
-+import { IViewContainersRegistry, IViewsRegistry } from '../../../common/views.js';
++import { ViewContainerLocation, Extensions as ViewExtensions, IViewContainersRegistry, IViewsRegistry } from '../../../common/views.js';
 +import { Registry } from '../../../../platform/registry/common/platform.js';
 +import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
 +import * as nls from '../../../../nls.js';
@@ -69,19 +55,19 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstackIcons.ts
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,5 @@
 +/* eslint-disable header/header */
-+import { URI } from '../../../../base/common/uri.js';
 +import { FileAccess } from '../../../../base/common/network.js';
 +
-+// Main activity bar icon - direct URI to custom SVG
-+export const rudderstackFeatureViewIcon = URI.parse(FileAccess.asBrowserUri('vs/workbench/contrib/rudderstack/browser/media/rudderstack-icon.svg').toString());
++// Custom rudderstack icon - direct FileAccess approach
++export const rudderstackFeatureViewIcon = FileAccess.asFileUri('vs/workbench/contrib/rudderstack/browser/media/rudderstack-icon.svg');
 Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstackMainView.ts
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstackMainView.ts
-@@ -0,0 +1,307 @@
+@@ -0,0 +1,309 @@
 +/* eslint-disable header/header */
++import './media/icon.css';
 +import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 +import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
 +import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
@@ -97,6 +83,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 +import { TerminalLocation } from '../../../../platform/terminal/common/terminal.js';
 +import { IEditorService } from '../../../services/editor/common/editorService.js';
 +import { IFileService } from '../../../../platform/files/common/files.js';
++
 +import { VSBuffer } from '../../../../base/common/buffer.js';
 +import { URI } from '../../../../base/common/uri.js';
 +import { SaveReason } from '../../../common/editor.js';
@@ -135,6 +122,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 +		@ITerminalEditorService private readonly terminalEditorService: ITerminalEditorService,
 +		@IEditorService private readonly editorService: IEditorService,
 +		@IFileService private readonly fileService: IFileService,
++
 +	) {
 +		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 +	}
@@ -159,18 +147,17 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 +		title.style.color = 'var(--vscode-foreground)';
 +		title.textContent = nls.localize('rudderstackTitle', 'Rudderstack Profiles');
 +
-+		// Description
-+		const description = append(contentContainer, $('.rudderstack-description'));
-+		description.style.fontSize = '12px';
-+		description.style.color = 'var(--vscode-descriptionForeground)';
-+		description.style.marginBottom = '8px';
-+		description.textContent = nls.localize('rudderstackDescription', 'edit your project');
-+
 +		// Button container
 +		const buttonContainer = append(contentContainer, $('.button-container'));
 +		buttonContainer.style.display = 'flex';
 +		buttonContainer.style.flexDirection = 'column';
 +		buttonContainer.style.gap = '8px';
++
++				// Description
++				const description = append(contentContainer, $('.rudderstack-description'));
++				description.style.fontSize = '12px';
++				description.style.color = 'var(--vscode-descriptionForeground)';
++				description.textContent = nls.localize('rudderstackDescription', 'Save and Exit will create a profiles project in your rudderstack workspace and close this session');
 +
 +		// Primary action button (like "Run and Debug" button)
 +		this.primaryButton = this._register(new Button(buttonContainer, {
@@ -258,7 +245,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 +		const result = await this.dialogService.confirm({
 +			type: Severity.Warning,
 +			message: nls.localize('saveAndExitConfirm', 'Save and Exit'),
-+			detail: nls.localize('saveAndExitDetail', 'Are you sure you want to save all files and exit?'),
++			detail: nls.localize('saveAndExitDetail', 'Confirm to close this session and create a profiles project in your rudderstack workspace'),
 +			primaryButton: nls.localize('saveAndExit', 'Save and Exit'),
 +			cancelButton: nls.localize('cancel', 'Cancel')
 +		});
@@ -296,10 +283,10 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudde
 +				}
 +				
 +				// Show success notification
-+				this.dialogService.confirm({
++				await this.dialogService.confirm({
 +					type: Severity.Info,
 +					message: nls.localize('saveAndExitSuccess', 'Save and Exit Complete'),
-+					detail: nls.localize('saveAndExitSuccessDetail', 'All files have been saved successfully.'),
++					detail: nls.localize('saveAndExitSuccessDetail', 'A profiles project has been created in your rudderstack workspace. You can close this tab now.'),
 +					primaryButton: nls.localize('ok', 'OK')
 +				});
 +				
@@ -444,4 +431,29 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/common/rudder
 +
 +export const VIEWLET_ID = 'workbench.view.rudderstack';
 +export const MAIN_VIEW_ID = 'workbench.rudderstack.mainView'; 
+\ No newline at end of file
+Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media/icon.css
+===================================================================
+--- /dev/null
++++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media/icon.css
+@@ -0,0 +1,19 @@
++/* .monaco-workbench.vs .chat-setup-dialog .dialog-buttons-row > .dialog-buttons > .monaco-button.continue-button.alternate.monochrome::before {
++	background-image: url('./rudderstack-icon.svg');
++}
++
++
++
++.monaco-workbench .activitybar > .content :not(.monaco-menu) > .monaco-action-bar .action-label:not(.codicon) */
++
++/* .monaco-workbench .activitybar .monaco-action-bar .action-label.activity-workbench-view-rudderstack-b3e9d62fd0cd322d3a9939c5927fa4097328304e::before{
++    background-image: url('./rudderstack-icon.svg');
++} */
++
++.monaco-workbench .activitybar .monaco-action-bar .action-label[class*="activity-workbench-view-rudderstack"].uri-icon {
++    background-color: transparent !important;
++    background-image: url('./rudderstack-icon.svg');
++    background-repeat: no-repeat;
++    background-position: center;
++    background-size: 24px 24px;
++}
 \ No newline at end of file
