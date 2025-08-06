@@ -457,3 +457,14 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media
 +    background-size: 24px 24px;
 +}
 \ No newline at end of file
+Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts
++++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+@@ -421,4 +421,6 @@ import './contrib/dropOrPasteInto/browse
+ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
+ 
+ 
++import './contrib/rudderstack/browser/rudderstack.contribution.js';
++
+ //#endregion
