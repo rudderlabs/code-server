@@ -115,7 +115,6 @@ jobs:
           name: code-server-packages
           path: |
             **/*.deb
-
   build:
     needs:
       - metadata
