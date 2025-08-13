@@ -23,3 +23,8 @@ test/test-results
 # Quilt's internal data.
 /.pc
 /patches/*.diff~
+
+# Extension build artifacts
+cline-preseeder.vsix
+cline-preseeder/out/
+cline-preseeder/node_modules/

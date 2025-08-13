@@ -50,15 +50,19 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 USER codeuser
 WORKDIR /home/codeuser
 
-# Install extension as codeuser
-# RUN code-server --install-extension saoudrizwan.claude-dev
+# Copy the pre-built extension (much faster!)
+COPY cline-preseeder.vsix /tmp/cline-preseeder.vsix
+
+# Install Cline extension and pre-built preseeder extension
+RUN code-server --install-extension saoudrizwan.claude-dev
+RUN code-server --install-extension /tmp/cline-preseeder.vsix
 
 # Clone profiles-mcp as codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
-RUN echo 'RUDDERSTACK_PAT=${RUDDERSTACK_PAT}' > /home/codeuser/profiles-mcp/.env
+RUN echo "RUDDERSTACK_PAT=${RUDDERSTACK_PAT}" > /home/codeuser/profiles-mcp/.env
 
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
@@ -74,6 +78,9 @@ RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
 RUN chmod 755 /home/codeuser/custom-strings.json
+
+# Clean up
+RUN rm -f /tmp/cline-preseeder.vsix
 
 # Switch back to codeuser
 USER codeuser

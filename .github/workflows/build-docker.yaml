@@ -115,10 +115,37 @@ jobs:
           name: code-server-packages
           path: |
             **/*.deb
+
+  # NEW: Build extension before Docker build
+  build-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'cline-preseeder/package-lock.json'
+          
+      - name: Build extension
+        run: |
+          chmod +x ./build-extension.sh
+          ./build-extension.sh
+          
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cline-preseeder-extension
+          path: cline-preseeder.vsix
+
   build:
     needs:
       - metadata
       - download-artifacts
+      - build-extension  # Add dependency on extension build
     strategy:
       fail-fast: false
       matrix:
@@ -137,8 +164,6 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Download artifacts (if available)
         uses: actions/download-artifact@v4
@@ -146,6 +171,14 @@ jobs:
           name: code-server-packages
           path: .
         continue-on-error: false
+        
+      # NEW: Download pre-built extension
+      - name: Download extension artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cline-preseeder-extension
+          path: .
+          
       - name: List downloaded files
         run: |
           pwd
