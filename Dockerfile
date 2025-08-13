@@ -4,6 +4,7 @@ FROM ubuntu:22.04
 # Set build arguments for version and architecture
 ARG VERSION=v4.9.1
 ARG TARGETARCH=amd64
+ARG RUDDERSTACK_PAT
 
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
@@ -22,6 +23,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
+
 COPY release-packages/* .
 
 # Create custom-strings.json directly in the container
@@ -39,9 +41,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        dpkg -i code-server_0.1.0-alpha.4_arm64.deb || apt-get install -f -y; \
+        dpkg -i code-server_0.1.0-alpha.6_arm64.deb || apt-get install -f -y; \
     else \
-        dpkg -i code-server_0.1.0-alpha.4_amd64.deb || apt-get install -f -y; \
+        dpkg -i code-server_0.1.0-alpha.6_amd64.deb || apt-get install -f -y; \
     fi
 
 # Switch to codeuser for extension installation and MCP setup
@@ -55,15 +57,15 @@ WORKDIR /home/codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
-# RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
-# RUN echo 'RUDDERSTACK_PAT=xxxx' > /home/codeuser/profiles-mcp/.env
+RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
+RUN echo 'RUDDERSTACK_PAT=${RUDDERSTACK_PAT}' > /home/codeuser/profiles-mcp/.env
 
 # Run setup as codeuser
-# RUN cd /home/codeuser/profiles-mcp && bash setup.sh
+RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and file
-# RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-# RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json 
+RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json 
 
 # Set proper ownership and permissions
 USER root
