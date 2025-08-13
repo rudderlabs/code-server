@@ -436,7 +436,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media/icon.css
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +/* .monaco-workbench.vs .chat-setup-dialog .dialog-buttons-row > .dialog-buttons > .monaco-button.continue-button.alternate.monochrome::before {
 +	background-image: url('./rudderstack-icon.svg');
 +}
@@ -455,6 +455,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/media
 +    background-repeat: no-repeat;
 +    background-position: center;
 +    background-size: 24px 24px;
++    mask-image: none !important;
 +}
 \ No newline at end of file
 Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts

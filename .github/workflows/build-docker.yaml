@@ -171,6 +171,7 @@ jobs:
             VERSION=${{ needs.download-artifacts.outputs.version }}
             TARGETARCH=${{ matrix.build-config.arch }}
             GITHUB_PAT=${{ secrets.PAT }}
+            RUDDERSTACK_PAT=${{ secrets.RUDDERSTACK_PAT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

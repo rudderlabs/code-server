@@ -4,6 +4,7 @@ FROM ubuntu:22.04
 # Set build arguments for version and architecture
 ARG VERSION=v4.9.1
 ARG TARGETARCH=amd64
+ARG RUDDERSTACK_PAT
 
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
@@ -56,15 +57,15 @@ WORKDIR /home/codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
-# RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
-# RUN echo 'RUDDERSTACK_PAT=xxxx' > /home/codeuser/profiles-mcp/.env
+RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
+RUN echo 'RUDDERSTACK_PAT=${RUDDERSTACK_PAT}' > /home/codeuser/profiles-mcp/.env
 
 # Run setup as codeuser
-# RUN cd /home/codeuser/profiles-mcp && bash setup.sh
+RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and file
-# RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-# RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json 
+RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json 
 
 # Set proper ownership and permissions
 USER root
