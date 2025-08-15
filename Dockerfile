@@ -51,7 +51,7 @@ USER codeuser
 WORKDIR /home/codeuser
 
 # Install extension as codeuser
-# RUN code-server --install-extension saoudrizwan.claude-dev
+RUN code-server --install-extension saoudrizwan.claude-dev
 
 # Clone profiles-mcp as codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
