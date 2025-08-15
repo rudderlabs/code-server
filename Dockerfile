@@ -41,9 +41,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        dpkg -i code-server_0.1.0-alpha.6_arm64.deb || apt-get install -f -y; \
+        dpkg -i code-server_0.1.0-alpha.7_arm64.deb || apt-get install -f -y; \
     else \
-        dpkg -i code-server_0.1.0-alpha.6_amd64.deb || apt-get install -f -y; \
+        dpkg -i code-server_0.1.0-alpha.7_amd64.deb || apt-get install -f -y; \
     fi
 
 # Switch to codeuser for extension installation and MCP setup
@@ -51,14 +51,14 @@ USER codeuser
 WORKDIR /home/codeuser
 
 # Install extension as codeuser
-# RUN code-server --install-extension saoudrizwan.claude-dev
+RUN code-server --install-extension saoudrizwan.claude-dev
 
 # Clone profiles-mcp as codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py 
-RUN echo 'RUDDERSTACK_PAT=${RUDDERSTACK_PAT}' > /home/codeuser/profiles-mcp/.env
+RUN echo "RUDDERSTACK_PAT=${RUDDERSTACK_PAT}" > /home/codeuser/profiles-mcp/.env
 
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
