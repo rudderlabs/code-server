@@ -76,6 +76,10 @@ RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
 RUN chmod 755 /home/codeuser/custom-strings.json
 
+COPY safe-bash /usr/local/bin/safe-bash
+RUN chmod +x /usr/local/bin/safe-bash
+ENV SHELL="/usr/local/bin/safe-bash"
+
 # Switch back to codeuser
 USER codeuser
 WORKDIR /home/codeuser/project
