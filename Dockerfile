@@ -23,6 +23,8 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
+RUN pip3 install profiles-mlcorelib
+RUN pip3 install --upgrade pip
 
 COPY release-packages/* .
 COPY claude-dev-3.26.1.vsix claude.vsix
