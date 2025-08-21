@@ -49,10 +49,10 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
-WORKDIR /home/codeuser
-
 # Install extension as codeuser
 RUN code-server --install-extension claude.vsix
+
+WORKDIR /home/codeuser
 
 # Clone profiles-mcp as codeuser
 RUN git clone https://github.com/rudderlabs/profiles-mcp
