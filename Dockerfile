@@ -21,10 +21,10 @@ RUN mkdir -p /home/codeuser/project
 RUN mkdir -p /home/codeuser/.pb && \
   touch /home/codeuser/.pb/siteconfig.yaml
 
+RUN pip3 install --upgrade pip
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 RUN pip3 install profiles-mlcorelib
-RUN pip3 install --upgrade pip
 
 COPY release-packages/* .
 COPY claude-dev-3.26.1.vsix claude.vsix
