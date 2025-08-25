@@ -68,7 +68,7 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and file
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles", "setup_new_profiles_project", "get_existing_connections", "profiles_faq", "profiles_docs", "run_query", "input_table_suggestions", "describe_table", "profiles_workflow_guide", "evaluate_eligible_user_filters", "get_profiles_output_details"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
 # Set proper ownership and permissions
 USER root
