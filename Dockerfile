@@ -25,6 +25,7 @@ RUN pip3 install --upgrade pip
 # Install RudderStack Profiles CLI (assuming pip install)
 RUN pip3 install profiles-rudderstack
 RUN pip3 install profiles-mlcorelib
+RUN pip install awscli==1.33.14
 
 COPY release-packages/* .
 COPY claude-dev-3.26.1.vsix claude.vsix
