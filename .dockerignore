@@ -3,3 +3,4 @@
 !ci
 !*.vsix
 !safe-bash
+!clinerules.md

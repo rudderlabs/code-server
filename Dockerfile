@@ -67,9 +67,9 @@ RUN echo "RUDDERSTACK_PAT=${RUDDERSTACK_PAT}" > /home/codeuser/profiles-mcp/.env
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
-# Create MCP settings directory and file
+# Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles", "setup_new_profiles_project", "get_existing_connections", "profiles_faq", "profiles_docs", "run_query", "input_table_suggestions", "describe_table", "profiles_workflow_guide", "evaluate_eligible_user_filters", "get_profiles_output_details"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles", "setup_new_profiles_project", "get_existing_connections", "profiles_faq", "profiles_docs", "run_query", "input_table_suggestions", "describe_table", "profiles_workflow_guide", "evaluate_eligible_user_filters", "get_profiles_output_details", "initialize_snowflake_connection", "search_profiles_docs"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
 # Set proper ownership and permissions
 USER root
@@ -79,12 +79,10 @@ RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
 RUN chmod 755 /home/codeuser/custom-strings.json
 
-COPY safe-bash /usr/local/bin/safe-bash
-RUN chmod +x /usr/local/bin/safe-bash
-ENV SHELL="/usr/local/bin/safe-bash"
-
 # Switch back to codeuser
 USER codeuser
+RUN mkdir -p /home/codeuser/Documents/Cline/Rules
+COPY clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
