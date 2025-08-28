@@ -10,6 +10,7 @@ on:
         description: The workflow run ID to download artifacts from (leave empty for current workflow or latest)
         type: string
         required: false
+        default: "16983107575"
 
 permissions:
   id-token: write # allows the JWT to be requested from GitHub's OIDC provider
