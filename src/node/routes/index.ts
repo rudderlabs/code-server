@@ -82,15 +82,12 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   // Add CORS header to all responses
   app.router.use((req, res, next) => {
     const origin = req.headers.origin
-    const allowedOrigins = [
-      'https://app.rudderstack.com',
-      'https://app.dev.rudderlabs.com'
-    ]
-    
+    const allowedOrigins = ["https://app.rudderstack.com", "https://app.dev.rudderlabs.com"]
+
     if (origin && (allowedOrigins.includes(origin) || origin.match(/^https?:\/\/localhost(:\d+)?$/))) {
-      res.setHeader('Access-Control-Allow-Origin', origin)
+      res.setHeader("Access-Control-Allow-Origin", origin)
     }
-    
+
     next()
   })
 
