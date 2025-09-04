@@ -58,7 +58,7 @@ RUN code-server --install-extension claude.vsix
 WORKDIR /home/codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch v0.1.0 https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
