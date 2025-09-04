@@ -79,6 +79,18 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   app.router.use(common)
   app.wsRouter.use(common)
 
+  // Add CORS header to all responses
+  app.router.use((req, res, next) => {
+    const origin = req.headers.origin
+    const allowedOrigins = ["https://app.rudderstack.com", "https://app.dev.rudderlabs.com"]
+
+    if (origin && (allowedOrigins.includes(origin) || origin.match(/^https?:\/\/localhost(:\d+)?$/))) {
+      res.setHeader("Access-Control-Allow-Origin", origin)
+    }
+
+    next()
+  })
+
   app.router.use(/.*/, async (req, res, next) => {
     // If we're handling TLS ensure all requests are redirected to HTTPS.
     // TODO: This does *NOT* work if you have a base path since to specify the

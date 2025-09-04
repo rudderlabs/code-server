@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Check if the command contains dangerous patterns
+case "$*" in
+    *printenv*|*env*|*"set "*|*declare*)
+        echo "Command not allowed"
+        exit 1
+        ;;
+    *)
+        # Run the command normally
+        exec bash "$@"
+        ;;
+esac
