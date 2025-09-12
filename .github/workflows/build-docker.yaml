@@ -2,14 +2,14 @@ name: build-docker
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: The version to use (include "v", i.e. "v4.9.1"). If not provided, will try to download artifacts from main branch.
+      docker_image_version:
+        description: Docker image version/tag (e.g. "v1.2.3", "latest", "dev-branch"). This will be used as the Docker image tag.
         type: string
-        required: false
+        required: true
       run_id:
-        description: The workflow run ID to download artifacts from (leave empty for current workflow or latest)
+        description: The workflow run ID to download artifacts from
         type: string
-        required: false
+        required: true
         default: "16983107575"
 
 permissions:
@@ -26,7 +26,7 @@ env:
   docker_images: |
     name=rudderstack/profiles-code-server
   docker_tags: |
-    type=raw,value=latest
+    type=raw,value=${{ inputs.docker_image_version || 'latest' }}
 
 jobs:
   metadata:
@@ -67,32 +67,12 @@ jobs:
 
   download-artifacts:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
     steps:
-      - name: Get version
-        id: get-version
-        run: |
-          if [ "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=v4.9.1" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get latest release run ID (if no run_id provided)
-        if: ${{ !inputs.run_id }}
-        id: get-run-id
-        run: |
-          RUN_ID=$(gh run list --workflow=release.yaml --status=completed --limit=1 --json databaseId --jq '.[0].databaseId')
-          echo "run-id=$RUN_ID" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-
       - name: Download npm release package
         uses: actions/download-artifact@v4
         with:
           name: npm-release-package
-          run-id: ${{ inputs.run_id || steps.get-run-id.outputs.run-id }}
+          run-id: ${{ inputs.run_id }}
           github-token: ${{ secrets.PAT }}
 
       - name: Download all release packages (optional)
@@ -101,7 +81,7 @@ jobs:
           pattern: release-packages-*
           path: ./release-packages/
           merge-multiple: true
-          run-id: ${{ inputs.run_id || steps.get-run-id.outputs.run-id }}
+          run-id: ${{ inputs.run_id }}
           github-token: ${{ secrets.PAT }}
         continue-on-error: true
       - name: List downloaded files
@@ -164,12 +144,12 @@ jobs:
         uses: rudderlabs/build-scan-push-action@v1.5.3
         with:
           context: .
+          file: ./Dockerfile.optimize
           platforms: ${{ matrix.build-config.platform }}
           push: true
           tags: ${{ matrix.build-config.tags }}
           labels: ${{ matrix.build-config.labels }}
           build-args: |
-            VERSION=${{ needs.download-artifacts.outputs.version }}
             TARGETARCH=${{ matrix.build-config.arch }}
             GITHUB_PAT=${{ secrets.PAT }}
             RUDDERSTACK_PAT=${{ secrets.RUDDERSTACK_PAT }}
