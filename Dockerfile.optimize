@@ -1,0 +1,120 @@
+# Multi-stage build for size optimization
+FROM ubuntu:22.04 AS builder
+
+# Set build arguments
+ARG TARGETARCH=amd64
+ARG RUDDERSTACK_PAT
+
+# Install build dependencies and download external resources in one layer
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  git \
+  curl \
+  wget \
+  ca-certificates && \
+  # Clone profiles-mcp in builder stage
+  git clone --branch v0.2.0 --depth 1 https://github.com/rudderlabs/profiles-mcp /tmp/profiles-mcp && \
+  # Clean up in same layer
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/apt-*
+
+# Final stage
+FROM ubuntu:22.04
+
+# Set build arguments
+ARG TARGETARCH=amd64
+ARG RUDDERSTACK_PAT
+
+# Install all system dependencies, create user, and clean up in single layer
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  python3.10 \
+  python3-pip \
+  git \
+  curl \
+  wget \
+  sudo \
+  ca-certificates && \
+  # Create non-root user and directories
+  useradd -m -s /bin/bash codeuser && \
+  mkdir -p /home/codeuser/project \
+  /home/codeuser/.pb \
+  /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/ \
+  /home/codeuser/Documents/Cline/Rules && \
+  touch /home/codeuser/.pb/siteconfig.yaml && \
+  # Install Python packages and clean pip cache
+  pip3 install --no-cache-dir --upgrade pip && \
+  pip3 install --no-cache-dir \
+  profiles-rudderstack \
+  profiles-mlcorelib \
+  awscli==1.33.14 && \
+  # Clean up package cache and temporary files
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* \
+  /var/cache/apt/archives/* \
+  /tmp/* \
+  /var/tmp/* \
+  /root/.cache/pip/* \
+  /home/codeuser/.cache/pip/*
+
+# Copy only the necessary .deb file based on architecture and other required files
+COPY claude-dev-3.26.1.vsix /tmp/claude.vsix
+COPY clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
+
+# Copy profiles-mcp from builder stage
+COPY --from=builder /tmp/profiles-mcp /home/codeuser/profiles-mcp
+
+# Copy architecture-specific .deb file only
+COPY release-packages/code-server_0.1.0-alpha.7_${TARGETARCH}.deb /tmp/code-server.deb
+
+# Install code-server and clean up
+RUN dpkg -i /tmp/code-server.deb || apt-get install -f -y && \
+    rm -f /tmp/code-server.deb
+
+# Create custom-strings.json
+RUN cat > /home/codeuser/custom-strings.json << 'EOF'
+{
+"WELCOME": "Welcome to {{app}}",
+"LOGIN_TITLE": "{{app}} Access Portal",
+"LOGIN_BELOW": "Please enter the code to continue",
+"PASSWORD_PLACEHOLDER": "Enter Code",
+"LOGIN_PASSWORD": "",
+"LOGIN_USING_ENV_PASSWORD": "",
+"LOGIN_USING_HASHED_PASSWORD": ""
+}
+EOF
+
+# Configure profiles-mcp environment
+RUN echo "RUDDERSTACK_PAT=${RUDDERSTACK_PAT}" > /home/codeuser/profiles-mcp/.env && \
+    echo "IS_CLOUD_BASED=true" >> /home/codeuser/profiles-mcp/.env && \
+    echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
+
+# Set ownership and permissions
+RUN chown -R codeuser:codeuser /home/codeuser && \
+    chmod 755 /home/codeuser/project \
+              /home/codeuser/.pb \
+              /home/codeuser/custom-strings.json && \
+    chmod 644 /home/codeuser/.pb/siteconfig.yaml
+
+# Switch to codeuser for extension installation and MCP setup
+USER codeuser
+WORKDIR /home/codeuser
+
+# Install extension and run setup in consolidated layer
+RUN code-server --install-extension /tmp/claude.vsix && \
+  # Run profiles-mcp setup
+  cd /home/codeuser/profiles-mcp && \
+  bash setup.sh && \
+  # Create MCP settings
+  echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles","get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","profiles_workflow_guide","analyze_and_validate_project","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json && \
+  # Clean up user cache
+  rm -rf /home/codeuser/.cache/* \
+         /home/codeuser/.npm/_cacache/*
+
+# Final cleanup as root
+USER root
+RUN rm -rf /tmp/* /var/tmp/*
+USER codeuser
+
+WORKDIR /home/codeuser/project
+EXPOSE 8080
