@@ -82,7 +82,7 @@ RUN chmod 755 /home/codeuser/custom-strings.json
 # Switch back to codeuser
 USER codeuser
 RUN mkdir -p /home/codeuser/Documents/Cline/Rules
-COPY clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
+COPY --chown=codeuser:codeuser clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
