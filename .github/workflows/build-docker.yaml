@@ -141,7 +141,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: docker build
-        uses: rudderlabs/build-scan-push-action@v1.5.3
+        uses: rudderlabs/build-scan-push-action@v1.8.1
         with:
           context: .
           platforms: ${{ matrix.build-config.platform }}
