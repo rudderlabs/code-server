@@ -28,7 +28,7 @@ RUN pip3 install profiles-mlcorelib
 RUN pip install awscli==1.33.14
 
 COPY release-packages/* .
-COPY claude-dev-3.32.6.vsix claude.vsix
+COPY claude-dev-3.32.7.vsix claude.vsix
 
 # Create custom-strings.json directly in the container
 RUN cat > /home/codeuser/custom-strings.json << 'EOF'
