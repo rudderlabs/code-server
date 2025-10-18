@@ -24,6 +24,11 @@ jobs:
   npm:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Checkout code-server
         uses: actions/checkout@v4
 
@@ -60,6 +65,11 @@ jobs:
       # Ensure things are up to date
       # Suggested by homebrew maintainers
       # https://github.com/Homebrew/discussions/discussions/1532#discussioncomment-782633
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
@@ -93,6 +103,11 @@ jobs:
 
     steps:
       # We need to checkout code-server so we can get the version
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Checkout code-server
         uses: actions/checkout@v4
         with:
@@ -147,6 +162,11 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Checkout code-server
         uses: actions/checkout@v4
 
