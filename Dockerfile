@@ -2,7 +2,7 @@
 FROM ubuntu:22.04
 
 # Set build arguments for version and architecture
-ARG VERSION=v4.9.1
+ARG VERSION=v4.9.2
 ARG TARGETARCH=amd64
 ARG RUDDERSTACK_PAT
 
