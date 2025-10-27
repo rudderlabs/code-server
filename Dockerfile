@@ -25,7 +25,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 COPY requirements.txt .
 
 RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt && rm requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY release-packages/* .
 COPY claude-dev-3.32.7.vsix claude.vsix
