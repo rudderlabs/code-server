@@ -21,11 +21,11 @@ RUN mkdir -p /home/codeuser/project
 RUN mkdir -p /home/codeuser/.pb && \
   touch /home/codeuser/.pb/siteconfig.yaml
 
+# Copy requirements.txt first
+COPY requirements.txt .
+
 RUN pip3 install --upgrade pip
-# Install RudderStack Profiles CLI (assuming pip install)
-RUN pip3 install profiles-rudderstack
-RUN pip3 install profiles-mlcorelib
-RUN pip install awscli==1.42.59
+RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY release-packages/* .
 COPY claude-dev-3.32.7.vsix claude.vsix
