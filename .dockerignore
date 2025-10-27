@@ -4,3 +4,4 @@
 !*.vsix
 !safe-bash
 !clinerules.md
+!requirements.txt
