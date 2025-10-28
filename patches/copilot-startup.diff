@@ -18,10 +18,10 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
 +import { IFileService } from '../../platform/files/common/files.js';
 +import { IWorkspaceContextService } from '../../platform/workspace/common/workspace.js';
 +import { joinPath } from '../../base/common/resources.js';
- 
+
  export class CodeServerClient extends Disposable {
  	static LOGOUT_COMMAND_ID = 'code-server.logout';
- 
+
  	constructor (
  		@ILogService private logService: ILogService,
 +		@IEditorService private editorService: IEditorService,
@@ -33,7 +33,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
 @@ -24,6 +31,8 @@ export class CodeServerClient extends Di
  		const event = new CustomEvent('ide-ready');
  		window.dispatchEvent(event);
- 
+
 +		await this.openCopilotMarkdownIfExists();
 +
  		if (parent) {
@@ -61,7 +61,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
 +				this.logService.info('Opening copilot.md from workspace');
 +				await this.editorService.openEditor({
 +					resource: copilotMdUri,
-+					options: { preserveFocus: false }
++					options: { preserveFocus: false, preview: true }
 +				});
 +			}
 +		} catch (error) {
