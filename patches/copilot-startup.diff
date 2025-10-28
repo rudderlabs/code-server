@@ -1,0 +1,71 @@
+Open copilot.md in preview mode on startup
+
+This patch checks if a file named "copilot.md" exists in the workspace directory
+when VSCode launches. If found, it automatically opens the file in preview mode.
+
+The check happens after the workbench is fully initialized and services are
+available, ensuring a smooth startup experience.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/client.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/client.ts
+@@ -6,12 +6,19 @@ import { ILogService } from '../../platf
+ import { INotificationService, Severity } from '../../platform/notification/common/notification.js';
+ import { IProductService } from '../../platform/product/common/productService.js';
+ import { IStorageService, StorageScope, StorageTarget } from '../../platform/storage/common/storage.js';
++import { IEditorService } from '../services/editor/common/editorService.js';
++import { IFileService } from '../../platform/files/common/files.js';
++import { IWorkspaceContextService } from '../../platform/workspace/common/workspace.js';
++import { joinPath } from '../../base/common/resources.js';
+ 
+ export class CodeServerClient extends Disposable {
+ 	static LOGOUT_COMMAND_ID = 'code-server.logout';
+ 
+ 	constructor (
+ 		@ILogService private logService: ILogService,
++		@IEditorService private editorService: IEditorService,
++		@IFileService private fileService: IFileService,
++		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
+ 		@INotificationService private notificationService: INotificationService,
+ 		@IProductService private productService: IProductService,
+ 		@IStorageService private storageService: IStorageService,
+@@ -24,6 +31,8 @@ export class CodeServerClient extends Di
+ 		const event = new CustomEvent('ide-ready');
+ 		window.dispatchEvent(event);
+ 
++		await this.openCopilotMarkdownIfExists();
++
+ 		if (parent) {
+ 			// Tell the parent loading has completed.
+ 			parent.postMessage({ event: 'loaded' }, '*');
+@@ -178,4 +187,29 @@ export class CodeServerClient extends Di
+ 			}
+ 		}
+ 	}
++
++	private async openCopilotMarkdownIfExists(): Promise<void> {
++		try {
++			const workspace = this.workspaceContextService.getWorkspace();
++			if (!workspace || workspace.folders.length === 0) {
++				return;
++			}
++
++			// Check the first workspace folder for copilot.md
++			const workspaceFolder = workspace.folders[0];
++			const copilotMdUri = joinPath(workspaceFolder.uri, 'copilot.md');
++
++			// Check if the file exists
++			const exists = await this.fileService.exists(copilotMdUri);
++			if (exists) {
++				this.logService.info('Opening copilot.md from workspace');
++				await this.editorService.openEditor({
++					resource: copilotMdUri,
++					options: { preserveFocus: false }
++				});
++			}
++		} catch (error) {
++			this.logService.debug('Failed to open copilot.md:', error);
++		}
++	}
+ }

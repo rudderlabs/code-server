@@ -69,9 +69,9 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
  		@ILogService private logService: ILogService,
  		@INotificationService private notificationService: INotificationService,
 @@ -81,6 +85,10 @@ export class CodeServerClient extends Di
- 		if (this.productService.updateEndpoint) {
- 			this.checkUpdates(this.productService.updateEndpoint)
- 		}
+ 		// if (this.productService.updateEndpoint) {
+ 		//	this.checkUpdates(this.productService.updateEndpoint)
+ 		// }
 +
 +		if (this.productService.logoutEndpoint) {
 +			this.addLogoutCommand(this.productService.logoutEndpoint);
