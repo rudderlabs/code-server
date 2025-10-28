@@ -57,6 +57,9 @@ RUN code-server --install-extension claude.vsix
 
 WORKDIR /home/codeuser
 
+COPY copilot-new-project.md .
+COPY rudderstack_logo.png .
+
 # Clone profiles-mcp as codeuser
 RUN git clone --branch v0.6.0 https://github.com/rudderlabs/profiles-mcp
 
