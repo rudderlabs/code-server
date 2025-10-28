@@ -24,3 +24,4 @@ trusted-domains.diff
 signature-verification.diff
 rudderstack-plugin.diff
 copilot-startup.diff
+remove-update-check.diff

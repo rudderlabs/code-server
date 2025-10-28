@@ -34,9 +34,9 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
  			});
  		}
 +
-+		// if (this.productService.updateEndpoint) {
-+		//	this.checkUpdates(this.productService.updateEndpoint)
-+		// }
++		if (this.productService.updateEndpoint) {
++			this.checkUpdates(this.productService.updateEndpoint)
++		}
 +	}
 +
 +	private checkUpdates(updateEndpoint: string) {
