@@ -1,0 +1,367 @@
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+@@ -17,6 +17,7 @@ import { IStorageService, StorageScope,
+ import { defaultKeybindingLabelStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+ import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+ import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
++import { IsEnabledCoderGettingStarted } from '../../../common/contextkeys.js';
+ 
+ interface WatermarkEntry {
+ 	readonly id: string;
+@@ -73,7 +74,10 @@ export class EditorGroupWatermark extend
+ 
+ 	private readonly cachedWhen: { [when: string]: boolean };
+ 
++	private readonly watermarkRoot: HTMLElement;
+ 	private readonly shortcuts: HTMLElement;
++	private readonly letterpress: HTMLElement;
++	private readonly copilotContent: HTMLElement;
+ 	private readonly transientDisposables = this._register(new DisposableStore());
+ 	private readonly keybindingLabels = this._register(new DisposableStore());
+ 
+@@ -94,12 +98,192 @@ export class EditorGroupWatermark extend
+ 		this.workbenchState = this.contextService.getWorkbenchState();
+ 
+ 		const elements = h('.editor-group-watermark', [
+-			h('.letterpress'),
++			h('.letterpress@letterpress'),
+ 			h('.shortcuts@shortcuts'),
++			h('.copilot-content@copilotContent'),
+ 		]);
+ 
+ 		append(container, elements.root);
++		this.watermarkRoot = elements.root;
+ 		this.shortcuts = elements.shortcuts;
++		this.letterpress = elements.letterpress;
++		this.copilotContent = elements.copilotContent;
++
++		// Build Profiles Copilot custom content
++		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
++			// Add class to root element for styling
++			this.watermarkRoot.classList.add('copilot-enabled');
++
++			// Hide default letterpress and shortcuts
++			this.letterpress.style.display = 'none';
++			this.shortcuts.style.display = 'none';
++
++			// Header section
++			const header = append(this.copilotContent, $('.copilot-header'));
++			const logo = append(header, $('img.copilot-logo')) as HTMLImageElement;
++			logo.src = '/_static/src/browser/media/rudderstack.svg';
++			logo.alt = 'RudderStack Logo';
++			logo.onerror = () => {
++				console.error('Failed to load RudderStack logo from:', logo.src);
++				logo.style.display = 'none'; // Hide broken image
++			};
++
++			const title = append(header, $('h1.copilot-title'));
++			title.textContent = '🚀 Welcome to Profiles Copilot';
++
++			const subtitle = append(header, $('h3.copilot-subtitle'));
++			subtitle.textContent = 'Your AI pair programmer for building customer 360 profiles';
++
++			// What's Profiles Copilot section
++			const whatSection = append(this.copilotContent, $('.copilot-section'));
++			const whatTitle = append(whatSection, $('h2'));
++			whatTitle.textContent = '👋 Hey there!';
++
++			const whatSubtitle = append(whatSection, $('h3'));
++			whatSubtitle.textContent = 'What\'s Profiles Copilot?';
++
++			const whatDesc = append(whatSection, $('p'));
++			whatDesc.textContent = 'Think of it as your technical co-pilot that helps you:';
++
++			const whatList = append(whatSection, $('ul'));
++			const whatItems = [
++				'🎯 Build complete Customer 360 views on your data',
++				'🔗 Stitch user identities across platforms (iOS, Android, web, Shopify, etc.)',
++				'⚡ Create powerful features',
++				'🧠 Generate predictive models (churn, LTV, propensity etc)',
++				'🐛 Debug your existing profiles'
++			];
++			whatItems.forEach(text => {
++				const li = append(whatList, $('li'));
++				li.textContent = text;
++			});
++
++			const whatCta = append(whatSection, $('p.copilot-cta'));
++			whatCta.textContent = 'Just start chatting with the copilot - seriously, that\'s it.';
++
++			// Ready to get started section
++			const startedSection = append(this.copilotContent, $('.copilot-section'));
++			const startedTitle = append(startedSection, $('h2'));
++			startedTitle.textContent = '🎬 Ready to get started? Try these:';
++
++			const startedDesc = append(startedSection, $('p'));
++			startedDesc.textContent = 'Pick any of these to begin (or type your own question):';
++
++			// Build from scratch
++			const example1 = append(startedSection, $('.copilot-example'));
++			const example1Title = append(example1, $('p.copilot-example-title'));
++			example1Title.textContent = '🏗️ Build from scratch:';
++			const example1Code = append(example1, $('pre.copilot-code'));
++			example1Code.textContent = 'Help me build a C360 on our user data. I want to understand conversion rates, retention, and which marketing campaigns are crushing it.';
++
++			// Identity stitching
++			const example2 = append(startedSection, $('.copilot-example'));
++			const example2Title = append(example2, $('p.copilot-example-title'));
++			example2Title.textContent = '🪢 Identity stitching:';
++			const example2Code = append(example2, $('pre.copilot-code'));
++			example2Code.textContent = 'Stitch our user data across iOS, Android, web and Shopify using anonymous_id, email, user_id and shopify_customer_id';
++
++			// Feature engineering
++			const example3 = append(startedSection, $('.copilot-example'));
++			const example3Title = append(example3, $('p.copilot-example-title'));
++			example3Title.textContent = '🎯 Feature engineering:';
++			const example3Code = append(example3, $('pre.copilot-code'));
++			example3Code.textContent = 'I want to create features tracking user engagement - like days since last purchase, total order value, and favorite product categories';
++
++			// Predictive models
++			const example4 = append(startedSection, $('.copilot-example'));
++			const example4Title = append(example4, $('p.copilot-example-title'));
++			example4Title.textContent = '🔮 Predictive models:';
++			const example4Code = append(example4, $('pre.copilot-code'));
++			example4Code.textContent = 'Build a predictive LTV model on our user data';
++
++			// Just exploring
++			const example5 = append(startedSection, $('.copilot-example'));
++			const example5Title = append(example5, $('p.copilot-example-title'));
++			example5Title.textContent = '💬 Just exploring:';
++			const example5Code = append(example5, $('pre.copilot-code'));
++			example5Code.textContent = 'What can I build with Profiles? Walk me through the basics';
++
++			// Quick heads up section
++			const headsUpSection = append(this.copilotContent, $('.copilot-section'));
++			const headsUpTitle = append(headsUpSection, $('h2'));
++			headsUpTitle.textContent = '💡 Quick heads up';
++
++			const permTitle = append(headsUpSection, $('p.copilot-bold'));
++			permTitle.textContent = 'About permissions:';
++
++			const permDesc = append(headsUpSection, $('p'));
++			permDesc.textContent = 'The copilot may ask for clipboard access to help you copy code, configs, or commands easily. And it uses an MCP server that might ask you to approve tool calls. Just approve when prompted - it\'s all secure and needed for the copilot to work properly.';
++
++			const howTitle = append(headsUpSection, $('p.copilot-bold'));
++			howTitle.textContent = 'How to work with the copilot:';
++
++			const howList = append(headsUpSection, $('ul'));
++			const howItems = [
++				'Chat naturally - no need to be formal',
++				'Be specific about your data (table names, column names help)',
++				'Where-ever possible, be specific about the feature definitions',
++				'Ask follow-up questions if something\'s unclear'
++			];
++			howItems.forEach(text => {
++				const li = append(howList, $('li'));
++				li.textContent = text;
++			});
++
++			const interactiveTitle = append(headsUpSection, $('p.copilot-bold'));
++			interactiveTitle.textContent = 'It\'s interactive:';
++
++			const interactiveDesc = append(headsUpSection, $('p'));
++			interactiveDesc.textContent = 'The copilot will ask YOU questions too - about your warehouse, tables, what you\'re trying to build. That\'s how it figures out the best setup for your use case.';
++
++			// New to Profiles section
++			const newSection = append(this.copilotContent, $('.copilot-section'));
++			const newTitle = append(newSection, $('h2'));
++			newTitle.textContent = '🎓 New to Profiles?';
++
++			const newDesc1 = append(newSection, $('p'));
++			newDesc1.textContent = 'Don\'t worry! The copilot can explain concepts as you go, but here\'s the TL;DR:';
++
++			const newDesc2 = append(newSection, $('p.copilot-bold'));
++			newDesc2.textContent = 'RudderStack Profiles lets you build unified customer profiles directly in your data warehouse (Snowflake, BigQuery, etc.).';
++
++			const newDesc3 = append(newSection, $('p'));
++			newDesc3.textContent = 'You\'ll work with YAML files to configure:';
++
++			const newList = append(newSection, $('ul'));
++			const inputsLi = append(newList, $('li'));
++			const inputsBold = append(inputsLi, $('strong'));
++			inputsBold.textContent = 'inputs.yaml';
++			append(inputsLi, document.createTextNode(' - Where your data lives (tables, schemas)'));
++
++			const modelsLi = append(newList, $('li'));
++			const modelsBold = append(modelsLi, $('strong'));
++			modelsBold.textContent = 'models.yaml';
++			append(modelsLi, document.createTextNode(' - How to stitch IDs and define features'));
++
++			const projectLi = append(newList, $('li'));
++			const projectBold = append(projectLi, $('strong'));
++			projectBold.textContent = 'pb_project.yaml';
++			append(projectLi, document.createTextNode(' - Overall project config'));
++
++			const newDesc4 = append(newSection, $('p'));
++			newDesc4.textContent = 'The copilot will guide you through all of this step by step.';
++
++			// Final CTA
++			const ctaSection = append(this.copilotContent, $('.copilot-section.copilot-cta-section'));
++			const ctaTitle = append(ctaSection, $('h2'));
++			ctaTitle.textContent = '🚀 Let\'s get building';
++
++			const ctaText = append(ctaSection, $('p.copilot-cta'));
++			ctaText.textContent = '← Type your question in the chat box to get started';
++
++			// Handle wheel events for scrolling since VS Code's scroll system doesn't apply here
++			this.copilotContent.addEventListener('wheel', (e) => {
++				e.preventDefault();
++				e.stopPropagation();
++				this.copilotContent.scrollTop += e.deltaY;
++			}, { passive: false });
++		}
+ 
+ 		this.registerListeners();
+ 
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+@@ -71,6 +71,145 @@
+ 	background-image: url('./letterpress-hcDark.svg');
+ }
+ 
++/* Profiles Copilot Custom Watermark Content */
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content {
++	width: 100%;
++	height: 0;
++	flex: 1 1 auto;
++	overflow-y: auto;
++	overflow-x: hidden;
++	padding: 40px;
++	box-sizing: border-box;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-header {
++	text-align: center;
++	margin-bottom: 32px;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-logo {
++	max-width: 200px;
++	margin-bottom: 16px;
++	display: block;
++	margin-left: auto;
++	margin-right: auto;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-title {
++	font-size: 28px;
++	margin: 16px 0;
++	font-weight: 600;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-subtitle {
++	font-size: 16px;
++	margin: 12px 0;
++	font-weight: normal;
++	color: var(--vscode-descriptionForeground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section {
++	width: 100%;
++	margin: 0 0 32px 0;
++	padding: 20px;
++	background: var(--vscode-editor-background);
++	border-radius: 8px;
++	border: 1px solid var(--vscode-panel-border);
++	box-sizing: border-box;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section h2 {
++	font-size: 20px;
++	margin-bottom: 16px;
++	font-weight: 600;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section h3 {
++	font-size: 16px;
++	margin-bottom: 12px;
++	font-weight: 500;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section p {
++	margin-bottom: 12px;
++	line-height: 1.6;
++	color: var(--vscode-descriptionForeground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section ul {
++	margin: 12px 0;
++	padding-left: 24px;
++	list-style-type: disc;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section li {
++	margin-bottom: 8px;
++	line-height: 1.6;
++	color: var(--vscode-descriptionForeground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta {
++	font-weight: 600;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-bold {
++	font-weight: 600;
++	margin-bottom: 8px;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-example {
++	margin-bottom: 16px;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-example-title {
++	font-weight: 600;
++	margin-bottom: 8px;
++	color: var(--vscode-foreground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-code {
++	background: var(--vscode-textCodeBlock-background);
++	padding: 12px;
++	border-radius: 4px;
++	font-size: 13px;
++	font-family: var(--monaco-monospace-font);
++	overflow-x: auto;
++	color: var(--vscode-foreground);
++	white-space: pre-wrap;
++	word-wrap: break-word;
++	margin: 0;
++	border: 1px solid var(--vscode-panel-border);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-section {
++	text-align: center;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content strong {
++	font-weight: 600;
++	color: var(--vscode-foreground);
++}
++
++/* Hide copilot content by default, only show when explicitly enabled */
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content:empty {
++	display: none;
++}
++
++/* Remove max-width constraint when copilot content is displayed */
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark.copilot-enabled {
++	max-width: none;
++	width: 100%;
++	margin: 0;
++	align-items: stretch;
++	justify-content: flex-start;
++	overflow: hidden;
++}
++
+ .monaco-workbench .part.editor > .content:not(.empty) .editor-group-container > .editor-group-watermark > .shortcuts,
+ .monaco-workbench .part.editor > .content.auxiliary .editor-group-container > .editor-group-watermark > .shortcuts,
+ .monaco-workbench .part.editor > .content .editor-group-container.max-height-478px > .editor-group-watermark > .shortcuts {
