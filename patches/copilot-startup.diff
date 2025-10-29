@@ -61,7 +61,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
 +				this.logService.info('Opening copilot.md from workspace');
 +				await this.editorService.openEditor({
 +					resource: copilotMdUri,
-+					options: { preserveFocus: false, preview: true }
++					options: { preserveFocus: false, pinned: false }
 +				});
 +			}
 +		} catch (error) {
