@@ -17,6 +17,7 @@ external-file-actions.diff
 telemetry.diff
 cli-window-open.diff
 getting-started.diff
+editor-watermark.diff
 keepalive.diff
 clipboard.diff
 display-language.diff

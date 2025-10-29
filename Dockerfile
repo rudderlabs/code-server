@@ -58,7 +58,12 @@ RUN code-server --install-extension claude.vsix
 WORKDIR /home/codeuser
 
 COPY copilot-new-project.md .
-COPY rudderstack_logo.png .
+COPY src/browser/media/copilot-welcome.html .
+
+# Copy assets to code-server static assets directory so they're accessible via /_static
+USER root
+COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/media/copilot-welcome.html
+USER codeuser
 
 # Clone profiles-mcp as codeuser
 RUN git clone --branch v0.6.0 https://github.com/rudderlabs/profiles-mcp
