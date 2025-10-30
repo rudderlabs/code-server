@@ -57,7 +57,6 @@ RUN code-server --install-extension claude.vsix
 
 WORKDIR /home/codeuser
 
-COPY copilot-new-project.md .
 COPY src/browser/media/copilot-welcome.html .
 
 # Copy assets to code-server static directory (verify path matches code-server installation)
