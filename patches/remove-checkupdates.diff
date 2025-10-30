@@ -2,7 +2,23 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/client.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/client.ts
-@@ -82,10 +82,6 @@ export class CodeServerClient extends Di
+@@ -5,7 +5,6 @@ import { CommandsRegistry } from '../../
+ import { ILogService } from '../../platform/log/common/log.js';
+ import { INotificationService, Severity } from '../../platform/notification/common/notification.js';
+ import { IProductService } from '../../platform/product/common/productService.js';
+-import { IStorageService, StorageScope, StorageTarget } from '../../platform/storage/common/storage.js';
+ 
+ export class CodeServerClient extends Disposable {
+ 	static LOGOUT_COMMAND_ID = 'code-server.logout';
+@@ -14,7 +13,6 @@ export class CodeServerClient extends Di
+ 		@ILogService private logService: ILogService,
+ 		@INotificationService private notificationService: INotificationService,
+ 		@IProductService private productService: IProductService,
+-		@IStorageService private storageService: IStorageService,
+ 	) {
+ 		super();
+ 	}
+@@ -82,10 +80,6 @@ export class CodeServerClient extends Di
  			});
  		}
  
@@ -13,7 +29,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
  		if (this.productService.logoutEndpoint) {
  			this.addLogoutCommand(this.productService.logoutEndpoint);
  		}
-@@ -95,56 +91,6 @@ export class CodeServerClient extends Di
+@@ -95,56 +89,6 @@ export class CodeServerClient extends Di
  		}
  	}
  
