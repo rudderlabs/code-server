@@ -2,6 +2,15 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+@@ -9,7 +9,7 @@ import { coalesce, shuffle } from '../..
+ import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+ import { isMacintosh, isWeb, OS } from '../../../../base/common/platform.js';
+ import { localize } from '../../../../nls.js';
+-import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
++import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+ import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+ import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+ import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 @@ -17,6 +17,7 @@ import { IStorageService, StorageScope,
  import { defaultKeybindingLabelStyles } from '../../../../platform/theme/browser/defaultStyles.js';
  import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
@@ -21,7 +30,17 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
  	private readonly transientDisposables = this._register(new DisposableStore());
  	private readonly keybindingLabels = this._register(new DisposableStore());
  
-@@ -94,12 +98,51 @@ export class EditorGroupWatermark extend
+@@ -86,7 +90,8 @@ export class EditorGroupWatermark extend
+ 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+ 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
+ 		@IConfigurationService private readonly configurationService: IConfigurationService,
+-		@IStorageService private readonly storageService: IStorageService
++		@IStorageService private readonly storageService: IStorageService,
++		@ICommandService private readonly commandService: ICommandService
+ 	) {
+ 		super();
+ 
+@@ -94,12 +99,78 @@ export class EditorGroupWatermark extend
  		this.workbenchState = this.contextService.getWorkbenchState();
  
  		const elements = h('.editor-group-watermark', [
@@ -63,6 +82,33 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
 +						e.stopPropagation();
 +						this.copilotContent.scrollTop += e.deltaY;
 +					}, { passive: false });
++
++					// Prevent double-click from opening a new file
++					this.copilotContent.addEventListener('dblclick', (e) => {
++						e.preventDefault();
++						e.stopPropagation();
++					});
++
++					// Handle CTA button clicks to open Cline with prefilled text
++					this.copilotContent.addEventListener('click', (e) => {
++						const target = e.target as HTMLElement;
++						if (target.classList.contains('copilot-cta-button')) {
++							const prompt = target.getAttribute('data-prompt');
++							if (prompt) {
++								// First focus/open Cline sidebar, then add the text
++								this.commandService.executeCommand('claude-dev.SidebarProvider.focus').then(() => {
++									// Wait a bit for Cline to open, then send the prompt
++									setTimeout(() => {
++										this.commandService.executeCommand('cline.addToChatWithoutSelection', prompt).catch(err => {
++											console.error('Failed to add prompt to Cline:', err);
++										});
++									}, 200);
++								}).catch(err => {
++									console.error('Failed to open Cline:', err);
++								});
++							}
++						}
++					});
 +				})
 +				.catch(err => {
 +					console.error('Failed to load Profiles Copilot welcome content:', err);
@@ -78,7 +124,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
-@@ -71,6 +71,145 @@
+@@ -71,6 +71,202 @@
  	background-image: url('./letterpress-hcDark.svg');
  }
  
@@ -120,9 +166,34 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +	color: var(--vscode-descriptionForeground);
 +}
 +
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-grid {
++	display: grid;
++	grid-template-columns: 6fr 4fr;
++	gap: 24px;
++	margin-bottom: 32px;
++	align-items: stretch;
++	width: 100%;
++	box-sizing: border-box;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-grid-left {
++	display: flex;
++	flex-direction: column;
++	gap: 24px;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-grid-right {
++	display: flex;
++	flex-direction: column;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-grid-right .copilot-section {
++	height: 100%;
++}
++
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-section {
 +	width: 100%;
-+	margin: 0 0 32px 0;
++	margin: 0;
 +	padding: 20px;
 +	background: var(--vscode-editor-background);
 +	border-radius: 8px;
@@ -177,6 +248,27 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +	margin-bottom: 16px;
 +}
 +
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button {
++	margin-top: 8px;
++	padding: 8px 16px;
++	background: var(--vscode-button-background);
++	color: var(--vscode-button-foreground);
++	border: none;
++	border-radius: 4px;
++	cursor: pointer;
++	font-size: 14px;
++	font-weight: 500;
++	transition: background 0.2s;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:hover {
++	background: var(--vscode-button-hoverBackground);
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:active {
++	background: var(--vscode-button-activeBackground);
++}
++
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-example-title {
 +	font-weight: 600;
 +	margin-bottom: 8px;
@@ -199,6 +291,17 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-section {
 +	text-align: center;
++	margin-bottom: 32px;
++	width: 100%;
++	box-sizing: border-box;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-buttons {
++	display: flex;
++	justify-content: center;
++	gap: 12px;
++	flex-wrap: wrap;
++	margin-top: 16px;
 +}
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content strong {

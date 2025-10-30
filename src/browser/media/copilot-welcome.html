@@ -4,84 +4,64 @@
 	<h3 class="copilot-subtitle">Your AI pair programmer for building customer 360 profiles</h3>
 </div>
 
-<div class="copilot-section">
-	<h2>👋 Hey there!</h2>
-	<h3>What's Profiles Copilot?</h3>
-	<p>Think of it as your technical co-pilot that helps you:</p>
-	<ul>
-		<li>🎯 Build complete Customer 360 views on your data</li>
-		<li>🔗 Stitch user identities across platforms (iOS, Android, web, Shopify, etc.)</li>
-		<li>⚡ Create powerful features</li>
-		<li>🧠 Generate predictive models (churn, LTV, propensity etc)</li>
-		<li>🐛 Debug your existing profiles</li>
-	</ul>
-	<p class="copilot-cta">Just start chatting with the copilot - seriously, that's it.</p>
-</div>
+<div class="copilot-grid">
+	<div class="copilot-grid-left">
+		<div class="copilot-section">
+			<h2>👋 Hey there!</h2>
+			<h3>What's Profiles Copilot?</h3>
+			<p>Think of it as your technical co-pilot that helps you:</p>
+			<ul>
+				<li>🎯 Build complete Customer 360 views on your data</li>
+				<li>🔗 Stitch user identities across platforms (iOS, Android, web, Shopify, etc.)</li>
+				<li>⚡ Create powerful features</li>
+				<li>🧠 Generate predictive models (churn, LTV, propensity etc)</li>
+				<li>🐛 Debug your existing profiles</li>
+			</ul>
+			<p class="copilot-cta">Just start chatting with the copilot - seriously, that's it.</p>
+		</div>
 
-<div class="copilot-section">
-	<h2>🎬 Ready to get started? Try these:</h2>
-	<p>Pick any of these to begin (or type your own question):</p>
-
-	<div class="copilot-example">
-		<p class="copilot-example-title">🏗️ Build from scratch:</p>
-		<pre class="copilot-code">Help me build a C360 on our user data. I want to understand conversion rates, retention, and which marketing campaigns are crushing it.</pre>
+		<div class="copilot-section">
+			<h2>🎓 New to Profiles?</h2>
+			<p>Don't worry! The copilot can explain concepts as you go, but here's the TL;DR:</p>
+			<p class="copilot-bold">RudderStack Profiles lets you build unified customer profiles directly in your data warehouse (Snowflake, BigQuery, etc.).</p>
+			<p>You'll work with YAML files to configure:</p>
+			<ul>
+				<li><strong>inputs.yaml</strong> - Where your data lives (tables, schemas)</li>
+				<li><strong>models.yaml</strong> - How to stitch IDs and define features</li>
+				<li><strong>pb_project.yaml</strong> - Overall project config</li>
+			</ul>
+			<p>The copilot will guide you through all of this step by step.</p>
+		</div>
 	</div>
 
-	<div class="copilot-example">
-		<p class="copilot-example-title">🪢 Identity stitching:</p>
-		<pre class="copilot-code">Stitch our user data across iOS, Android, web and Shopify using anonymous_id, email, user_id and shopify_customer_id</pre>
+	<div class="copilot-grid-right">
+		<div class="copilot-section">
+			<h2>💡 Quick heads up</h2>
+			<p class="copilot-bold">About permissions:</p>
+			<p>The copilot may ask for clipboard access to help you copy code, configs, or commands easily. And it uses an MCP server that might ask you to approve tool calls. Just approve when prompted - it's all secure and needed for the copilot to work properly.</p>
+
+			<p class="copilot-bold">How to work with the copilot:</p>
+			<ul>
+				<li>Chat naturally - no need to be formal</li>
+				<li>Be specific about your data (table names, column names help)</li>
+				<li>Where-ever possible, be specific about the feature definitions</li>
+				<li>Ask follow-up questions if something's unclear</li>
+			</ul>
+
+			<p class="copilot-bold">It's interactive:</p>
+			<p>The copilot will ask YOU questions too - about your warehouse, tables, what you're trying to build. That's how it figures out the best setup for your use case.</p>
+		</div>
 	</div>
-
-	<div class="copilot-example">
-		<p class="copilot-example-title">🎯 Feature engineering:</p>
-		<pre class="copilot-code">I want to create features tracking user engagement - like days since last purchase, total order value, and favorite product categories</pre>
-	</div>
-
-	<div class="copilot-example">
-		<p class="copilot-example-title">🔮 Predictive models:</p>
-		<pre class="copilot-code">Build a predictive LTV model on our user data</pre>
-	</div>
-
-	<div class="copilot-example">
-		<p class="copilot-example-title">💬 Just exploring:</p>
-		<pre class="copilot-code">What can I build with Profiles? Walk me through the basics</pre>
-	</div>
-</div>
-
-<div class="copilot-section">
-	<h2>💡 Quick heads up</h2>
-	<p class="copilot-bold">About permissions:</p>
-	<p>The copilot may ask for clipboard access to help you copy code, configs, or commands easily. And it uses an MCP server that might ask you to approve tool calls. Just approve when prompted - it's all secure and needed for the copilot to work properly.</p>
-
-	<p class="copilot-bold">How to work with the copilot:</p>
-	<ul>
-		<li>Chat naturally - no need to be formal</li>
-		<li>Be specific about your data (table names, column names help)</li>
-		<li>Where-ever possible, be specific about the feature definitions</li>
-		<li>Ask follow-up questions if something's unclear</li>
-	</ul>
-
-	<p class="copilot-bold">It's interactive:</p>
-	<p>The copilot will ask YOU questions too - about your warehouse, tables, what you're trying to build. That's how it figures out the best setup for your use case.</p>
-</div>
-
-<div class="copilot-section">
-	<h2>🎓 New to Profiles?</h2>
-	<p>Don't worry! The copilot can explain concepts as you go, but here's the TL;DR:</p>
-
-	<p class="copilot-bold">RudderStack Profiles lets you build unified customer profiles directly in your data warehouse (Snowflake, BigQuery, etc.).</p>
-
-	<p>You'll work with YAML files to configure:</p>
-	<ul>
-		<li><strong>inputs.yaml</strong> - Where your data lives (tables, schemas)</li>
-		<li><strong>models.yaml</strong> - How to stitch IDs and define features</li>
-		<li><strong>pb_project.yaml</strong> - Overall project config</li>
-	</ul>
-
-	<p>The copilot will guide you through all of this step by step.</p>
 </div>
 
 <div class="copilot-section copilot-cta-section">
-	<h2>🚀 Let's get building</h2>
-	<p class="copilot-cta">← Type your question in the chat box to get started</p>
+	<h2>🎬 Ready to get started?</h2>
+	<p class="copilot-cta">Choose a quick start option below or type your own question in the chat:</p>
+	<div class="copilot-cta-buttons">
+		<button class="copilot-cta-button" data-prompt="Help me build a C360 on our user data. I want to understand conversion rates, retention, and which marketing campaigns are crushing it.">🏗️ Build C360</button>
+		<button class="copilot-cta-button" data-prompt="Stitch our user data across iOS, Android, web and Shopify using anonymous_id, email, user_id and shopify_customer_id">🪢 Identity Stitching</button>
+		<button class="copilot-cta-button" data-prompt="I want to create features tracking user engagement - like days since last purchase, total order value, and favorite product categories">🎯 Feature Engineering</button>
+		<button class="copilot-cta-button" data-prompt="What can I build with Profiles? Walk me through the basics">💬 What is Profiles?</button>
+	</div>
+	<p class="copilot-cta" style="margin-top: 24px;">🚀 <strong>Let's get building</strong> — Type in the chat to start your journey!</p>
 </div>
