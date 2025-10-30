@@ -57,6 +57,15 @@ RUN code-server --install-extension claude.vsix
 
 WORKDIR /home/codeuser
 
+COPY src/browser/media/copilot-welcome.html .
+
+# Copy assets to code-server static directory (verify path matches code-server installation)
+# For .deb installations, code-server is typically at /usr/lib/code-server/
+USER root
+RUN mkdir -p /usr/lib/code-server/src/browser/media/
+COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/media/copilot-welcome.html
+USER codeuser
+
 # Clone profiles-mcp as codeuser
 RUN git clone --branch v0.6.0 https://github.com/rudderlabs/profiles-mcp
 
