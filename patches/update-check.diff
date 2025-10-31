@@ -19,7 +19,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
  import { INotificationService, Severity } from '../../platform/notification/common/notification.js';
 +import { IProductService } from '../../platform/product/common/productService.js';
 +import { IStorageService, StorageScope, StorageTarget } from '../../platform/storage/common/storage.js';
- 
+
  export class CodeServerClient extends Disposable {
  	constructor (
 +		@ILogService private logService: ILogService,
@@ -98,7 +98,7 @@ Index: code-server/lib/vscode/src/vs/base/common/product.ts
  	readonly codeServerVersion?: string
  	readonly rootEndpoint?: string
 +	readonly updateEndpoint?: string
- 
+
  	readonly version: string;
  	readonly date?: string;
 Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
@@ -119,19 +119,19 @@ Index: code-server/lib/vscode/src/vs/server/node/serverEnvironmentService.ts
 +++ code-server/lib/vscode/src/vs/server/node/serverEnvironmentService.ts
 @@ -15,6 +15,8 @@ import { joinPath } from '../../base/com
  import { join } from '../../base/common/path.js';
- 
+
  export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
 +	/* ----- code-server ----- */
 +	'disable-update-check': { type: 'boolean' },
- 
+
  	/* ----- server setup ----- */
- 
+
 @@ -97,6 +99,8 @@ export const serverOptions: OptionDescri
  };
- 
+
  export interface ServerParsedArgs {
 +	/* ----- code-server ----- */
 +	'disable-update-check'?: boolean;
- 
+
  	/* ----- server setup ----- */
- 
+
