@@ -107,13 +107,6 @@ __log_command() {
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] $last_cmd" >> "$LOG_DIR/commands.log"
     fi
 }
-
-# Create unique session log file
-SESSION_LOG="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_$$.log"
-
-# Redirect all output to session log
-exec > >(tee -a "$SESSION_LOG")
-exec 2>&1
 EOF
 
 WORKDIR /home/codeuser/project
