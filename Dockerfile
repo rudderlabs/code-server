@@ -2,7 +2,7 @@
 FROM ubuntu:22.04
 
 # Set build arguments for version and architecture
-ARG VERSION=v0.2.0
+ARG VERSION=v0.4.0
 ARG TARGETARCH=amd64
 ARG RUDDERSTACK_PAT
 
@@ -45,9 +45,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_0.3.0_arm64.deb || apt-get install -f -y; \
+  dpkg -i code-server_0.4.0_arm64.deb || apt-get install -f -y; \
   else \
-  dpkg -i code-server_0.3.0_amd64.deb || apt-get install -f -y; \
+  dpkg -i code-server_0.4.0_amd64.deb || apt-get install -f -y; \
   fi
 
 # Switch to codeuser for extension installation and MCP setup
