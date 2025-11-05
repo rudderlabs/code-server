@@ -95,13 +95,25 @@ COPY --chown=codeuser:codeuser clinerules.md /home/codeuser/Documents/Cline/Rule
 
 # Add terminal logging to .bashrc
 RUN cat >> /home/codeuser/.bashrc << 'EOF'
-if [ -z "$SCRIPT_LOG_INIT" ]; then
-    export SCRIPT_LOG_INIT=1
-    LOG_DIR="$HOME/terminal_logs"
-    mkdir -p "$LOG_DIR"
-    LOGFILE="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_$$.log"
-    exec script -q -f -c "$SHELL" "$LOGFILE" 2>/dev/null
-fi
+LOG_DIR="$HOME/terminal_logs"
+mkdir -p "$LOG_DIR"
+
+# Command logging with timestamps
+PROMPT_COMMAND='__log_command'
+
+__log_command() {
+    local last_cmd=$(history 1 | sed 's/^[ ]*[0-9]\+[ ]*//')
+    if [ -n "$last_cmd" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $last_cmd" >> "$LOG_DIR/commands.log"
+    fi
+}
+
+# Create unique session log file
+SESSION_LOG="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_$$.log"
+
+# Redirect all output to session log
+exec > >(tee -a "$SESSION_LOG")
+exec 2>&1
 EOF
 
 WORKDIR /home/codeuser/project
