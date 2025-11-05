@@ -92,6 +92,18 @@ RUN chmod 755 /home/codeuser/custom-strings.json
 USER codeuser
 RUN mkdir -p /home/codeuser/Documents/Cline/Rules
 COPY --chown=codeuser:codeuser clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
+
+# Add terminal logging to .bashrc
+RUN cat >> /home/codeuser/.bashrc << 'EOF'
+if [ -z "$SCRIPT_LOG_INIT" ]; then
+    export SCRIPT_LOG_INIT=1
+    LOG_DIR="$HOME/terminal_logs"
+    mkdir -p "$LOG_DIR"
+    LOGFILE="$LOG_DIR/$(date +%Y%m%d_%H%M%S)_$$.log"
+    exec script -q -f -c "$SHELL" "$LOGFILE" 2>/dev/null
+fi
+EOF
+
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
