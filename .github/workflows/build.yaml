@@ -31,6 +31,11 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       helm: ${{ steps.filter.outputs.helm }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Check changed files
@@ -64,6 +69,11 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -82,6 +92,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.docs == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -100,6 +115,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.helm == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
         with:
@@ -114,6 +134,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -131,6 +156,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ci == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Check workflow files
@@ -146,6 +176,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -169,6 +204,11 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       DISABLE_V8_COMPILE_CACHE: 1
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -231,6 +271,11 @@ jobs:
     needs: [changes, build]
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - run: sudo apt update && sudo apt install -y libkrb5-dev
       - uses: actions/setup-node@v4
@@ -265,6 +310,11 @@ jobs:
     needs: [changes, build]
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - run: sudo apt update && sudo apt install -y libkrb5-dev
       - uses: actions/setup-node@v4

@@ -10,7 +10,7 @@ on:
         description: The workflow run ID to download artifacts from
         type: string
         required: true
-        default: "19015086016"
+        default: "19104361364"
 
 permissions:
   id-token: write # allows the JWT to be requested from GitHub's OIDC provider
@@ -42,6 +42,11 @@ jobs:
       amd64_tags: ${{ steps.amd64_meta.outputs.tags }}
       amd64_labels: ${{ steps.amd64_meta.outputs.labels }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -68,6 +73,11 @@ jobs:
   download-artifacts:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: Download npm release package
         uses: actions/download-artifact@v4
         with:
@@ -116,6 +126,11 @@ jobs:
             arch: amd64
     runs-on: ${{ matrix.build-config.os }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: checkout
         uses: actions/checkout@v4
         with:
@@ -159,6 +174,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, metadata]
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - name: setup buildx
         uses: docker/setup-buildx-action@v3
       - name: docker login
