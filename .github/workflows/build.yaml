@@ -32,12 +32,12 @@ jobs:
       helm: ${{ steps.filter.outputs.helm }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Check changed files
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 #v3
         id: filter
@@ -70,12 +70,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -93,12 +93,12 @@ jobs:
     if: needs.changes.outputs.docs == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -116,12 +116,12 @@ jobs:
     if: needs.changes.outputs.helm == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           token: ${{ secrets.PAT }}
       - run: helm plugin install https://github.com/instrumenta/helm-kubeval
@@ -135,12 +135,12 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -157,12 +157,12 @@ jobs:
     if: needs.changes.outputs.ci == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Check workflow files
         run: |
           bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.1
@@ -177,12 +177,12 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -191,7 +191,7 @@ jobs:
             test/package-lock.json
       - run: SKIP_SUBMODULE_DEPS=1 npm ci
       - run: npm run test:unit
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         if: success()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -205,11 +205,11 @@ jobs:
       DISABLE_V8_COMPILE_CACHE: 1
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           submodules: true
       - run: sudo apt update && sudo apt install -y libkrb5-dev
@@ -218,7 +218,7 @@ jobs:
           packages: quilt
           version: 1.0
       - run: quilt push -a
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -240,7 +240,7 @@ jobs:
       # force a rebuild.
       - name: Fetch prebuilt Code package from cache
         id: cache-vscode
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: lib/vscode-reh-web-*
           key: vscode-reh-package-${{ secrets.VSCODE_CACHE_VERSION }}-${{ steps.vscode-rev.outputs.rev }}-${{ hashFiles('patches/*.diff', 'ci/build/build-vscode.sh') }}
@@ -259,7 +259,7 @@ jobs:
         if: success()
       # https://github.com/actions/upload-artifact/issues/38
       - run: tar -czf package.tar.gz release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: npm-package
           path: ./package.tar.gz
@@ -272,13 +272,13 @@ jobs:
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - run: sudo apt update && sudo apt install -y libkrb5-dev
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -286,7 +286,7 @@ jobs:
             package-lock.json
             test/package-lock.json
       - run: SKIP_SUBMODULE_DEPS=1 npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: npm-package
       - run: tar -xzf package.tar.gz
@@ -296,7 +296,7 @@ jobs:
           ./test/node_modules/.bin/playwright install-deps
           ./test/node_modules/.bin/playwright install
       - run: CODE_SERVER_TEST_ENTRY=./release npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: failed-test-videos
@@ -311,13 +311,13 @@ jobs:
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - run: sudo apt update && sudo apt install -y libkrb5-dev
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -325,7 +325,7 @@ jobs:
             package-lock.json
             test/package-lock.json
       - run: SKIP_SUBMODULE_DEPS=1 npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: npm-package
       - run: tar -xzf package.tar.gz
@@ -335,7 +335,7 @@ jobs:
           ./test/node_modules/.bin/playwright install-deps
           ./test/node_modules/.bin/playwright install
       - name: Cache Caddy
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         id: caddy-cache
         with:
           path: |
@@ -354,7 +354,7 @@ jobs:
       - run: ~/.cache/caddy/caddy stop --config ./ci/Caddyfile
         if: always()
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: failed-test-videos-proxy

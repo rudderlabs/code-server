@@ -25,20 +25,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Checkout code-server
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .node-version
 
       - name: Download npm package from release artifacts
-        uses: robinraju/release-downloader@v1.12
+        uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
         with:
           repository: "coder/code-server"
           tag: ${{ github.event.inputs.version || github.ref_name }}
@@ -66,16 +66,16 @@ jobs:
       # Suggested by homebrew maintainers
       # https://github.com/Homebrew/discussions/discussions/1532#discussioncomment-782633
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Set up Homebrew
         id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@6608395265063b0b4534ee5672930fa31cd45f94 # master
 
       - name: Checkout code-server
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Configure git
         run: |
@@ -104,18 +104,18 @@ jobs:
     steps:
       # We need to checkout code-server so we can get the version
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Checkout code-server
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           fetch-depth: 0
           path: "./code-server"
 
       - name: Checkout code-server-aur repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           repository: "cdrci/code-server-aur"
           token: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
@@ -139,7 +139,7 @@ jobs:
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - name: Validate package
-        uses: heyhusen/archlinux-package-action@v2.4.0
+        uses: heyhusen/archlinux-package-action@04303ce8da27317c34f00ea0a2c61ee0eed65ee3 # v2.4.0
         env:
           VERSION: ${{ env.VERSION }}
         with:
@@ -163,27 +163,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
         with:
           egress-policy: audit
 
       - name: Checkout code-server
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -196,7 +196,7 @@ jobs:
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - name: Download deb artifacts
-        uses: robinraju/release-downloader@v1.12
+        uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
         with:
           repository: "coder/code-server"
           tag: v${{ env.VERSION }}
@@ -204,7 +204,7 @@ jobs:
           out-file-path: "release-packages"
 
       - name: Download rpm artifacts
-        uses: robinraju/release-downloader@v1.12
+        uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05 # v1.12
         with:
           repository: "coder/code-server"
           tag: v${{ env.VERSION }}
