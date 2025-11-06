@@ -79,14 +79,14 @@ jobs:
           egress-policy: audit
 
       - name: Download npm release package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: npm-release-package
           run-id: ${{ inputs.run_id }}
           github-token: ${{ secrets.PAT }}
 
       - name: Download all release packages (optional)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: release-packages-*
           path: ./release-packages/
@@ -137,7 +137,7 @@ jobs:
           lfs: true
 
       - name: Download artifacts (if available)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: code-server-packages
           path: .
