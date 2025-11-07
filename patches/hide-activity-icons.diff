@@ -226,3 +226,16 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/extensions/browser/extens
  		ctorDescriptor: new SyncDescriptor(ExtensionsViewPaneContainer),
  		icon: extensionsViewIcon,
  		order: 4,
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+@@ -226,7 +226,7 @@ export class ActivityBarCompositeBar ext
+ 		}, part, paneCompositePart, instantiationService, storageService, extensionService, viewDescriptorService, viewService, contextKeyService, environmentService, layoutService);
+ 
+ 		if (showGlobalActivities) {
+-			this.globalCompositeBar = this._register(instantiationService.createInstance(GlobalCompositeBar, () => this.getContextMenuActions(), (theme: IColorTheme) => this.options.colors(theme), this.options.activityHoverOptions));
++			this.globalCompositeBar = this._register(instantiationService.createInstance(GlobalCompositeBar));
+ 		}
+ 
+ 		// Register for configuration changes
