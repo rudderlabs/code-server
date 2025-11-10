@@ -1,3 +1,128 @@
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/globalCompositeBar.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/globalCompositeBar.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/globalCompositeBar.ts
+@@ -4,15 +4,14 @@
+  *--------------------------------------------------------------------------------------------*/
+ 
+ import { localize } from '../../../nls.js';
+-import { ActionBar, ActionsOrientation } from '../../../base/browser/ui/actionbar/actionbar.js';
+ import { ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID } from '../../common/activity.js';
+ import { IActivityService } from '../../services/activity/common/activity.js';
+ import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
+ import { DisposableStore, Disposable } from '../../../base/common/lifecycle.js';
+-import { IColorTheme, IThemeService } from '../../../platform/theme/common/themeService.js';
++import { IThemeService } from '../../../platform/theme/common/themeService.js';
+ import { IStorageService, StorageScope, StorageTarget } from '../../../platform/storage/common/storage.js';
+ import { IExtensionService } from '../../services/extensions/common/extensions.js';
+-import { CompositeBarActionViewItem, CompositeBarAction, IActivityHoverOptions, ICompositeBarActionViewItemOptions, ICompositeBarColors } from './compositeBarActions.js';
++import { CompositeBarActionViewItem, CompositeBarAction, IActivityHoverOptions, ICompositeBarActionViewItemOptions } from './compositeBarActions.js';
+ import { Codicon } from '../../../base/common/codicons.js';
+ import { ThemeIcon } from '../../../base/common/themables.js';
+ import { registerIcon } from '../../../platform/theme/common/iconRegistry.js';
+@@ -47,66 +46,18 @@ import { ICommandService } from '../../.
+ 
+ export class GlobalCompositeBar extends Disposable {
+ 
+-	private static readonly ACCOUNTS_ACTION_INDEX = 0;
+ 	static readonly ACCOUNTS_ICON = registerIcon('accounts-view-bar-icon', Codicon.account, localize('accountsViewBarIcon', "Accounts icon in the view bar."));
+ 
+ 	readonly element: HTMLElement;
+ 
+-	private readonly globalActivityAction = this._register(new Action(GLOBAL_ACTIVITY_ID));
+-	private readonly accountAction = this._register(new Action(ACCOUNTS_ACTIVITY_ID));
+-	private readonly globalActivityActionBar: ActionBar;
+-
+ 	constructor(
+-		private readonly contextMenuActionsProvider: () => IAction[],
+-		private readonly colors: (theme: IColorTheme) => ICompositeBarColors,
+-		private readonly activityHoverOptions: IActivityHoverOptions,
+ 		@IConfigurationService configurationService: IConfigurationService,
+-		@IInstantiationService private readonly instantiationService: IInstantiationService,
+ 		@IStorageService private readonly storageService: IStorageService,
+ 		@IExtensionService private readonly extensionService: IExtensionService,
+ 	) {
+ 		super();
+ 
+ 		this.element = $('div');
+-		const contextMenuAlignmentOptions = () => ({
+-			anchorAlignment: configurationService.getValue('workbench.sideBar.location') === 'left' ? AnchorAlignment.RIGHT : AnchorAlignment.LEFT,
+-			anchorAxisAlignment: AnchorAxisAlignment.HORIZONTAL
+-		});
+-		this.globalActivityActionBar = this._register(new ActionBar(this.element, {
+-			actionViewItemProvider: (action, options) => {
+-				if (action.id === GLOBAL_ACTIVITY_ID) {
+-					return this.instantiationService.createInstance(GlobalActivityActionViewItem, this.contextMenuActionsProvider, { ...options, colors: this.colors, hoverOptions: this.activityHoverOptions }, contextMenuAlignmentOptions);
+-				}
+-
+-				if (action.id === ACCOUNTS_ACTIVITY_ID) {
+-					return this.instantiationService.createInstance(AccountsActivityActionViewItem,
+-						this.contextMenuActionsProvider,
+-						{
+-							...options,
+-							colors: this.colors,
+-							hoverOptions: this.activityHoverOptions
+-						},
+-						contextMenuAlignmentOptions,
+-						(actions: IAction[]) => {
+-							actions.unshift(...[
+-								toAction({ id: 'hideAccounts', label: localize('hideAccounts', "Hide Accounts"), run: () => setAccountsActionVisible(storageService, false) }),
+-								new Separator()
+-							]);
+-						});
+-				}
+-
+-				throw new Error(`No view item for action '${action.id}'`);
+-			},
+-			orientation: ActionsOrientation.VERTICAL,
+-			ariaLabel: localize('manage', "Manage"),
+-			preventLoopNavigation: true
+-		}));
+-
+-		if (this.accountsVisibilityPreference) {
+-			this.globalActivityActionBar.push(this.accountAction, { index: GlobalCompositeBar.ACCOUNTS_ACTION_INDEX });
+-		}
+-
+-		this.globalActivityActionBar.push(this.globalActivityAction);
+ 
+ 		this.registerListeners();
+ 	}
+@@ -124,11 +75,10 @@ export class GlobalCompositeBar extends
+ 	}
+ 
+ 	focus(): void {
+-		this.globalActivityActionBar.focus(true);
+ 	}
+ 
+ 	size(): number {
+-		return this.globalActivityActionBar.viewItems.length;
++		return 0;
+ 	}
+ 
+ 	getContextMenuActions(): IAction[] {
+@@ -136,14 +86,14 @@ export class GlobalCompositeBar extends
+ 	}
+ 
+ 	private toggleAccountsActivity() {
+-		if (this.globalActivityActionBar.length() === 2 && this.accountsVisibilityPreference) {
+-			return;
+-		}
+-		if (this.globalActivityActionBar.length() === 2) {
+-			this.globalActivityActionBar.pull(GlobalCompositeBar.ACCOUNTS_ACTION_INDEX);
+-		} else {
+-			this.globalActivityActionBar.push(this.accountAction, { index: GlobalCompositeBar.ACCOUNTS_ACTION_INDEX });
+-		}
++		// if (this.globalActivityActionBar.length() === 2 && this.accountsVisibilityPreference) {
++		// 	return;
++		// }
++		// if (this.globalActivityActionBar.length() === 2) {
++		// 	this.globalActivityActionBar.pull(GlobalCompositeBar.ACCOUNTS_ACTION_INDEX);
++		// } else {
++		// 	this.globalActivityActionBar.push(this.accountAction, { index: GlobalCompositeBar.ACCOUNTS_ACTION_INDEX });
++		// }
+ 	}
+ 
+ 	private get accountsVisibilityPreference(): boolean {
 Index: code-server/lib/vscode/src/vs/workbench/contrib/debug/browser/debug.contribution.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/debug/browser/debug.contribution.ts
@@ -80,7 +205,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/extensions/browser/extens
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts
 @@ -5,7 +5,7 @@
-
+ 
  import './media/extensionManagement.css';
  import { localize, localize2 } from '../../../../nls.js';
 -import { KeyMod, KeyCode } from '../../../../base/common/keyCodes.js';
@@ -88,67 +213,29 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/extensions/browser/extens
  import { Registry } from '../../../../platform/registry/common/platform.js';
  import { MenuRegistry, MenuId, registerAction2, Action2, IMenuItem, IAction2Options } from '../../../../platform/actions/common/actions.js';
  import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
-@@ -18,7 +18,7 @@ import { VIEWLET_ID, IExtensionsWorkbenc
- import { InstallSpecificVersionOfExtensionAction, ConfigureWorkspaceRecommendedExtensionsAction, ConfigureWorkspaceFolderRecommendedExtensionsAction, SetColorThemeAction, SetFileIconThemeAction, SetProductIconThemeAction, ClearLanguageAction, ToggleAutoUpdateForExtensionAction, ToggleAutoUpdatesForPublisherAction, TogglePreReleaseExtensionAction, InstallAnotherVersionAction, InstallAction } from './extensionsActions.js';
- import { ExtensionsInput } from '../common/extensionsInput.js';
- import { ExtensionEditor } from './extensionEditor.js';
--import { StatusUpdater, MaliciousExtensionChecker, ExtensionsViewletViewsContribution, ExtensionsViewPaneContainer, BuiltInExtensionsContext, SearchMarketplaceExtensionsContext, RecommendedExtensionsContext, ExtensionsSortByContext, SearchHasTextContext, ExtensionsSearchValueContext } from './extensionsViewlet.js';
-+import { StatusUpdater, MaliciousExtensionChecker, ExtensionsViewletViewsContribution, ExtensionsViewPaneContainer, BuiltInExtensionsContext, SearchMarketplaceExtensionsContext, RecommendedExtensionsContext, ExtensionsSortByContext, SearchHasTextContext, ExtensionsSearchValueContext } from './extensionsViewlet.js';
- import { IConfigurationRegistry, Extensions as ConfigurationExtensions, ConfigurationScope } from '../../../../platform/configuration/common/configurationRegistry.js';
- import * as jsonContributionRegistry from '../../../../platform/jsonschemas/common/jsonContributionRegistry.js';
- import { ExtensionsConfigurationSchema, ExtensionsConfigurationSchemaId } from '../common/extensionsFileTemplate.js';
-@@ -33,7 +33,7 @@ import { ExtensionActivationProgress } f
- import { onUnexpectedError } from '../../../../base/common/errors.js';
- import { ExtensionDependencyChecker } from './extensionsDependencyChecker.js';
- import { CancellationToken } from '../../../../base/common/cancellation.js';
--import { IViewContainersRegistry, ViewContainerLocation, Extensions as ViewContainerExtensions } from '../../../common/views.js';
-+import { IViewContainersRegistry, ViewContainerLocation, Extensions as ViewContainerExtensions } from '../../../common/views.js';
- import { IViewsService } from '../../../services/views/common/viewsService.js';
- import { IClipboardService } from '../../../../platform/clipboard/common/clipboardService.js';
- import { IPreferencesService } from '../../../services/preferences/common/preferences.js';
-@@ -58,7 +58,7 @@ import { IWorkspaceExtensionsConfigServi
- import { Schemas } from '../../../../base/common/network.js';
- import { ShowRuntimeExtensionsAction } from './abstractRuntimeExtensionsEditor.js';
- import { ExtensionEnablementWorkspaceTrustTransitionParticipant } from './extensionEnablementWorkspaceTrustTransitionParticipant.js';
--import { clearSearchResultsIcon, configureRecommendedIcon, extensionsViewIcon, filterIcon, installWorkspaceRecommendedIcon, refreshIcon } from './extensionsIcons.js';
-+import { clearSearchResultsIcon, configureRecommendedIcon, extensionsViewIcon, filterIcon, installWorkspaceRecommendedIcon, refreshIcon } from './extensionsIcons.js';
- import { EXTENSION_CATEGORIES, ExtensionType } from '../../../../platform/extensions/common/extensions.js';
- import { Disposable, DisposableStore, IDisposable, isDisposable } from '../../../../base/common/lifecycle.js';
- import { IDialogService, IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
-@@ -109,23 +107,19 @@ Registry.as<IEditorPaneRegistry>(EditorE
- 		new SyncDescriptor(ExtensionsInput)
- 	]);
-
--export const VIEW_CONTAINER = Registry.as<IViewContainersRegistry>(ViewContainerExtensions.ViewContainersRegistry).registerViewContainer(
--	{
--		id: VIEWLET_ID,
--		title: localize2('extensions', "Extensions"),
+@@ -113,12 +113,6 @@ export const VIEW_CONTAINER = Registry.a
+ 	{
+ 		id: VIEWLET_ID,
+ 		title: localize2('extensions', "Extensions"),
 -		openCommandActionDescriptor: {
 -			id: VIEWLET_ID,
 -			mnemonicTitle: localize({ key: 'miViewExtensions', comment: ['&& denotes a mnemonic'] }, "E&&xtensions"),
 -			keybindings: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyX },
 -			order: 4,
 -		},
--		ctorDescriptor: new SyncDescriptor(ExtensionsViewPaneContainer),
--		icon: extensionsViewIcon,
--		order: 4,
--		rejectAddedViews: true,
--		alwaysUseContainerInfo: true,
--	}, ViewContainerLocation.Sidebar);
--
-+// Keep VIEW_CONTAINER export for MCP compatibility, but don't show in activity bar
-+export const VIEW_CONTAINER = Registry.as<IViewContainersRegistry>(ViewContainerExtensions.ViewContainersRegistry).registerViewContainer(
-+	{
-+		id: VIEWLET_ID,
-+		title: localize2('extensions', "Extensions"),
-+		ctorDescriptor: new SyncDescriptor(ExtensionsViewPaneContainer),
-+		icon: extensionsViewIcon,
-+		order: 4,
-+		rejectAddedViews: true,
-+		alwaysUseContainerInfo: true,
-+		hideIfEmpty: true,
-+	}, ViewContainerLocation.Sidebar);
-+
- Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
- 	.registerConfiguration({
- 		id: 'extensions',
+ 		ctorDescriptor: new SyncDescriptor(ExtensionsViewPaneContainer),
+ 		icon: extensionsViewIcon,
+ 		order: 4,
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+@@ -226,7 +226,7 @@ export class ActivityBarCompositeBar ext
+ 		}, part, paneCompositePart, instantiationService, storageService, extensionService, viewDescriptorService, viewService, contextKeyService, environmentService, layoutService);
+ 
+ 		if (showGlobalActivities) {
+-			this.globalCompositeBar = this._register(instantiationService.createInstance(GlobalCompositeBar, () => this.getContextMenuActions(), (theme: IColorTheme) => this.options.colors(theme), this.options.activityHoverOptions));
++			this.globalCompositeBar = this._register(instantiationService.createInstance(GlobalCompositeBar));
+ 		}
+ 
+ 		// Register for configuration changes
