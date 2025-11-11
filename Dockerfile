@@ -92,6 +92,23 @@ RUN chmod 755 /home/codeuser/custom-strings.json
 USER codeuser
 RUN mkdir -p /home/codeuser/Documents/Cline/Rules
 COPY --chown=codeuser:codeuser clinerules.md /home/codeuser/Documents/Cline/Rules/clinerules.md
+
+# Add terminal logging to .bashrc
+RUN cat >> /home/codeuser/.bashrc << 'EOF'
+LOG_DIR="$HOME/terminal_logs"
+mkdir -p "$LOG_DIR"
+
+# Command logging with timestamps
+PROMPT_COMMAND='__log_command'
+
+__log_command() {
+    local last_cmd=$(history 1 | sed 's/^[ ]*[0-9]\+[ ]*//')
+    if [ -n "$last_cmd" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $last_cmd" >> "$LOG_DIR/commands.log"
+    fi
+}
+EOF
+
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
