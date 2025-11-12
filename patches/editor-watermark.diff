@@ -40,7 +40,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
  	) {
  		super();
  
-@@ -94,12 +99,94 @@ export class EditorGroupWatermark extend
+@@ -94,12 +99,85 @@ export class EditorGroupWatermark extend
  		this.workbenchState = this.contextService.getWorkbenchState();
  
  		const elements = h('.editor-group-watermark', [
@@ -97,28 +97,19 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
 +							e.stopPropagation();
 +							const prompt = target.getAttribute('data-prompt');
 +							if (prompt) {
-+								console.log('CTA button clicked with prompt:', prompt);
 +								// First focus/open Cline sidebar, then add the text and send it
 +								this.commandService.executeCommand('claude-dev.SidebarProvider.focus').then(() => {
-+									console.log('Cline sidebar focused');
-+									// Wait a bit for Cline to open, then send the prompt
-+									setTimeout(() => {
-+										console.log('Attempting to add prompt to Cline...');
-+										this.commandService.executeCommand('cline.addToChatWithoutSelection', prompt).then((result) => {
-+											console.log('Prompt added to Cline, result:', result);
-+											// Auto-send the message after prefilling
-+											setTimeout(() => {
-+												console.log('Attempting to send message...');
-+												this.commandService.executeCommand('cline.sendMessage').then((sendResult) => {
-+													console.log('Message sent, result:', sendResult);
-+												}).catch(err => {
-+													console.error('Failed to send message to Cline:', err);
-+												});
-+											}, 100);
-+										}).catch(err => {
-+											console.error('Failed to add prompt to Cline:', err);
-+										});
-+									}, 500);
++									// Add prompt to chat input (Cline will wait internally if provider not ready)
++									this.commandService.executeCommand('cline.addToChatWithoutSelection', prompt).then(() => {
++										// Auto-send the message after prefilling (small delay to ensure text is added)
++										setTimeout(() => {
++											this.commandService.executeCommand('cline.sendMessage').catch(err => {
++												console.error('Failed to send message to Cline:', err);
++											});
++										}, 200);
++									}).catch(err => {
++										console.error('Failed to add prompt to Cline:', err);
++									});
 +								}).catch(err => {
 +									console.error('Failed to open Cline:', err);
 +								});
