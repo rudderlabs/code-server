@@ -28,7 +28,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY release-packages/* .
-COPY claude-dev-3.32.7.vsix claude.vsix
+COPY claude.vsix /claude.vsix
 
 # Create custom-strings.json directly in the container
 RUN cat > /home/codeuser/custom-strings.json << 'EOF'
@@ -53,7 +53,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
 # Install extension as codeuser
-RUN code-server --install-extension claude.vsix
+RUN code-server --install-extension /claude.vsix
 
 WORKDIR /home/codeuser
 

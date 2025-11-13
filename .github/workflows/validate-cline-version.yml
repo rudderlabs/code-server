@@ -1,0 +1,64 @@
+name: Validate Cline Version
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate .cline-version format
+        run: |
+          echo "::group::Validating .cline-version file"
+
+          if [ ! -f .cline-version ]; then
+            echo "::error file=.cline-version::File .cline-version not found"
+            exit 1
+          fi
+
+          CLINE_REF=$(cat .cline-version | tr -d '[:space:]')
+          echo "Cline reference: ${CLINE_REF}"
+
+          # Check if it's a valid semantic version (X.Y.Z)
+          if [[ "$CLINE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✅ Valid release version: ${CLINE_REF}"
+            echo "::notice title=Cline Version::Using release version ${CLINE_REF}"
+          else
+            echo "::endgroup::"
+            echo ""
+            echo "::error file=.cline-version,line=1::Invalid .cline-version format. Must be a semantic version (e.g., 4.0.0), found: ${CLINE_REF}"
+            echo ""
+            echo "❌ VALIDATION FAILED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "The .cline-version file must contain a release version number"
+            echo "for PRs targeting the main branch."
+            echo ""
+            echo "Current value: ${CLINE_REF}"
+            echo ""
+            echo "✓ Valid format:   4.0.0"
+            echo "✗ Invalid format: feat/my-branch"
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "For development/testing:"
+            echo "  - Branch names are allowed in feature branches"
+            echo "  - They are blocked from merging to main for safety"
+            echo ""
+            echo "To fix this PR:"
+            echo "  1. Update .cline-version to a release version (e.g., 4.0.0)"
+            echo "  2. Or keep as branch name for testing only (do not merge)"
+            echo ""
+            exit 1
+          fi
+
+          echo "::endgroup::"

@@ -23,3 +23,7 @@ test/test-results
 # Quilt's internal data.
 /.pc
 /patches/*.diff~
+
+# Cline VSIX files
+claude-dev-*.vsix
+claude.vsix
