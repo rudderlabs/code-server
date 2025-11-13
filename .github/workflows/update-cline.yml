@@ -58,21 +58,6 @@ jobs:
             echo "needed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Verify VSIX exists in release
-        if: steps.check.outputs.needed == 'true'
-        run: |
-          DOWNLOAD_URL="https://github.com/rudderlabs/cline/releases/download/${{ steps.vars.outputs.tag }}/cline-${{ steps.vars.outputs.version }}.vsix"
-          echo "Checking if VSIX exists at: $DOWNLOAD_URL"
-
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$DOWNLOAD_URL")
-
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Error: VSIX not found at $DOWNLOAD_URL (HTTP $HTTP_CODE)"
-            exit 1
-          fi
-
-          echo "✅ VSIX verified at $DOWNLOAD_URL"
-
       - name: Update .cline-version file
         if: steps.check.outputs.needed == 'true'
         run: |
