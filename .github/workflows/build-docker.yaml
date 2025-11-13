@@ -151,7 +151,7 @@ jobs:
             DOWNLOAD_URL="https://github.com/rudderlabs/cline/releases/download/v${CLINE_REF}/cline-${CLINE_REF}.vsix"
             echo "Downloading from releases: ${DOWNLOAD_URL}"
 
-            HTTP_CODE=$(curl -w "%{http_code}" -L -o claude.vsix "$DOWNLOAD_URL" -s)
+            HTTP_CODE=$(curl -w "%{http_code}" -L -H "Authorization: token ${GH_TOKEN}" -o claude.vsix "$DOWNLOAD_URL" -s)
 
             if [ "$HTTP_CODE" != "200" ]; then
               echo "❌ Error: Failed to download release version ${CLINE_REF} (HTTP ${HTTP_CODE})"
