@@ -136,6 +136,107 @@ jobs:
         with:
           lfs: true
 
+      - name: Download Cline Extension
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          CLINE_REF=$(cat .cline-version | tr -d '[:space:]')
+          echo "Cline reference: ${CLINE_REF}"
+
+          # Check if it's a version number (matches pattern: X.Y.Z)
+          if [[ "$CLINE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✓ Detected release version: ${CLINE_REF}"
+
+            # Download from GitHub releases using gh CLI
+            echo "Downloading cline-${CLINE_REF}.vsix from release v${CLINE_REF}..."
+
+            if ! gh release download "v${CLINE_REF}" \
+              --repo rudderlabs/cline \
+              --pattern "cline-${CLINE_REF}.vsix" \
+              --output claude.vsix; then
+              echo "❌ Error: Failed to download release version ${CLINE_REF}"
+              echo "Please verify the release exists: https://github.com/rudderlabs/cline/releases/tag/v${CLINE_REF}"
+              exit 1
+            fi
+
+          else
+            echo "✓ Detected branch/ref: ${CLINE_REF}"
+            echo "⚠️  WARNING: Using development build from branch ${CLINE_REF}"
+
+            # Find the latest successful workflow run for this branch
+            echo "Fetching latest workflow run for branch ${CLINE_REF}..."
+
+            # Get the most recent successful run
+            RUN_DATA=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/rudderlabs/cline/actions/workflows/build-artifacts.yml/runs?branch=${CLINE_REF}&status=success&per_page=1" \
+              --jq '.workflow_runs[0] | select(.id != null) | {id: .id, created_at: .created_at, head_sha: .head_sha}')
+
+            if [ -z "$RUN_DATA" ] || [ "$RUN_DATA" = "null" ]; then
+              echo "❌ Error: No successful workflow runs found for branch ${CLINE_REF}"
+              echo ""
+              echo "Please verify:"
+              echo "  1. Branch exists: https://github.com/rudderlabs/cline/tree/${CLINE_REF}"
+              echo "  2. Build workflow has run successfully on this branch"
+              echo "  3. Check workflow runs: https://github.com/rudderlabs/cline/actions/workflows/build-artifacts.yml"
+              exit 1
+            fi
+
+            RUN_ID=$(echo "$RUN_DATA" | jq -r '.id')
+            CREATED_AT=$(echo "$RUN_DATA" | jq -r '.created_at')
+            HEAD_SHA=$(echo "$RUN_DATA" | jq -r '.head_sha')
+
+            echo "Found workflow run:"
+            echo "  - Run ID: ${RUN_ID}"
+            echo "  - Created: ${CREATED_AT}"
+            echo "  - Commit: ${HEAD_SHA}"
+            echo "  - URL: https://github.com/rudderlabs/cline/actions/runs/${RUN_ID}"
+
+            # Download artifact using gh run download with PAT
+            echo "Downloading artifact 'cline-vsix' from run ${RUN_ID}..."
+
+            if ! gh run download ${RUN_ID} \
+              --repo rudderlabs/cline \
+              --name cline-vsix \
+              --dir ./cline-artifact; then
+              echo "❌ Error: Failed to download artifact from workflow run"
+              echo "Run URL: https://github.com/rudderlabs/cline/actions/runs/${RUN_ID}"
+              exit 1
+            fi
+
+            # Find the VSIX file
+            VSIX_FILE=$(find ./cline-artifact -name "*.vsix" -type f | head -1)
+
+            if [ -z "$VSIX_FILE" ]; then
+              echo "❌ Error: No VSIX file found in artifact"
+              echo "Contents of artifact:"
+              ls -la ./cline-artifact/
+              exit 1
+            fi
+
+            echo "Found VSIX: $(basename $VSIX_FILE)"
+            mv "$VSIX_FILE" claude.vsix
+            rm -rf ./cline-artifact
+
+            echo "✓ Successfully downloaded dev build from ${CLINE_REF} (${HEAD_SHA:0:7})"
+          fi
+
+          # Verify final VSIX exists and is not empty
+          if [ ! -f claude.vsix ]; then
+            echo "❌ Error: claude.vsix not found after download"
+            exit 1
+          fi
+
+          FILE_SIZE=$(stat -f%z claude.vsix 2>/dev/null || stat -c%s claude.vsix 2>/dev/null)
+          if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "❌ Error: claude.vsix is too small (${FILE_SIZE} bytes), likely corrupted"
+            exit 1
+          fi
+
+          echo "✅ Cline extension ready"
+          ls -lh claude.vsix
+
       - name: Download artifacts (if available)
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
