@@ -147,14 +147,14 @@ jobs:
           if [[ "$CLINE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "✓ Detected release version: ${CLINE_REF}"
 
-            # Download from GitHub releases
-            DOWNLOAD_URL="https://github.com/rudderlabs/cline/releases/download/v${CLINE_REF}/cline-${CLINE_REF}.vsix"
-            echo "Downloading from releases: ${DOWNLOAD_URL}"
+            # Download from GitHub releases using gh CLI
+            echo "Downloading cline-${CLINE_REF}.vsix from release v${CLINE_REF}..."
 
-            HTTP_CODE=$(curl -w "%{http_code}" -L -H "Authorization: token ${GH_TOKEN}" -o claude.vsix "$DOWNLOAD_URL" -s)
-
-            if [ "$HTTP_CODE" != "200" ]; then
-              echo "❌ Error: Failed to download release version ${CLINE_REF} (HTTP ${HTTP_CODE})"
+            if ! gh release download "v${CLINE_REF}" \
+              --repo rudderlabs/cline \
+              --pattern "cline-${CLINE_REF}.vsix" \
+              --output claude.vsix; then
+              echo "❌ Error: Failed to download release version ${CLINE_REF}"
               echo "Please verify the release exists: https://github.com/rudderlabs/cline/releases/tag/v${CLINE_REF}"
               exit 1
             fi
