@@ -2,7 +2,15 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
-@@ -212,6 +212,37 @@
+@@ -202,6 +202,7 @@
+ 	font-size: 14px;
+ 	font-weight: 500;
+ 	transition: background 0.2s;
++	position: relative;
+ }
+ 
+ .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:hover {
+@@ -212,6 +213,37 @@
  	background: var(--vscode-button-activeBackground);
  }
  
