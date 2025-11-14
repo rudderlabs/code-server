@@ -266,7 +266,6 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +	font-size: 14px;
 +	font-weight: 500;
 +	transition: background 0.2s;
-+	position: relative;
 +}
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:hover {
@@ -275,37 +274,6 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:active {
 +	background: var(--vscode-button-activeBackground);
-+}
-+
-+/* Custom tooltip for CTA buttons */
-+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button::before {
-+	content: attr(data-description);
-+	position: absolute;
-+	bottom: calc(100% + 12px);
-+	left: 50%;
-+	transform: translateX(-50%);
-+	background: var(--vscode-editorHoverWidget-background);
-+	color: var(--vscode-editorHoverWidget-foreground);
-+	border: 1px solid var(--vscode-editorHoverWidget-border);
-+	border-radius: 3px;
-+	padding: 8px 12px;
-+	font-size: 12px;
-+	font-weight: normal;
-+	line-height: 1.4;
-+	max-width: 280px;
-+	width: max-content;
-+	white-space: normal;
-+	text-align: center;
-+	opacity: 0;
-+	pointer-events: none;
-+	transition: opacity 0.15s ease-in;
-+	box-shadow: 0 2px 8px var(--vscode-widget-shadow);
-+	z-index: 1000;
-+}
-+
-+/* Show tooltip on hover */
-+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-cta-button:hover::before {
-+	opacity: 1;
 +}
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .copilot-content .copilot-example-title {
