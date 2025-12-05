@@ -79,6 +79,14 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
 RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles","get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","profiles_workflow_guide","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
+# Configure Cline to open on the right side
+RUN mkdir -p /home/codeuser/.local/share/code-server/User
+RUN cat > /home/codeuser/.local/share/code-server/User/settings.json << 'EOF'
+{
+  "workbench.sideBar.location": "right"
+}
+EOF
+
 # Set proper ownership and permissions
 USER root
 RUN chown -R codeuser:codeuser /home/codeuser
