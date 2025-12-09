@@ -257,7 +257,7 @@ jobs:
         with:
           aws-region: ${{ vars.AWS_ECR_REGION }}
           role-to-assume: ${{ vars.AWS_ECR_IAM_ROLE_ARN }}
-          role-session-name: github-actions-${{ github.run_id }}
+          role-session-name: ${{ github.event.repository.name }}
 
       - name: Login to ECR
         id: login-ecr
@@ -295,7 +295,7 @@ jobs:
         with:
           aws-region: ${{ vars.AWS_ECR_REGION }}
           role-to-assume: ${{ vars.AWS_ECR_IAM_ROLE_ARN }}
-          role-session-name: github-actions-${{ github.run_id }}
+          role-session-name: ${{ github.event.repository.name }}
 
       - name: Login to ECR
         id: login-ecr
