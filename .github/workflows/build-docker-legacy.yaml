@@ -13,7 +13,7 @@ on:
         default: "19676094931"
 
 permissions:
-  id-token: write # Required for OIDC
+  id-token: write # allows the JWT to be requested from GitHub's OIDC provider
   contents: read # This is required for actions/checkout
 
 concurrency:
@@ -23,9 +23,8 @@ concurrency:
 env:
   arch_amd64: amd64
   arch_arm64: arm64
-  ecr_registry: 422074288268.dkr.ecr.us-east-1.amazonaws.com
   docker_images: |
-    name=422074288268.dkr.ecr.us-east-1.amazonaws.com/rudderstack/profiles-code-server
+    name=rudderstack/profiles-code-server
   docker_tags: |
     type=raw,value=${{ inputs.docker_image_version || 'latest' }}
 
@@ -251,20 +250,14 @@ jobs:
 
       - name: setup buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      - name: docker login
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
-          aws-region: ${{ vars.AWS_ECR_REGION }}
-          role-to-assume: ${{ vars.AWS_ECR_IAM_ROLE_ARN }}
-          role-session-name: ${{ github.event.repository.name }}
-
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: docker build
-        uses: rudderlabs/build-scan-push-action@96d7bfca912dd2e8805dbb322dc2540504ecac1e # v2.1.0
+        uses: rudderlabs/build-scan-push-action@6da37ae441adc487f22920ca87bf52d6fd715fd3 # v1.5.3
         with:
           context: .
           platforms: ${{ matrix.build-config.platform }}
@@ -289,18 +282,11 @@ jobs:
 
       - name: setup buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      - name: docker login
+        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
         with:
-          aws-region: ${{ vars.AWS_ECR_REGION }}
-          role-to-assume: ${{ vars.AWS_ECR_IAM_ROLE_ARN }}
-          role-session-name: ${{ github.event.repository.name }}
-
-      - name: Login to ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
-
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: multi-arch manifest
         run: |
           while read -r tag; do
