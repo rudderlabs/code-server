@@ -1,0 +1,80 @@
+Index: code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstack.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstack.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/rudderstack/browser/rudderstack.contribution.ts
+@@ -1,38 +1,38 @@
+ /* eslint-disable header/header */
+-import { ViewContainerLocation, Extensions as ViewExtensions, IViewContainersRegistry, IViewsRegistry } from '../../../common/views.js';
+-import { Registry } from '../../../../platform/registry/common/platform.js';
+-import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
+-import * as nls from '../../../../nls.js';
+-import { KeyMod, KeyCode } from '../../../../base/common/keyCodes.js';
+-import { rudderstackFeatureViewIcon } from './rudderstackIcons.js';
+-import { RudderstackViewPaneContainer } from './rudderstackViewlet.js';
+-import { RudderstackMainView } from './rudderstackMainView.js';
+-import { VIEWLET_ID, MAIN_VIEW_ID } from '../common/rudderstack.js';
++// import { ViewContainerLocation, Extensions as ViewExtensions, IViewContainersRegistry, IViewsRegistry } from '../../../common/views.js';
++// import { Registry } from '../../../../platform/registry/common/platform.js';
++// import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
++// import * as nls from '../../../../nls.js';
++// import { KeyMod, KeyCode } from '../../../../base/common/keyCodes.js';
++// import { rudderstackFeatureViewIcon } from './rudderstackIcons.js';
++// import { RudderstackViewPaneContainer } from './rudderstackViewlet.js';
++// import { RudderstackMainView } from './rudderstackMainView.js';
++// import { VIEWLET_ID, MAIN_VIEW_ID } from '../common/rudderstack.js';
+
+-// Register the view container (activity bar icon)
+-const viewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
+-    id: VIEWLET_ID, // Unique ID
+-    title: nls.localize2('rudderstack', "Rudderstack"), // Display name
+-    openCommandActionDescriptor: {
+-        id: VIEWLET_ID,
+-        mnemonicTitle: nls.localize({ key: 'miViewRudderstack', comment: ['&& denotes a mnemonic'] }, "&&Rudderstack"),
+-        keybindings: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyX }, // Optional shortcut
+-    },
+-    ctorDescriptor: new SyncDescriptor(RudderstackViewPaneContainer), // Container class
+-    icon: rudderstackFeatureViewIcon, // Icon for activity bar
+-    alwaysUseContainerInfo: true,
+-    order: 1000, // High number to appear last
+-}, ViewContainerLocation.Sidebar);
++// // Register the view container (activity bar icon)
++// const viewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
++//     id: VIEWLET_ID, // Unique ID
++//     title: nls.localize2('rudderstack', "Rudderstack"), // Display name
++//     openCommandActionDescriptor: {
++//         id: VIEWLET_ID,
++//         mnemonicTitle: nls.localize({ key: 'miViewRudderstack', comment: ['&& denotes a mnemonic'] }, "&&Rudderstack"),
++//         keybindings: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyX }, // Optional shortcut
++//     },
++//     ctorDescriptor: new SyncDescriptor(RudderstackViewPaneContainer), // Container class
++//     icon: rudderstackFeatureViewIcon, // Icon for activity bar
++//     alwaysUseContainerInfo: true,
++//     order: 1000, // High number to appear last
++// }, ViewContainerLocation.Sidebar);
+
+-// Register views inside the container
+-const viewsRegistry = Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry);
+-viewsRegistry.registerViews([{
+-    id: MAIN_VIEW_ID,
+-    name: nls.localize2('rudderstackMainView', "Rudderstack"),
+-    containerIcon: rudderstackFeatureViewIcon,
+-    ctorDescriptor: new SyncDescriptor(RudderstackMainView),
+-    order: 10,
+-    weight: 40,
+-    canToggleVisibility: true,
+-    canMoveView: true
+-}], viewContainer);
+\ No newline at end of file
++// // Register views inside the container
++// const viewsRegistry = Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry);
++// viewsRegistry.registerViews([{
++//     id: MAIN_VIEW_ID,
++//     name: nls.localize2('rudderstackMainView', "Rudderstack"),
++//     containerIcon: rudderstackFeatureViewIcon,
++//     ctorDescriptor: new SyncDescriptor(RudderstackMainView),
++//     order: 10,
++//     weight: 40,
++//     canToggleVisibility: true,
++//     canMoveView: true
++// }], viewContainer);
+\ No newline at end of file
