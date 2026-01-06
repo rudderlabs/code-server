@@ -2,7 +2,6 @@
 FROM ubuntu:22.04@sha256:09506232a8004baa32c47d68f1e5c307d648fdd59f5e7eaa42aaf87914100db3
 
 # Set build arguments for version and architecture
-ARG VERSION=v0.5.0
 ARG TARGETARCH=amd64
 ARG RUDDERSTACK_PAT
 
@@ -45,9 +44,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_0.6.0-alpha1_amd64.deb || apt-get install -f -y; \
+  dpkg -i code-server_0.7.0_arm64.deb || apt-get install -f -y; \
   else \
-  dpkg -i code-server_0.6.0-alpha1_arm64.deb || apt-get install -f -y; \
+  dpkg -i code-server_0.7.0_amd64.deb || apt-get install -f -y; \
   fi
 
 # Switch to codeuser for extension installation and MCP setup
@@ -67,7 +66,7 @@ COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/med
 USER codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone --branch v0.6.0 https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch v0.8.0 https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
