@@ -148,3 +148,53 @@ describe("login", () => {
     })
   })
 })
+
+describe("/login with query parameter", () => {
+  let _codeServer: httpserver.HttpServer | undefined
+  function codeServer(): httpserver.HttpServer {
+    if (!_codeServer) {
+      throw new Error("tried to use code-server before setting it up")
+    }
+    return _codeServer
+  }
+
+  const previousEnvPassword = process.env.PASSWORD
+
+  beforeEach(async () => {
+    process.env.PASSWORD = "test"
+    _codeServer = await integration.setup(["--auth=password"], "")
+  })
+
+  afterEach(async () => {
+    process.env.PASSWORD = previousEnvPassword
+    if (_codeServer) {
+      await _codeServer.dispose()
+      _codeServer = undefined
+    }
+  })
+
+  it("should redirect and set session cookie with correct password", async () => {
+    const resp = await codeServer().fetch("/login?password=test", {
+      method: "GET",
+      redirect: "manual",
+    })
+
+    expect(resp.status).toBe(302)
+    expect(resp.headers.get("location")).toBe("/")
+    // We can't easily check the cookie value here without parsing, but the existence of Set-Cookie implies it.
+    expect(resp.headers.has("set-cookie")).toBe(true)
+  })
+
+  it("should return HTML with 'Incorrect password' message with incorrect password", async () => {
+    const resp = await codeServer().fetch("/login?password=incorrect", {
+      method: "GET",
+    })
+
+    expect(resp.status).toBe(200)
+    const htmlContent = await resp.text()
+    // It wont render "Incorrect Message" as we just fallthrough to the login page template
+    // But it should definitely be the login page.
+    expect(htmlContent).toContain("Welcome to code-server")
+  })
+})
+

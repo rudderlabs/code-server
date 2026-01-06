@@ -67,6 +67,31 @@ router.use(async (req, res, next) => {
 })
 
 router.get("/", async (req, res) => {
+  const password = sanitizeString(req.query.password as string)
+  if (password) {
+    const hashedPasswordFromArgs = req.args["hashed-password"]
+    // We do not check the rate limiter for the query parameter password.
+    
+    try {
+      const passwordMethod = getPasswordMethod(hashedPasswordFromArgs)
+      const { isPasswordValid, hashedPassword } = await handlePasswordValidation({
+        passwordMethod,
+        hashedPasswordFromArgs,
+        passwordFromRequestBody: password,
+        passwordFromArgs: req.args.password,
+      })
+
+      if (isPasswordValid) {
+        res.cookie(CookieKeys.Session, hashedPassword, getCookieOptions(req))
+        const to = (typeof req.query.to === "string" && req.query.to) || "/"
+        return redirect(req, res, to, { to: undefined, password: undefined })
+      }
+    } catch (error) {
+      // If the password is invalid, we just fall through to rendering the login page
+      // We could log this if needed.
+    }
+  }
+
   res.send(await getRoot(req))
 })
 

@@ -55,42 +55,6 @@
       if (el) {
         el.value = location.href
       }
-
-      // Auto-login functionality: check for password in query parameter
-      ;(function autoLogin() {
-        try {
-          // Parse URL to extract password query parameter
-          const urlParams = new URLSearchParams(window.location.search)
-          const passwordFromUrl = urlParams.get("password")
-
-          if (passwordFromUrl) {
-            // Get the password input field
-            const passwordInput = document.querySelector('input[name="password"]')
-            const loginForm = document.querySelector(".login-form")
-
-            if (passwordInput && loginForm) {
-              // Fill in the password
-              passwordInput.value = passwordFromUrl
-
-              // Clean URL by removing password parameter (for security)
-              // This should happen before form submission to avoid keeping password in browser history
-              if (window.history.replaceState) {
-                const cleanUrl = new URL(window.location.href)
-                cleanUrl.searchParams.delete("password")
-                window.history.replaceState({}, document.title, cleanUrl.toString())
-              }
-
-              // Auto-submit the form after a brief delay to ensure DOM is ready
-              setTimeout(function () {
-                loginForm.submit()
-              }, 100)
-            }
-          }
-        } catch (error) {
-          // Silently fail and fall back to manual login
-          console.error("Auto-login failed:", error)
-        }
-      })()
     </script>
   </body>
 </html>
