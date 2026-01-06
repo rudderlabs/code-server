@@ -88,7 +88,7 @@ router.get("/", async (req, res) => {
       }
     } catch (error) {
       // If the password is invalid, we just fall through to rendering the login page
-      // We could log this if needed.
+      console.error("Error during login with query parameter password:", error)
     }
   }
 
