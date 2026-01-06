@@ -149,7 +149,7 @@ describe("login", () => {
   })
 })
 
-describe("/login with query parameter", () => {
+describe("/login with query parameter (plain password only)", () => {
   let _codeServer: httpserver.HttpServer | undefined
   function codeServer(): httpserver.HttpServer {
     if (!_codeServer) {
@@ -159,14 +159,22 @@ describe("/login with query parameter", () => {
   }
 
   const previousEnvPassword = process.env.PASSWORD
+  const previousEnvHashedPassword = process.env.HASHED_PASSWORD
 
   beforeEach(async () => {
+    // Ensure we're using plain password mode only
     process.env.PASSWORD = "test"
+    delete process.env.HASHED_PASSWORD
     _codeServer = await integration.setup(["--auth=password"], "")
   })
 
   afterEach(async () => {
     process.env.PASSWORD = previousEnvPassword
+    if (previousEnvHashedPassword) {
+      process.env.HASHED_PASSWORD = previousEnvHashedPassword
+    } else {
+      delete process.env.HASHED_PASSWORD
+    }
     if (_codeServer) {
       await _codeServer.dispose()
       _codeServer = undefined
@@ -181,20 +189,26 @@ describe("/login with query parameter", () => {
 
     expect(resp.status).toBe(302)
     expect(resp.headers.get("location")).toBe("/")
-    // We can't easily check the cookie value here without parsing, but the existence of Set-Cookie implies it.
     expect(resp.headers.has("set-cookie")).toBe(true)
   })
 
-  it("should return HTML with 'Incorrect password' message with incorrect password", async () => {
+  it("should render login page with incorrect password", async () => {
     const resp = await codeServer().fetch("/login?password=incorrect", {
       method: "GET",
     })
 
     expect(resp.status).toBe(200)
     const htmlContent = await resp.text()
-    // It wont render "Incorrect Message" as we just fallthrough to the login page template
-    // But it should definitely be the login page.
+    expect(htmlContent).toContain("Welcome to code-server")
+  })
+
+  it("should render login page when password query param is missing", async () => {
+    const resp = await codeServer().fetch("/login", {
+      method: "GET",
+    })
+
+    expect(resp.status).toBe(200)
+    const htmlContent = await resp.text()
     expect(htmlContent).toContain("Welcome to code-server")
   })
 })
-
