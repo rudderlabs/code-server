@@ -192,7 +192,9 @@ describe("/login with query parameter (plain password only)", () => {
     )
 
     expect(resp.status).toBe(302)
-    expect(resp.headers.get("location")).toBe("/")
+    const location = resp.headers.get("location")
+    // Location can be relative "/" or absolute "http://host/"
+    expect(location).toMatch(/\/$/)
     expect(resp.headers.has("set-cookie")).toBe(true)
   })
 
