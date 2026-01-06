@@ -182,10 +182,14 @@ describe("/login with query parameter (plain password only)", () => {
   })
 
   it("should redirect and set session cookie with correct password", async () => {
-    const resp = await codeServer().fetch("/login?password=test", {
-      method: "GET",
-      redirect: "manual",
-    })
+    const resp = await codeServer().fetch(
+      "/login",
+      {
+        method: "GET",
+        redirect: "manual",
+      },
+      { password: "test" },
+    )
 
     expect(resp.status).toBe(302)
     expect(resp.headers.get("location")).toBe("/")
@@ -193,9 +197,13 @@ describe("/login with query parameter (plain password only)", () => {
   })
 
   it("should render login page with incorrect password", async () => {
-    const resp = await codeServer().fetch("/login?password=incorrect", {
-      method: "GET",
-    })
+    const resp = await codeServer().fetch(
+      "/login",
+      {
+        method: "GET",
+      },
+      { password: "incorrect" },
+    )
 
     expect(resp.status).toBe(200)
     const htmlContent = await resp.text()
