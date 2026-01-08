@@ -1,0 +1,292 @@
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+===================================================================
+diff --git a/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts b/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+index e3b1dd55c69..03daebf3f54 100644
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+@@ -8,15 +8,19 @@ import { KeybindingLabel } from '../../../../base/browser/ui/keybindingLabel/key
+ import { coalesce, shuffle } from '../../../../base/common/arrays.js';
+ import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+ import { isMacintosh, isWeb, OS } from '../../../../base/common/platform.js';
++import { URI } from '../../../../base/common/uri.js';
+ import { localize } from '../../../../nls.js';
+-import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
++import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+ import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+ import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
++import { IFileService } from '../../../../platform/files/common/files.js';
+ import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
+ import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from '../../../../platform/storage/common/storage.js';
+ import { defaultKeybindingLabelStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+ import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+ import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
++import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
++import { IsEnabledCoderGettingStarted } from '../../../common/contextkeys.js';
+ 
+ interface WatermarkEntry {
+ 	readonly id: string;
+@@ -73,7 +77,10 @@ export class EditorGroupWatermark extends Disposable {
+ 
+ 	private readonly cachedWhen: { [when: string]: boolean };
+ 
++	private readonly watermarkRoot: HTMLElement;
+ 	private readonly shortcuts: HTMLElement;
++	private readonly letterpress: HTMLElement;
++	private readonly copilotContent: HTMLElement;
+ 	private readonly transientDisposables = this._register(new DisposableStore());
+ 	private readonly keybindingLabels = this._register(new DisposableStore());
+ 
+@@ -86,7 +93,10 @@ export class EditorGroupWatermark extends Disposable {
+ 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+ 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
+ 		@IConfigurationService private readonly configurationService: IConfigurationService,
+-		@IStorageService private readonly storageService: IStorageService
++		@IStorageService private readonly storageService: IStorageService,
++		@ICommandService private readonly commandService: ICommandService,
++		@IFileService private readonly fileService: IFileService,
++		@IWorkspaceTrustManagementService private readonly workspaceTrustService: IWorkspaceTrustManagementService
+ 	) {
+ 		super();
+ 
+@@ -94,12 +104,118 @@ export class EditorGroupWatermark extends Disposable {
+ 		this.workbenchState = this.contextService.getWorkbenchState();
+ 
+ 		const elements = h('.editor-group-watermark', [
+-			h('.letterpress'),
++			h('.letterpress@letterpress'),
+ 			h('.shortcuts@shortcuts'),
++			h('.copilot-content@copilotContent'),
+ 		]);
+ 
+ 		append(container, elements.root);
++		this.watermarkRoot = elements.root;
+ 		this.shortcuts = elements.shortcuts;
++		this.letterpress = elements.letterpress;
++		this.copilotContent = elements.copilotContent;
++
++		// Build Profiles Copilot custom content
++		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
++			// Add class to root element for styling
++			this.watermarkRoot.classList.add('copilot-enabled');
++
++			// Hide default letterpress and shortcuts
++			this.letterpress.style.display = 'none';
++			this.shortcuts.style.display = 'none';
++
++			// Check for context files and load HTML content
++			this.checkContextFiles().then(contextFiles => {
++				// Load HTML content from file
++				fetch('/_static/src/browser/media/copilot-welcome.html')
++					.then(response => {
++						if (!response.ok) {
++							throw new Error(`Failed to load welcome content: ${response.status}`);
++						}
++						return response.text();
++					})
++					.then(html => {
++						this.copilotContent.innerHTML = html;
++
++						// Set data attribute to indicate if context files exist
++						const hasContextFiles = contextFiles.length > 0 ? 'true' : 'false';
++						console.log('[Copilot] Setting data-has-context-files to:', hasContextFiles, 'context files count:', contextFiles.length);
++						document.body.setAttribute('data-has-context-files', hasContextFiles);
++
++						// Toggle button visibility based on context files availability
++						const featureBtn = this.copilotContent.querySelector('#feature-engineering-btn') as HTMLElement;
++						const contextBtn = this.copilotContent.querySelector('#update-context-btn') as HTMLElement;
++						console.log('[Copilot] Toggle buttons - hasContextFiles:', contextFiles.length > 0, 'featureBtn:', !!featureBtn, 'contextBtn:', !!contextBtn);
++
++						if (contextFiles.length > 0) {
++							console.log('[Copilot] Showing context button, hiding feature button');
++							if (featureBtn) featureBtn.style.display = 'none';
++							if (contextBtn) contextBtn.style.display = 'inline-block';
++						} else {
++							console.log('[Copilot] Showing feature button, hiding context button');
++							if (featureBtn) featureBtn.style.display = 'inline-block';
++							if (contextBtn) contextBtn.style.display = 'none';
++						}
++
++						// Handle wheel events for scrolling since VS Code's scroll system doesn't apply here
++						this.copilotContent.addEventListener('wheel', (e) => {
++							e.preventDefault();
++							e.stopPropagation();
++							this.copilotContent.scrollTop += e.deltaY;
++						}, { passive: false });
++
++						// Prevent double-click from opening a new file
++						this.copilotContent.addEventListener('dblclick', (e) => {
++							e.preventDefault();
++							e.stopPropagation();
++						});
++
++						// Handle CTA button clicks to open Cline with prefilled text and auto-send
++						this.copilotContent.addEventListener('click', (e) => {
++							const target = e.target as HTMLElement;
++							if (target.classList.contains('copilot-cta-button')) {
++								e.preventDefault();
++								e.stopPropagation();
++
++								// Check if this is the "Update Profiles Goals" button
++								const action = target.getAttribute('data-action');
++								if (action === 'openContextFiles') {
++									// Open all context files
++									this.openContextFiles(contextFiles);
++									return;
++								}
++
++								// Handle normal prompt buttons
++								const prompt = target.getAttribute('data-prompt');
++								if (prompt) {
++									// First focus/open Cline sidebar, then add the text and send it
++									this.commandService.executeCommand('claude-dev.SidebarProvider.focus').then(() => {
++										// Add prompt to chat input (Cline will wait internally if provider not ready)
++										this.commandService.executeCommand('cline.addToChatWithoutSelection', prompt).then(() => {
++											// Auto-send the message after prefilling (small delay to ensure text is added)
++											setTimeout(() => {
++												this.commandService.executeCommand('cline.sendMessage').catch(err => {
++													console.error('Failed to send message to Cline:', err);
++												});
++											}, 200);
++										}).catch(err => {
++											console.error('Failed to add prompt to Cline:', err);
++										});
++									}).catch(err => {
++										console.error('Failed to open Cline:', err);
++									});
++								}
++							}
++						});
++					})
++					.catch(err => {
++						console.error('Failed to load Profiles Copilot welcome content:', err);
++						// Fallback: show a simple message
++						const fallback = append(this.copilotContent, $('p'));
++						fallback.textContent = 'Welcome to Profiles Copilot! Start chatting in the sidebar to get started.';
++					});
++			});
++		}
+ 
+ 		this.registerListeners();
+ 
+@@ -188,6 +304,121 @@ export class EditorGroupWatermark extends Disposable {
+ 
+ 		return filteredEntries;
+ 	}
++
++	/**
++	 * Check for context files in $HOME/project/ directory
++	 * Returns an array of URIs for files ending with 'context.md'
++	 */
++	private async checkContextFiles(): Promise<URI[]> {
++		try {
++			console.log('[Copilot] Checking for context files...');
++
++			const allContextFiles: URI[] = [];
++
++			// For containerized environments, check these fixed paths that can be volume-mounted
++			const containerPaths = [
++				'/home/codeuser/project',       // Your specific container user home
++				'/workspace/project',           // Standard workspace location in containers
++				'/config/project',              // Alternative config location
++				'/home/coder/project',          // code-server default user home
++				'/root/project',                // Root user home
++			];
++
++			// Try each container path
++			for (const dirPath of containerPaths) {
++				try {
++					const projectPath = URI.file(dirPath);
++					console.log('[Copilot] Checking container path:', projectPath.fsPath);
++					const dirStat = await this.fileService.resolve(projectPath);
++
++					if (dirStat && dirStat.isDirectory && dirStat.children) {
++						const contextFiles = dirStat.children
++							.filter(child => !child.isDirectory && child.name.endsWith('context.md'))
++							.map(child => child.resource);
++
++						if (contextFiles.length > 0) {
++							console.log('[Copilot] Found context files in container path:', contextFiles.length, contextFiles.map(f => f.fsPath));
++							allContextFiles.push(...contextFiles);
++						}
++					}
++				} catch (e) {
++					// Path not accessible, continue to next
++					console.log('[Copilot] Container path not accessible:', dirPath);
++				}
++			}
++
++			// Also check workspace folders as a fallback
++			const workspaceFolders = this.contextService.getWorkspace().folders;
++			console.log('[Copilot] Workspace folders:', workspaceFolders.map(f => f.uri.fsPath));
++
++			for (const folder of workspaceFolders) {
++				try {
++					const folderUri = folder.uri;
++					console.log('[Copilot] Checking workspace folder:', folderUri.fsPath);
++
++					const dirStat = await this.fileService.resolve(folderUri);
++
++					if (dirStat && dirStat.isDirectory && dirStat.children) {
++						// Check root of workspace
++						const contextFiles = dirStat.children
++							.filter(child => !child.isDirectory && child.name.endsWith('context.md'))
++							.map(child => child.resource);
++
++						if (contextFiles.length > 0) {
++							console.log('[Copilot] Found context files in workspace root:', contextFiles.length, contextFiles.map(f => f.fsPath));
++							allContextFiles.push(...contextFiles);
++						}
++
++						// Also check for 'project' subdirectory in workspace
++						const projectSubdir = dirStat.children.find(child => child.isDirectory && child.name === 'project');
++						if (projectSubdir) {
++							console.log('[Copilot] Found project subdirectory in workspace:', projectSubdir.resource.fsPath);
++							const projectDirStat = await this.fileService.resolve(projectSubdir.resource);
++							if (projectDirStat && projectDirStat.isDirectory && projectDirStat.children) {
++								const projectContextFiles = projectDirStat.children
++									.filter(child => !child.isDirectory && child.name.endsWith('context.md'))
++									.map(child => child.resource);
++
++								if (projectContextFiles.length > 0) {
++									console.log('[Copilot] Found context files in workspace/project:', projectContextFiles.length, projectContextFiles.map(f => f.fsPath));
++									allContextFiles.push(...projectContextFiles);
++								}
++							}
++						}
++					}
++				} catch (folderError) {
++					console.log('[Copilot] Error checking workspace folder:', folder.uri.fsPath, folderError);
++				}
++			}
++
++			if (allContextFiles.length > 0) {
++				console.log('[Copilot] Total context files found:', allContextFiles.length);
++				return allContextFiles;
++			}
++
++			console.log('[Copilot] No context files found in any checked location');
++			return [];
++		} catch (error) {
++			console.log('[Copilot] Error checking context files:', error);
++			return [];
++		}
++	}
++
++	/**
++	 * Open all context files for editing
++	 */
++	private async openContextFiles(contextFiles: URI[]): Promise<void> {
++		try {
++			// Trust the URIs before opening to avoid the trust dialog
++			await this.workspaceTrustService.setUrisTrust(contextFiles, true);
++
++			for (const fileUri of contextFiles) {
++				await this.commandService.executeCommand('vscode.open', fileUri);
++			}
++		} catch (error) {
++			console.error('Failed to open context files:', error);
++		}
++	}
+ }
+ 
+ registerColor('editorWatermark.foreground', { dark: transparent(editorForeground, 0.6), light: transparent(editorForeground, 0.68), hcDark: editorForeground, hcLight: editorForeground }, localize('editorLineHighlight', 'Foreground color for the labels in the editor watermark.'));

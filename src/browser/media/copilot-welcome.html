@@ -28,23 +28,37 @@
     <button
       class="copilot-cta-button"
       data-description="Build identity stitching + features for complete customer view"
-      data-prompt="I want to build a complete customer 360 - both identity stitching and features to understand customer behavior. Ask me about my data sources and what I'm trying to achieve."
+      data-prompt="Build me a Customer 360 with identity stitching and features.
+      Use the profiles workflow guide to start, then discover my warehouse connections and tables automatically. If there's a single connection available, use it. From that, suggest which of my tables and columns to use for identity resolution and features, then build the project taking my inputs while offering suggestions at each step. the goal is to successfully run the project."
     >
       🏗️ Customer 360 Setup
     </button>
     <button
       class="copilot-cta-button"
       data-description="Connect user identities across platforms and data sources"
-      data-prompt="I need to stitch user identities across different platforms. Ask me about my data sources and which ID fields I should use."
+      data-prompt="I need to stitch user identities across different platforms. 
+      You can know the exact warehouse tables where my data is present, using the existing connections mcp tools. 
+      Based on the context you have about me, my workspace, and about profiles projects, give me a few suggestions on what specific id-types I should use, what entities I should build, and my data sources. 
+      Then help me build and run this id-stitcher project interactively, taking my inputs on exact source tables where my input data is, what id-types/entities I should use etc. You should provide suggestions where-ever you can. The goal is to build an id-stitcher project using Rudderstack profiles and successfully run it."
     >
       🔗 Identity Stitching
     </button>
     <button
       class="copilot-cta-button"
+      id="feature-engineering-btn"
       data-description="Create behavioral features and customer attributes"
       data-prompt="I want to add features to track customer behavior and attributes. Ask me what kind of features would help my use case."
     >
       ⚡ Feature Engineering
+    </button>
+    <button
+      class="copilot-cta-button"
+      id="update-context-btn"
+      data-description="Click here to update the context for Profiles Copilot"
+      data-action="openContextFiles"
+      style="display: none"
+    >
+      ✎ᝰ. Update Profiles Goals
     </button>
   </div>
   <p class="copilot-cta" style="margin-top: 24px">🚀 <strong>Let's get building</strong></p>
