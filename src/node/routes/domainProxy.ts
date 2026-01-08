@@ -74,15 +74,19 @@ router.all(/.*/, async (req, res, next) => {
       return next()
     }
 
+    // Let the login through regardless of Accept header to support:
+    // 1. Browser requests (with text/html)
+    // 2. API/programmatic requests (without text/html)
+    // 3. Login with password query parameter
+    if (/\/login\/?/.test(req.path)) {
+      return next()
+    }
+
     // Assume anything that explicitly accepts text/html is a user browsing a
     // page (as opposed to an xhr request). Don't use `req.accepts()` since
     // *every* request that I've seen (in Firefox and Chromium at least)
     // includes `*/*` making it always truthy. Even for css/javascript.
     if (req.headers.accept && req.headers.accept.includes("text/html")) {
-      // Let the login through.
-      if (/\/login\/?/.test(req.path)) {
-        return next()
-      }
       // Redirect all other pages to the login.
       const to = self(req)
       return redirect(req, res, "login", {

@@ -61,12 +61,40 @@ export const router = Router()
 router.use(async (req, res, next) => {
   const to = (typeof req.query.to === "string" && req.query.to) || "/"
   if (await authenticated(req)) {
-    return redirect(req, res, to, { to: undefined })
+    return redirect(req, res, to, { to: undefined, password: undefined })
   }
   next()
 })
 
 router.get("/", async (req, res) => {
+  const password = sanitizeString(req.query.password as string)
+  if (password) {
+    // We do not check the rate limiter for the query parameter password.
+    try {
+      // Only support plain password (not hashed) for query parameter authentication
+      const isPasswordValid = req.args.password && password === req.args.password
+
+      if (isPasswordValid) {
+        // Use the same hashing approach as the POST handler
+        const hashedPasswordFromArgs = req.args["hashed-password"]
+        const passwordMethod = getPasswordMethod(hashedPasswordFromArgs)
+        const { hashedPassword } = await handlePasswordValidation({
+          passwordMethod,
+          hashedPasswordFromArgs,
+          passwordFromRequestBody: password,
+          passwordFromArgs: req.args.password,
+        })
+
+        res.cookie(CookieKeys.Session, hashedPassword, getCookieOptions(req))
+        const to = (typeof req.query.to === "string" && req.query.to) || "/"
+        return redirect(req, res, to, { to: undefined, password: undefined })
+      }
+    } catch (error) {
+      // If the password is invalid, we just fall through to rendering the login page
+      console.error("Error during login with query parameter password:", error)
+    }
+  }
+
   res.send(await getRoot(req))
 })
 
@@ -98,7 +126,7 @@ router.post<{}, string, { password?: string; base?: string } | undefined, { to?:
       res.cookie(CookieKeys.Session, hashedPassword, getCookieOptions(req))
 
       const to = (typeof req.query.to === "string" && req.query.to) || "/"
-      return redirect(req, res, to, { to: undefined })
+      return redirect(req, res, to, { to: undefined, password: undefined })
     }
 
     // Note: successful logins should not count against the RateLimiter
