@@ -44,9 +44,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_1.0.0_arm64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.1.0_arm64.deb || apt-get install -f -y; \
   else \
-  dpkg -i code-server_1.0.0_amd64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.1.0_amd64.deb || apt-get install -f -y; \
   fi
 
 # Switch to codeuser for extension installation and MCP setup
@@ -79,6 +79,9 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
 RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles","get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","profiles_workflow_guide","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
+# Create VS Code settings for sidebar layout (file explorer left, Cline right in secondary sidebar)
+RUN echo '{"workbench.sideBar.location":"left","workbench.secondarySideBar.defaultVisibility":"visible"}' > /home/codeuser/.local/share/code-server/User/settings.json
+
 # Set proper ownership and permissions
 USER root
 RUN chown -R codeuser:codeuser /home/codeuser
@@ -101,10 +104,10 @@ mkdir -p "$LOG_DIR"
 PROMPT_COMMAND='__log_command'
 
 __log_command() {
-    local last_cmd=$(history 1 | sed 's/^[ ]*[0-9]\+[ ]*//')
-    if [ -n "$last_cmd" ]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $last_cmd" >> "$LOG_DIR/commands.log"
-    fi
+local last_cmd=$(history 1 | sed 's/^[ ]*[0-9]\+[ ]*//')
+if [ -n "$last_cmd" ]; then
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] $last_cmd" >> "$LOG_DIR/commands.log"
+fi
 }
 EOF
 
