@@ -1,0 +1,42 @@
+Place Cline extension in secondary sidebar (right side) by default
+
+This patch modifies VS Code to:
+1. Register Cline's view container in the AuxiliaryBar (secondary sidebar on the right)
+   instead of the primary Sidebar (left side)
+2. Set the secondary sidebar default width to 40% of the screen (max 600px)
+
+Index: b/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
+===================================================================
+--- a/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
++++ b/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
+@@ -308,7 +308,15 @@ class ViewsExtensionHandler implements I
+ 				}
+ 				switch (key) {
+ 					case 'activitybar':
+-						activityBarOrder = this.registerCustomViewContainers(value, description, activityBarOrder, existingViewContainers, ViewContainerLocation.Sidebar);
++						// Check for Cline extension view container and place it in AuxiliaryBar (right sidebar)
++						const clineContainers = value.filter(v => v.id === 'claude-dev-ActivityBar');
++						const otherContainers = value.filter(v => v.id !== 'claude-dev-ActivityBar');
++						if (clineContainers.length > 0) {
++							this.registerCustomViewContainers(clineContainers, description, activityBarOrder, existingViewContainers, ViewContainerLocation.AuxiliaryBar);
++						}
++						if (otherContainers.length > 0) {
++							activityBarOrder = this.registerCustomViewContainers(otherContainers, description, activityBarOrder, existingViewContainers, ViewContainerLocation.Sidebar);
++						}
+ 						break;
+ 					case 'panel':
+ 						panelOrder = this.registerCustomViewContainers(value, description, panelOrder, existingViewContainers, ViewContainerLocation.Panel);
+Index: b/lib/vscode/src/vs/workbench/browser/layout.ts
+===================================================================
+--- a/lib/vscode/src/vs/workbench/browser/layout.ts
++++ b/lib/vscode/src/vs/workbench/browser/layout.ts
+@@ -2867,7 +2867,8 @@ class LayoutStateModel extends Disposabl
+ 		const mainContainerDimension = configuration.mainContainerDimension;
+ 		LayoutStateKeys.SIDEBAR_SIZE.defaultValue = Math.min(300, mainContainerDimension.width / 4);
+ 		LayoutStateKeys.SIDEBAR_HIDDEN.defaultValue = workbenchState === WorkbenchState.EMPTY;
+-		LayoutStateKeys.AUXILIARYBAR_SIZE.defaultValue = Math.min(300, mainContainerDimension.width / 4);
++		// Set auxiliary bar (secondary sidebar) to 40% width for Cline
++		LayoutStateKeys.AUXILIARYBAR_SIZE.defaultValue = Math.min(600, mainContainerDimension.width * 0.4);
+ 		LayoutStateKeys.AUXILIARYBAR_HIDDEN.defaultValue = (() => {
+ 
+ 			// TODO@bpasero: lots of hacks here to not force open the auxiliary sidebar
