@@ -66,7 +66,7 @@ COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/med
 USER codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone --branch v0.8.0 https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch v0.9.0 https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
@@ -77,7 +77,7 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["about_profiles","get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","profiles_workflow_guide","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "autoApprove": ["get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
 # Create VS Code settings for sidebar layout (file explorer left, Cline right in secondary sidebar)
 RUN echo '{"workbench.sideBar.location":"left","workbench.secondarySideBar.defaultVisibility":"visible"}' > /home/codeuser/.local/share/code-server/User/settings.json
