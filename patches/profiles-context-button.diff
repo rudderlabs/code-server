@@ -1,17 +1,14 @@
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
 ===================================================================
-diff --git a/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts b/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
-index e3b1dd55c69..03daebf3f54 100644
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
-@@ -8,15 +8,19 @@ import { KeybindingLabel } from '../../../../base/browser/ui/keybindingLabel/key
+@@ -8,15 +8,18 @@ import { KeybindingLabel } from '../../.
  import { coalesce, shuffle } from '../../../../base/common/arrays.js';
  import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
  import { isMacintosh, isWeb, OS } from '../../../../base/common/platform.js';
 +import { URI } from '../../../../base/common/uri.js';
  import { localize } from '../../../../nls.js';
--import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
-+import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
+ import { CommandsRegistry, ICommandService } from '../../../../platform/commands/common/commands.js';
  import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
  import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 +import { IFileService } from '../../../../platform/files/common/files.js';
@@ -21,154 +18,146 @@ index e3b1dd55c69..03daebf3f54 100644
  import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
  import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
 +import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
-+import { IsEnabledCoderGettingStarted } from '../../../common/contextkeys.js';
+ import { IsEnabledCoderGettingStarted } from '../../../common/contextkeys.js';
  
  interface WatermarkEntry {
- 	readonly id: string;
-@@ -73,7 +77,10 @@ export class EditorGroupWatermark extends Disposable {
- 
- 	private readonly cachedWhen: { [when: string]: boolean };
- 
-+	private readonly watermarkRoot: HTMLElement;
- 	private readonly shortcuts: HTMLElement;
-+	private readonly letterpress: HTMLElement;
-+	private readonly copilotContent: HTMLElement;
- 	private readonly transientDisposables = this._register(new DisposableStore());
- 	private readonly keybindingLabels = this._register(new DisposableStore());
- 
-@@ -86,7 +93,10 @@ export class EditorGroupWatermark extends Disposable {
- 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+@@ -91,7 +94,9 @@ export class EditorGroupWatermark extend
  		@IContextKeyService private readonly contextKeyService: IContextKeyService,
  		@IConfigurationService private readonly configurationService: IConfigurationService,
--		@IStorageService private readonly storageService: IStorageService
-+		@IStorageService private readonly storageService: IStorageService,
+ 		@IStorageService private readonly storageService: IStorageService,
+-		@ICommandService private readonly commandService: ICommandService
 +		@ICommandService private readonly commandService: ICommandService,
 +		@IFileService private readonly fileService: IFileService,
 +		@IWorkspaceTrustManagementService private readonly workspaceTrustService: IWorkspaceTrustManagementService
  	) {
  		super();
  
-@@ -94,12 +104,118 @@ export class EditorGroupWatermark extends Disposable {
- 		this.workbenchState = this.contextService.getWorkbenchState();
+@@ -111,7 +116,10 @@ export class EditorGroupWatermark extend
+ 		this.copilotContent = elements.copilotContent;
  
- 		const elements = h('.editor-group-watermark', [
--			h('.letterpress'),
-+			h('.letterpress@letterpress'),
- 			h('.shortcuts@shortcuts'),
-+			h('.copilot-content@copilotContent'),
- 		]);
+ 		// Build Profiles Copilot custom content
++		console.log('[Copilot] Initializing Profiles Copilot watermark');
++		console.log('[Copilot] Context key check:', this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted));
+ 		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
++			console.log('[Copilot] Profiles Copilot is ENABLED - starting setup');
+ 			// Add class to root element for styling
+ 			this.watermarkRoot.classList.add('copilot-enabled');
  
- 		append(container, elements.root);
-+		this.watermarkRoot = elements.root;
- 		this.shortcuts = elements.shortcuts;
-+		this.letterpress = elements.letterpress;
-+		this.copilotContent = elements.copilotContent;
-+
-+		// Build Profiles Copilot custom content
-+		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
-+			// Add class to root element for styling
-+			this.watermarkRoot.classList.add('copilot-enabled');
-+
-+			// Hide default letterpress and shortcuts
-+			this.letterpress.style.display = 'none';
-+			this.shortcuts.style.display = 'none';
-+
+@@ -119,19 +127,60 @@ export class EditorGroupWatermark extend
+ 			this.letterpress.style.display = 'none';
+ 			this.shortcuts.style.display = 'none';
+ 
+-			// Load HTML content from file
+-			fetch('/_static/src/browser/media/copilot-welcome.html')
+-				.then(response => {
+-					if (!response.ok) {
+-						throw new Error(`Failed to load welcome content: ${response.status}`);
+-					}
+-					return response.text();
+-				})
+-				.then(html => {
+-					this.copilotContent.innerHTML = html;
 +			// Check for context files and load HTML content
++			console.log('[Copilot] Starting checkContextFiles...');
 +			this.checkContextFiles().then(contextFiles => {
++				console.log('[Copilot] checkContextFiles completed, found:', contextFiles.length, 'files');
++				console.log('[Copilot] Context file paths:', contextFiles.map(f => f.fsPath));
 +				// Load HTML content from file
++				console.log('[Copilot] Fetching welcome HTML from: /_static/src/browser/media/copilot-welcome.html');
 +				fetch('/_static/src/browser/media/copilot-welcome.html')
 +					.then(response => {
++						console.log('[Copilot] Fetch response status:', response.status, response.ok);
 +						if (!response.ok) {
 +							throw new Error(`Failed to load welcome content: ${response.status}`);
 +						}
 +						return response.text();
 +					})
 +					.then(html => {
++						console.log('[Copilot] HTML loaded, length:', html.length);
 +						this.copilotContent.innerHTML = html;
-+
-+						// Set data attribute to indicate if context files exist
-+						const hasContextFiles = contextFiles.length > 0 ? 'true' : 'false';
-+						console.log('[Copilot] Setting data-has-context-files to:', hasContextFiles, 'context files count:', contextFiles.length);
-+						document.body.setAttribute('data-has-context-files', hasContextFiles);
++						console.log('[Copilot] HTML content set in DOM');
 +
 +						// Toggle button visibility based on context files availability
++						console.log('[Copilot] Looking for buttons in DOM...');
 +						const featureBtn = this.copilotContent.querySelector('#feature-engineering-btn') as HTMLElement;
 +						const contextBtn = this.copilotContent.querySelector('#update-context-btn') as HTMLElement;
-+						console.log('[Copilot] Toggle buttons - hasContextFiles:', contextFiles.length > 0, 'featureBtn:', !!featureBtn, 'contextBtn:', !!contextBtn);
++						console.log('[Copilot] Button query results:');
++						console.log('[Copilot]   - featureBtn found:', !!featureBtn, featureBtn ? `id=${featureBtn.id}` : 'null');
++						console.log('[Copilot]   - contextBtn found:', !!contextBtn, contextBtn ? `id=${contextBtn.id}` : 'null');
++						console.log('[Copilot]   - contextFiles.length:', contextFiles.length);
++						console.log('[Copilot]   - Should show context button:', contextFiles.length > 0);
 +
 +						if (contextFiles.length > 0) {
-+							console.log('[Copilot] Showing context button, hiding feature button');
-+							if (featureBtn) featureBtn.style.display = 'none';
-+							if (contextBtn) contextBtn.style.display = 'inline-block';
++							console.log('[Copilot] ACTION: Showing context button, hiding feature button');
++							if (featureBtn) {
++								featureBtn.style.display = 'none';
++								console.log('[Copilot]   - Set featureBtn display to none');
++							}
++							if (contextBtn) {
++								contextBtn.style.display = 'inline-block';
++								console.log('[Copilot]   - Set contextBtn display to inline-block');
++							}
 +						} else {
-+							console.log('[Copilot] Showing feature button, hiding context button');
-+							if (featureBtn) featureBtn.style.display = 'inline-block';
-+							if (contextBtn) contextBtn.style.display = 'none';
++							console.log('[Copilot] ACTION: Showing feature button, hiding context button');
++							if (featureBtn) {
++								featureBtn.style.display = 'inline-block';
++								console.log('[Copilot]   - Set featureBtn display to inline-block');
++							}
++							if (contextBtn) {
++								contextBtn.style.display = 'none';
++								console.log('[Copilot]   - Set contextBtn display to none');
++							}
 +						}
-+
+ 
+-					// Handle wheel events for scrolling since VS Code's scroll system doesn't apply here
+-					this.copilotContent.addEventListener('wheel', (e) => {
 +						// Handle wheel events for scrolling since VS Code's scroll system doesn't apply here
 +						this.copilotContent.addEventListener('wheel', (e) => {
-+							e.preventDefault();
-+							e.stopPropagation();
-+							this.copilotContent.scrollTop += e.deltaY;
-+						}, { passive: false });
+ 						e.preventDefault();
+ 						e.stopPropagation();
+ 						this.copilotContent.scrollTop += e.deltaY;
+@@ -149,6 +198,18 @@ export class EditorGroupWatermark extend
+ 						if (target.classList.contains('copilot-cta-button')) {
+ 							e.preventDefault();
+ 							e.stopPropagation();
 +
-+						// Prevent double-click from opening a new file
-+						this.copilotContent.addEventListener('dblclick', (e) => {
-+							e.preventDefault();
-+							e.stopPropagation();
-+						});
-+
-+						// Handle CTA button clicks to open Cline with prefilled text and auto-send
-+						this.copilotContent.addEventListener('click', (e) => {
-+							const target = e.target as HTMLElement;
-+							if (target.classList.contains('copilot-cta-button')) {
-+								e.preventDefault();
-+								e.stopPropagation();
-+
-+								// Check if this is the "Update Profiles Goals" button
-+								const action = target.getAttribute('data-action');
-+								if (action === 'openContextFiles') {
-+									// Open all context files
-+									this.openContextFiles(contextFiles);
-+									return;
-+								}
-+
-+								// Handle normal prompt buttons
-+								const prompt = target.getAttribute('data-prompt');
-+								if (prompt) {
-+									// First focus/open Cline sidebar, then add the text and send it
-+									this.commandService.executeCommand('claude-dev.SidebarProvider.focus').then(() => {
-+										// Add prompt to chat input (Cline will wait internally if provider not ready)
-+										this.commandService.executeCommand('cline.addToChatWithoutSelection', prompt).then(() => {
-+											// Auto-send the message after prefilling (small delay to ensure text is added)
-+											setTimeout(() => {
-+												this.commandService.executeCommand('cline.sendMessage').catch(err => {
-+													console.error('Failed to send message to Cline:', err);
-+												});
-+											}, 200);
-+										}).catch(err => {
-+											console.error('Failed to add prompt to Cline:', err);
-+										});
-+									}).catch(err => {
-+										console.error('Failed to open Cline:', err);
-+									});
-+								}
++							// Check if this is the "Update Profiles Goals" button
++							const action = target.getAttribute('data-action');
++							console.log('[Copilot] Button clicked, action:', action, 'target id:', target.id);
++							if (action === 'openContextFiles') {
++								console.log('[Copilot] Opening context files, count:', contextFiles.length);
++								// Open all context files
++								this.openContextFiles(contextFiles);
++								return;
 +							}
-+						});
-+					})
-+					.catch(err => {
-+						console.error('Failed to load Profiles Copilot welcome content:', err);
-+						// Fallback: show a simple message
-+						const fallback = append(this.copilotContent, $('p'));
-+						fallback.textContent = 'Welcome to Profiles Copilot! Start chatting in the sidebar to get started.';
-+					});
++
++							// Handle normal prompt buttons
+ 							const prompt = target.getAttribute('data-prompt');
+ 							if (prompt) {
+ 								// First focus/open Cline sidebar, then add the text and send it
+@@ -172,11 +233,20 @@ export class EditorGroupWatermark extend
+ 					});
+ 				})
+ 				.catch(err => {
+-					console.error('Failed to load Profiles Copilot welcome content:', err);
++					console.error('[Copilot] ========== FETCH ERROR ==========');
++					console.error('[Copilot] Failed to load Profiles Copilot welcome content:', err);
++					console.error('[Copilot] Error details:', err.message, err.stack);
+ 					// Fallback: show a simple message
+ 					const fallback = append(this.copilotContent, $('p'));
+ 					fallback.textContent = 'Welcome to Profiles Copilot! Start chatting in the sidebar to get started.';
+ 				});
++			}).catch(err => {
++				console.error('[Copilot] ========== CHECK CONTEXT FILES PROMISE ERROR ==========');
++				console.error('[Copilot] Error in checkContextFiles promise chain:', err);
++				console.error('[Copilot] Error details:', err.message, err.stack);
 +			});
-+		}
++		} else {
++			console.log('[Copilot] Profiles Copilot is DISABLED - context key not matched');
+ 		}
  
  		this.registerListeners();
- 
-@@ -188,6 +304,121 @@ export class EditorGroupWatermark extends Disposable {
+@@ -266,6 +336,144 @@ export class EditorGroupWatermark extend
  
  		return filteredEntries;
  	}
@@ -179,7 +168,9 @@ index e3b1dd55c69..03daebf3f54 100644
 +	 */
 +	private async checkContextFiles(): Promise<URI[]> {
 +		try {
++			console.log('[Copilot] ========== CHECK CONTEXT FILES START ==========');
 +			console.log('[Copilot] Checking for context files...');
++			console.log('[Copilot] Current platform - isWeb:', isWeb);
 +
 +			const allContextFiles: URI[] = [];
 +
@@ -191,6 +182,7 @@ index e3b1dd55c69..03daebf3f54 100644
 +				'/home/coder/project',          // code-server default user home
 +				'/root/project',                // Root user home
 +			];
++			console.log('[Copilot] Will check', containerPaths.length, 'container paths');
 +
 +			// Try each container path
 +			for (const dirPath of containerPaths) {
@@ -260,14 +252,22 @@ index e3b1dd55c69..03daebf3f54 100644
 +			}
 +
 +			if (allContextFiles.length > 0) {
++				console.log('[Copilot] ========== SUCCESS ==========');
 +				console.log('[Copilot] Total context files found:', allContextFiles.length);
++				console.log('[Copilot] Files:', allContextFiles.map(f => f.fsPath));
++				console.log('[Copilot] ========== CHECK CONTEXT FILES END ==========');
 +				return allContextFiles;
 +			}
 +
++			console.log('[Copilot] ========== NO FILES FOUND ==========');
 +			console.log('[Copilot] No context files found in any checked location');
++			console.log('[Copilot] ========== CHECK CONTEXT FILES END ==========');
 +			return [];
 +		} catch (error) {
-+			console.log('[Copilot] Error checking context files:', error);
++			console.error('[Copilot] ========== ERROR ==========');
++			console.error('[Copilot] Error checking context files:', error);
++			console.error('[Copilot] Error stack:', error instanceof Error ? error.stack : 'no stack');
++			console.error('[Copilot] ========== CHECK CONTEXT FILES END ==========');
 +			return [];
 +		}
 +	}
@@ -277,14 +277,26 @@ index e3b1dd55c69..03daebf3f54 100644
 +	 */
 +	private async openContextFiles(contextFiles: URI[]): Promise<void> {
 +		try {
-+			// Trust the URIs before opening to avoid the trust dialog
-+			await this.workspaceTrustService.setUrisTrust(contextFiles, true);
++			console.log('[Copilot] ========== OPEN CONTEXT FILES START ==========');
++			console.log('[Copilot] Opening', contextFiles.length, 'context files');
++			console.log('[Copilot] Files to open:', contextFiles.map(f => f.fsPath));
 +
-+			for (const fileUri of contextFiles) {
++			// Trust the URIs before opening to avoid the trust dialog
++			console.log('[Copilot] Setting trust for URIs...');
++			await this.workspaceTrustService.setUrisTrust(contextFiles, true);
++			console.log('[Copilot] Trust set successfully');
++
++			for (let i = 0; i < contextFiles.length; i++) {
++				const fileUri = contextFiles[i];
++				console.log(`[Copilot] Opening file ${i + 1}/${contextFiles.length}:`, fileUri.fsPath);
 +				await this.commandService.executeCommand('vscode.open', fileUri);
++				console.log(`[Copilot] File ${i + 1} opened successfully`);
 +			}
++			console.log('[Copilot] ========== ALL FILES OPENED SUCCESSFULLY ==========');
 +		} catch (error) {
-+			console.error('Failed to open context files:', error);
++			console.error('[Copilot] ========== ERROR OPENING FILES ==========');
++			console.error('[Copilot] Failed to open context files:', error);
++			console.error('[Copilot] Error stack:', error instanceof Error ? error.stack : 'no stack');
 +		}
 +	}
  }
