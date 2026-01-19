@@ -1,0 +1,34 @@
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+@@ -20,6 +20,7 @@ import { defaultKeybindingLabelStyles }
+ import { editorForeground, registerColor, transparent } from '../../../../platform/theme/common/colorRegistry.js';
+ import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
+ import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
++import { IProductService } from '../../../../platform/product/common/productService.js';
+ import { IsEnabledCoderGettingStarted } from '../../../common/contextkeys.js';
+ 
+ interface WatermarkEntry {
+@@ -96,7 +97,8 @@ export class EditorGroupWatermark extend
+ 		@IStorageService private readonly storageService: IStorageService,
+ 		@ICommandService private readonly commandService: ICommandService,
+ 		@IFileService private readonly fileService: IFileService,
+-		@IWorkspaceTrustManagementService private readonly workspaceTrustService: IWorkspaceTrustManagementService
++		@IWorkspaceTrustManagementService private readonly workspaceTrustService: IWorkspaceTrustManagementService,
++		@IProductService private readonly productService: IProductService
+ 	) {
+ 		super();
+ 
+@@ -133,8 +135,9 @@ export class EditorGroupWatermark extend
+ 				console.log('[Copilot] checkContextFiles completed, found:', contextFiles.length, 'files');
+ 				console.log('[Copilot] Context file paths:', contextFiles.map(f => f.fsPath));
+ 				// Load HTML content from file
+-				console.log('[Copilot] Fetching welcome HTML from: /_static/src/browser/media/copilot-welcome.html');
+-				fetch('/_static/src/browser/media/copilot-welcome.html')
++				const welcomeUrl = `${this.productService.rootEndpoint || '.'}/_static/src/browser/media/copilot-welcome.html`;
++				console.log('[Copilot] Fetching welcome HTML from:', welcomeUrl);
++				fetch(welcomeUrl)
+ 					.then(response => {
+ 						console.log('[Copilot] Fetch response status:', response.status, response.ok);
+ 						if (!response.ok) {
