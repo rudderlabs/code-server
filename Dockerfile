@@ -44,9 +44,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_1.3.1_arm64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.4.0-alpha.1_arm64.deb || apt-get install -f -y; \
   else \
-  dpkg -i code-server_1.3.1_amd64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.4.0-alpha.1_amd64.deb || apt-get install -f -y; \
   fi
 
 # Switch to codeuser for extension installation and MCP setup
