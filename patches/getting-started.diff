@@ -205,7 +205,7 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -373,6 +373,13 @@ export class WebClientServer {
+@@ -373,6 +373,17 @@ export class WebClientServer {
  			userDataPath: this._environmentService.userDataPath,
  			isEnabledFileDownloads: !this._environmentService.args['disable-file-downloads'],
  			isEnabledFileUploads: !this._environmentService.args['disable-file-uploads'],
@@ -215,6 +215,10 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 +				'workbench.tips.enabled': false,
 +				'workbench.welcomePage.walkthroughs.openOnInstall': false,
 +				'workbench.editor.empty.hint': 'hidden',
++				'window.menuBarVisibility': 'hidden',
++				'window.commandCenter': false,
++				'workbench.layoutControl.enabled': false,
++				'workbench.activityBar.location': 'hidden',
 +			},
  			_wrapWebWorkerExtHostInIframe,
  			developmentOptions: { enableSmokeTestDriver: this._environmentService.args['enable-smoke-test-driver'] ? true : undefined, logLevel: this._logService.getLevel() },
