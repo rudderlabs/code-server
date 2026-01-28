@@ -5,4 +5,5 @@
 !safe-bash
 !clinerules.md
 !requirements.txt
+!settings.json
 !src/browser/media/copilot-welcome.html

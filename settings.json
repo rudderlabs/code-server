@@ -1,0 +1,11 @@
+{
+  "security.workspace.trust.enabled": false,
+  "workbench.sideBar.location": "left",
+  "workbench.secondarySideBar.defaultVisibility": "visible",
+  "workbench.colorCustomizations": {
+    "sideBar.background": "#e9ebec",
+    "sideBarSectionHeader.background": "#e9ebec",
+    "editorGroupHeader.tabsBackground": "#e9ebec",
+    "editorGroup.border": "#c0c0c0"
+  }
+}
