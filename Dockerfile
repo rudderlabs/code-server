@@ -44,9 +44,9 @@ EOF
 
 # Download and install code-server from GitHub releases
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_1.4.0_arm64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.5.0_arm64.deb || apt-get install -f -y; \
   else \
-  dpkg -i code-server_1.4.0_amd64.deb || apt-get install -f -y; \
+  dpkg -i code-server_1.5.0_amd64.deb || apt-get install -f -y; \
   fi
 
 # Switch to codeuser for extension installation and MCP setup
@@ -66,7 +66,7 @@ COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/med
 USER codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone --branch v1.0.0 https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch v1.2.0 https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
