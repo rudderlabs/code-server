@@ -1,0 +1,359 @@
+name: Lint and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Cancel in-progress runs for pull requests when developers push
+# additional changes, and serialize builds in branches.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      ci: ${{ steps.filter.outputs.ci }}
+      code: ${{ steps.filter.outputs.code }}
+      deps: ${{ steps.filter.outputs.deps }}
+      docs: ${{ steps.filter.outputs.docs }}
+      helm: ${{ steps.filter.outputs.helm }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout repo
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Check changed files
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 #v3
+        id: filter
+        with:
+          filters: |
+            ci:
+              - ".github/**"
+              - "ci/**"
+            docs:
+              - "docs/**"
+              - "README.md"
+              - "CHANGELOG.md"
+            helm:
+              - "ci/helm-chart/**"
+            code:
+              - "src/**"
+              - "test/**"
+            deps:
+              - "lib/**"
+              - "patches/**"
+              - "package-lock.json"
+              - "test/package-lock.json"
+      - id: debug
+        run: |
+          echo "${{ toJSON(steps.filter )}}"
+
+  prettier:
+    name: Run prettier check
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npx prettier --check .
+
+  doctoc:
+    name: Doctoc markdown files
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npm run doctoc
+
+  lint-helm:
+    name: Lint Helm chart
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.helm == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          token: ${{ secrets.PAT }}
+      - run: helm plugin install https://github.com/instrumenta/helm-kubeval
+      - run: helm kubeval ci/helm-chart
+
+  lint-ts:
+    name: Lint TypeScript files
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npm run lint:ts
+
+  lint-actions:
+    name: Lint GitHub Actions
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.ci == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout repo
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - name: Check workflow files
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.1
+          ./actionlint -color -shellcheck= -ignore "set-output"
+        shell: bash
+
+  test-unit:
+    name: Run unit tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npm run test:unit
+      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        if: success()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  build-vscode:
+    name: Build code-server
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      DISABLE_V8_COMPILE_CACHE: 1
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          submodules: true
+      - run: sudo apt update && sudo apt install -y libkrb5-dev
+      - uses: awalsh128/cache-apt-pkgs-action@4c82c3ccdc1344ee11e9775dbdbdf43aa8a5614e
+        with:
+          packages: quilt
+          version: 1.0
+      - run: quilt push -a
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+      # Get Code's git hash. When this changes it means the content is
+      # different and we need to rebuild.
+      - name: Get latest lib/vscode rev
+        id: vscode-rev
+        run: echo "rev=$(git rev-parse HEAD:./lib/vscode)" >> $GITHUB_OUTPUT
+      # We need to rebuild when we have a new version of Code, when any of
+      # the patches changed, or when the code-server version changes (since
+      # it gets embedded into the code). Use VSCODE_CACHE_VERSION to
+      # force a rebuild.
+      - name: Fetch prebuilt Code package from cache
+        id: cache-vscode
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: lib/vscode-reh-web-*
+          key: vscode-reh-package-${{ secrets.VSCODE_CACHE_VERSION }}-${{ steps.vscode-rev.outputs.rev }}-${{ hashFiles('patches/*.diff', 'ci/build/build-vscode.sh') }}
+      - name: Build vscode
+        env:
+          VERSION: "0.0.0"
+        if: steps.cache-vscode.outputs.cache-hit != 'true'
+        run: |
+          pushd lib/vscode
+          npm ci
+          popd
+          npm run build:vscode
+      # The release package does not contain any native modules
+      # and is neutral to architecture/os/libc version.
+      - run: npm run release
+        if: success()
+      # https://github.com/actions/upload-artifact/issues/38
+      - run: tar -czf package.tar.gz release
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-package
+          path: ./package.tar.gz
+
+  test-e2e:
+    name: Run e2e tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    needs: [changes, build-vscode]
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - run: sudo apt update && sudo apt install -y libkrb5-dev
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: npm-package
+      - run: tar -xzf package.tar.gz
+      - run: cd release && npm install --unsafe-perm --omit=dev
+      - name: Install Playwright OS dependencies
+        run: |
+          ./test/node_modules/.bin/playwright install-deps
+          ./test/node_modules/.bin/playwright install
+      - run: CODE_SERVER_TEST_ENTRY=./release npm run test:e2e
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: failed-test-videos
+          path: ./test/test-results
+      - run: rm -rf ./release ./test/test-results
+
+  test-e2e-proxy:
+    name: Run e2e tests behind proxy
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    needs: [changes, build-vscode]
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deps == 'true'
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - run: sudo apt update && sudo apt install -y libkrb5-dev
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: npm-package
+      - run: tar -xzf package.tar.gz
+      - run: cd release && npm install --unsafe-perm --omit=dev
+      - name: Install Playwright OS dependencies
+        run: |
+          ./test/node_modules/.bin/playwright install-deps
+          ./test/node_modules/.bin/playwright install
+      - name: Cache Caddy
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: caddy-cache
+        with:
+          path: |
+            ~/.cache/caddy
+          key: cache-caddy-2.5.2
+      - name: Install Caddy
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        if: steps.caddy-cache.outputs.cache-hit != 'true'
+        run: |
+          gh release download v2.5.2 --repo caddyserver/caddy --pattern "caddy_2.5.2_linux_amd64.tar.gz"
+          mkdir -p ~/.cache/caddy
+          tar -xzf caddy_2.5.2_linux_amd64.tar.gz --directory ~/.cache/caddy
+      - run: ~/.cache/caddy/caddy start --config ./ci/Caddyfile
+      - run: CODE_SERVER_TEST_ENTRY=./release npm run test:e2e:proxy
+      - run: ~/.cache/caddy/caddy stop --config ./ci/Caddyfile
+        if: always()
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: failed-test-videos-proxy
+          path: ./test/test-results
