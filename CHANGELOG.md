@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.7.1](https://github.com/rudderlabs/code-server/compare/v1.7.0...v1.7.1) (2026-02-05)
+
+
+### Bug Fixes
+
+* wrong token usage in release please ([b583883](https://github.com/rudderlabs/code-server/commit/b583883dc50a32da925eedd61e160ab747f3f60c))
+
 ## [1.7.0](https://github.com/rudderlabs/code-server/compare/v1.6.0...v1.7.0) (2026-02-05)
 
 
