@@ -307,3 +307,42 @@ jobs:
         with:
           name: npm-release-package
           path: ./package.tar.gz
+
+  upload-release-assets:
+    name: Upload assets to GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - package-linux-cross
+      - package-macos-amd64
+      - package-macos-arm64
+      - npm-package
+    steps:
+      - name: Download all release packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-packages-*
+          path: ./release-packages/
+          merge-multiple: true
+
+      - name: Download npm package
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-release-final
+          path: ./release-packages/
+
+      - name: List downloaded files
+        run: |
+          echo "Release packages:"
+          ls -la ./release-packages/
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
+        with:
+          tag_name: ${{ inputs.version }}
+          files: |
+            ./release-packages/*.deb
+            ./release-packages/*.rpm
+            ./release-packages/*.tar.gz
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

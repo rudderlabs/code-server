@@ -1,5 +1,7 @@
 name: build-docker
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       docker_image_version:
@@ -7,10 +9,9 @@ on:
         type: string
         required: true
       run_id:
-        description: The workflow run ID to download artifacts from
+        description: The workflow run ID to download artifacts from (required for workflow_dispatch)
         type: string
-        required: true
-        default: "21431124031"
+        required: false
 
 permissions:
   id-token: write # Required for OIDC
@@ -26,8 +27,9 @@ env:
   ecr_registry: 422074288268.dkr.ecr.us-east-1.amazonaws.com
   docker_images: |
     name=422074288268.dkr.ecr.us-east-1.amazonaws.com/rudderstack/profiles-code-server
+  # For release events, use the release tag; for workflow_dispatch, use the input
   docker_tags: |
-    type=raw,value=${{ inputs.docker_image_version || 'latest' }}
+    type=raw,value=${{ github.event.release.tag_name || inputs.docker_image_version || 'latest' }}
 
 jobs:
   metadata:
@@ -79,14 +81,31 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Download npm release package
+      # Download from GitHub Release assets when triggered by release event
+      - name: Download release assets from GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Downloading assets from release: ${{ github.event.release.tag_name }}"
+          mkdir -p release-packages
+          gh release download "${{ github.event.release.tag_name }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "*.deb" \
+            --dir ./release-packages/ || echo "No .deb files found in release"
+          ls -la ./release-packages/
+
+      # Download from workflow artifacts when triggered by workflow_dispatch
+      - name: Download npm release package (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_id != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: npm-release-package
           run-id: ${{ inputs.run_id }}
           github-token: ${{ secrets.PAT }}
 
-      - name: Download all release packages (optional)
+      - name: Download all release packages (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_id != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: release-packages-*
@@ -95,13 +114,13 @@ jobs:
           run-id: ${{ inputs.run_id }}
           github-token: ${{ secrets.PAT }}
         continue-on-error: true
+
       - name: List downloaded files
         run: |
           ls -la
           ls -la release-packages/ || true
 
       - name: Upload artifacts for build job
-        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: code-server-packages

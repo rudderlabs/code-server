@@ -1,0 +1,196 @@
+name: Docker Preview
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - 'settings.json'
+      - 'clinerules.md'
+      - 'src/browser/media/**'
+      - '.github/workflows/docker-preview.yml'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  ecr_registry: 422074288268.dkr.ecr.us-east-1.amazonaws.com
+  docker_image: 422074288268.dkr.ecr.us-east-1.amazonaws.com/rudderstack/profiles-code-server
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          lfs: true
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
+        with:
+          images: ${{ env.docker_image }}
+          tags: |
+            type=raw,value=pr-${{ github.event.pull_request.number }}
+
+      - name: Download Cline Extension
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          CLINE_REF=$(cat .cline-version | tr -d '[:space:]')
+          echo "Cline reference: ${CLINE_REF}"
+
+          if [[ "$CLINE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Downloading cline-${CLINE_REF}.vsix from release v${CLINE_REF}..."
+            gh release download "v${CLINE_REF}" \
+              --repo rudderlabs/cline \
+              --pattern "cline-${CLINE_REF}.vsix" \
+              --output claude.vsix
+          else
+            echo "Fetching latest workflow run for branch ${CLINE_REF}..."
+            RUN_DATA=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/rudderlabs/cline/actions/workflows/build-artifacts.yml/runs?branch=${CLINE_REF}&status=success&per_page=1" \
+              --jq '.workflow_runs[0] | select(.id != null) | {id: .id}')
+
+            if [ -z "$RUN_DATA" ] || [ "$RUN_DATA" = "null" ]; then
+              echo "Error: No successful workflow runs found for branch ${CLINE_REF}"
+              exit 1
+            fi
+
+            RUN_ID=$(echo "$RUN_DATA" | jq -r '.id')
+            gh run download ${RUN_ID} \
+              --repo rudderlabs/cline \
+              --name cline-vsix \
+              --dir ./cline-artifact
+
+            VSIX_FILE=$(find ./cline-artifact -name "*.vsix" -type f | head -1)
+            mv "$VSIX_FILE" claude.vsix
+            rm -rf ./cline-artifact
+          fi
+
+          ls -lh claude.vsix
+
+      - name: Download latest release .deb packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p release-packages
+          # Download from latest release for preview builds
+          LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName')
+          if [ -n "$LATEST_TAG" ]; then
+            echo "Downloading .deb packages from release: $LATEST_TAG"
+            gh release download "$LATEST_TAG" \
+              --repo "${{ github.repository }}" \
+              --pattern "*.deb" \
+              --dir ./release-packages/ || echo "No .deb files found"
+          else
+            echo "No releases found, build may fail"
+          fi
+          ls -la ./release-packages/
+
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          aws-region: ${{ vars.AWS_ECR_REGION }}
+          role-to-assume: ${{ vars.AWS_ECR_IAM_ROLE_ARN }}
+          role-session-name: ${{ github.event.repository.name }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+
+      - name: Build and push (amd64 only for speed)
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TARGETARCH=amd64
+            GITHUB_PAT=${{ secrets.PAT }}
+            RUDDERSTACK_PAT=${{ secrets.RUDDERSTACK_PAT }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  comment-on-pr:
+    needs: build-preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - name: Comment on PR
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const image = `${{ env.docker_image }}:pr-${{ github.event.pull_request.number }}`;
+            const body = `## Docker Preview Image Ready
+
+            A preview Docker image has been built for this PR:
+
+            \`\`\`bash
+            docker pull ${image}
+            \`\`\`
+
+            **Image Details:**
+            - Tag: \`pr-${{ github.event.pull_request.number }}\`
+            - Platform: \`linux/amd64\` (preview builds are amd64 only for speed)
+            - Registry: ECR
+
+            **Test the image:**
+            \`\`\`bash
+            docker run --rm -p 8080:8080 ${image}
+            \`\`\`
+
+            > **Note:** This preview image will be overwritten on subsequent pushes to this PR.
+            `;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Docker Preview Image Ready')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
