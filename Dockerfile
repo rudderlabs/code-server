@@ -46,11 +46,7 @@ EOF
 # x-release-please-start-version
 ARG CODE_SERVER_VERSION=1.6.0
 # x-release-please-end
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-  dpkg -i code-server_*_arm64.deb || apt-get install -f -y; \
-  else \
-  dpkg -i code-server_*_amd64.deb || apt-get install -f -y; \
-  fi
+RUN dpkg -i code-server_*_${TARGETARCH}.deb || apt-get install -f -y
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser

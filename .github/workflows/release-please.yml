@@ -37,29 +37,5 @@ jobs:
           echo "Tag: ${{ steps.release.outputs.tag_name }}"
           echo "Version: ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}"
           echo "SHA: ${{ steps.release.outputs.sha }}"
-
-  trigger-release-build:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
-
-      - name: Trigger release workflow
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          github-token: ${{ secrets.PAT }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'release.yaml',
-              ref: 'main',
-              inputs: {
-                version: '${{ needs.release-please.outputs.tag_name }}'
-              }
-            });
-            console.log('Triggered release.yaml workflow with version: ${{ needs.release-please.outputs.tag_name }}');
+          echo ""
+          echo "The build-docker.yaml workflow will be automatically triggered by the release event."
