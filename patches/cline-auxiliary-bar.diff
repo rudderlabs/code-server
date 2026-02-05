@@ -4,11 +4,12 @@ This patch modifies VS Code to:
 1. Register Cline's view container in the AuxiliaryBar (secondary sidebar on the right)
    instead of the primary Sidebar (left side)
 2. Set the secondary sidebar default width to 40% of the screen (max 600px)
+3. Force the auxiliary bar to be visible on every page load (overrides stored state)
 
-Index: b/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
+Index: code-server/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
 ===================================================================
---- a/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
-+++ b/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
+--- code-server.orig/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
++++ code-server/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
 @@ -308,7 +308,15 @@ class ViewsExtensionHandler implements I
  				}
  				switch (key) {
@@ -26,10 +27,10 @@ Index: b/lib/vscode/src/vs/workbench/api/browser/viewsExtensionPoint.ts
  						break;
  					case 'panel':
  						panelOrder = this.registerCustomViewContainers(value, description, panelOrder, existingViewContainers, ViewContainerLocation.Panel);
-Index: b/lib/vscode/src/vs/workbench/browser/layout.ts
+Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
 ===================================================================
---- a/lib/vscode/src/vs/workbench/browser/layout.ts
-+++ b/lib/vscode/src/vs/workbench/browser/layout.ts
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/layout.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/layout.ts
 @@ -2867,7 +2867,8 @@ class LayoutStateModel extends Disposabl
  		const mainContainerDimension = configuration.mainContainerDimension;
  		LayoutStateKeys.SIDEBAR_SIZE.defaultValue = Math.min(300, mainContainerDimension.width / 4);
@@ -40,3 +41,13 @@ Index: b/lib/vscode/src/vs/workbench/browser/layout.ts
  		LayoutStateKeys.AUXILIARYBAR_HIDDEN.defaultValue = (() => {
  
  			// TODO@bpasero: lots of hacks here to not force open the auxiliary sidebar
+@@ -2913,6 +2914,9 @@ class LayoutStateModel extends Disposabl
+ 			}
+ 		}
+ 
++		// Force auxiliary bar to be visible on every page load for Cline
++		this.stateCache.set(LayoutStateKeys.AUXILIARYBAR_HIDDEN.name, false);
++
+ 		// Apply all overrides
+ 		this.applyOverrides(configuration);
+ 
