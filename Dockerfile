@@ -30,8 +30,8 @@ RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 # RESTRICTED SHELL SECURITY (lshell)
 # ============================================
 
-# Install lshell
-RUN pip3 install lshell || (echo "FATAL: lshell installation failed" && exit 1)
+# Install lshell (PyPI package name is 'limited-shell')
+RUN pip3 install limited-shell || (echo "FATAL: lshell installation failed" && exit 1)
 
 # Verify lshell is installed
 RUN test -f /usr/local/bin/lshell || (echo "FATAL: lshell not found" && exit 1)
