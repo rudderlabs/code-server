@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.7.2](https://github.com/rudderlabs/code-server/compare/v1.7.1...v1.7.2) (2026-02-09)
+
+
+### Miscellaneous Chores
+
+* update Cline to 6.9.0 ([#125](https://github.com/rudderlabs/code-server/issues/125)) ([0d456b4](https://github.com/rudderlabs/code-server/commit/0d456b4ad4d90f9e3951d8c7fb8622ac4c83d0e6))
+
 ## [1.7.1](https://github.com/rudderlabs/code-server/compare/v1.7.0...v1.7.1) (2026-02-05)
 
 

@@ -44,7 +44,7 @@ EOF
 
 # Install code-server from .deb package
 # x-release-please-start-version
-ARG CODE_SERVER_VERSION=1.7.1
+ARG CODE_SERVER_VERSION=1.7.2
 # x-release-please-end
 RUN dpkg -i code-server_*_${TARGETARCH}.deb || apt-get install -f -y
 
