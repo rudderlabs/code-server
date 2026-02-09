@@ -10,8 +10,8 @@ RUN apt-get update && \
   apt-get install -y python3.10 python3-pip git curl wget sudo && \
   apt-get clean
 
-# Create a non-root user
-RUN useradd -m -s /bin/bash codeuser
+# Create a non-root user with RESTRICTED SHELL (lshell)
+RUN useradd -m -s /usr/local/bin/lshell codeuser
 
 # Create project directory
 RUN mkdir -p /home/codeuser/project
@@ -25,6 +25,24 @@ COPY requirements.txt .
 
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
+
+# ============================================
+# RESTRICTED SHELL SECURITY (lshell)
+# ============================================
+
+# Install lshell
+RUN pip3 install lshell || (echo "FATAL: lshell installation failed" && exit 1)
+
+# Verify lshell is installed
+RUN test -f /usr/local/bin/lshell || (echo "FATAL: lshell not found" && exit 1)
+
+# Create log directory
+RUN mkdir -p /var/log/lshell && chmod 755 /var/log/lshell
+
+# Copy lshell configuration from external file
+COPY config/lshell.conf /etc/lshell.conf
+
+# ============================================
 
 COPY release-packages/* .
 COPY claude.vsix /claude.vsix
