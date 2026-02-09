@@ -37,7 +37,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
  		LayoutStateKeys.SIDEBAR_HIDDEN.defaultValue = workbenchState === WorkbenchState.EMPTY;
 -		LayoutStateKeys.AUXILIARYBAR_SIZE.defaultValue = Math.min(300, mainContainerDimension.width / 4);
 +		// Set auxiliary bar (secondary sidebar) to 40% width for Cline
-+		LayoutStateKeys.AUXILIARYBAR_SIZE.defaultValue = Math.min(600, mainContainerDimension.width * 0.4);
++		LayoutStateKeys.AUXILIARYBAR_SIZE.defaultValue = Math.min(600, mainContainerDimension.width * 0.3);
  		LayoutStateKeys.AUXILIARYBAR_HIDDEN.defaultValue = (() => {
  
  			// TODO@bpasero: lots of hacks here to not force open the auxiliary sidebar
