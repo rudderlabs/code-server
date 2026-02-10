@@ -140,6 +140,42 @@ fi
 }
 EOF
 
+# ============================================
+# SECURITY: Remove Unused Shells (Defense in Depth)
+# ============================================
+# Remove all shells except lshell to prevent bypass attacks
+# This must be done LAST, after all RUN commands complete
+
+USER root
+
+# Backup lshell before removing shells
+RUN cp /usr/local/bin/lshell /tmp/lshell.backup
+
+# Remove bash and other shell packages
+RUN apt-get remove --purge -y bash bash-completion 2>/dev/null || true
+
+# Remove shell binaries (some may be from base image, not packages)
+RUN rm -f /bin/bash /usr/bin/bash \
+           /bin/sh /usr/bin/sh \
+           /bin/dash /usr/bin/dash \
+           /bin/rbash /usr/bin/rbash 2>/dev/null || true
+
+# Create minimal /bin/sh symlink to lshell (some scripts expect /bin/sh to exist)
+RUN ln -sf /usr/local/bin/lshell /bin/sh
+
+# Restore lshell if it was accidentally removed
+RUN test -f /usr/local/bin/lshell || cp /tmp/lshell.backup /usr/local/bin/lshell
+
+# Verify lshell still works
+RUN /usr/local/bin/lshell --version || echo "WARNING: lshell may not be working"
+
+# Remove backup
+RUN rm -f /tmp/lshell.backup
+
+USER codeuser
+
+# ============================================
+
 WORKDIR /home/codeuser/project
 
 EXPOSE 8080
