@@ -145,6 +145,9 @@ EOF
 # ============================================
 # Remove all shells except lshell to prevent bypass attacks
 # This must be done LAST, after all RUN commands complete
+# NOTE: After this step, no more RUN commands should be added!
+#       Docker's RUN uses /bin/sh which will now point to lshell
+#       lshell is not POSIX-compatible and won't work for RUN commands
 
 USER root
 
@@ -156,9 +159,7 @@ RUN rm -f /bin/bash /usr/bin/bash \
     rm -f /bin/sh /usr/bin/sh && \
     ln -sf /usr/local/bin/lshell /bin/sh
 
-# Verify lshell still works
-RUN /usr/local/bin/lshell --version || echo "WARNING: lshell verification failed"
-
+# Switch back to codeuser (no RUN commands after this point!)
 USER codeuser
 
 # ============================================
