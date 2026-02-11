@@ -148,14 +148,13 @@ EOF
 
 USER root
 
-# Remove shell binaries directly (works regardless of how they were installed)
+# Remove shell binaries and create symlink in ONE command
+# (Must be combined because Docker uses /bin/sh to run commands)
 RUN rm -f /bin/bash /usr/bin/bash \
-           /bin/sh /usr/bin/sh \
            /bin/dash /usr/bin/dash \
-           /bin/rbash /usr/bin/rbash || true
-
-# Create /bin/sh symlink to lshell (some scripts expect /bin/sh to exist)
-RUN ln -sf /usr/local/bin/lshell /bin/sh
+           /bin/rbash /usr/bin/rbash && \
+    rm -f /bin/sh /usr/bin/sh && \
+    ln -sf /usr/local/bin/lshell /bin/sh
 
 # Verify lshell still works
 RUN /usr/local/bin/lshell --version || echo "WARNING: lshell verification failed"
