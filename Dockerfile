@@ -107,7 +107,7 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "inheritEnv": ["RUDDERSTACK_PAT","RAG_ADMIN_USERNAME","RAG_ADMIN_PASSWORD","RETRIEVAL_API_URL","IS_CLOUD_BASED"], "autoApprove": ["get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "env": { "SHELL": "/bin/bash" }, "inheritEnv": ["RUDDERSTACK_PAT","RAG_ADMIN_USERNAME","RAG_ADMIN_PASSWORD","RETRIEVAL_API_URL","IS_CLOUD_BASED"], "autoApprove": ["get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
 # Copy VS Code settings for sidebar layout and theme customizations
 # Set proper ownership and permissions
