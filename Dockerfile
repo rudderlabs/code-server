@@ -113,6 +113,33 @@ RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/
 # Set proper ownership and permissions
 USER root
 COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-server/User/settings.json
+
+# Create settings.json with terminal profile configuration
+RUN python3 <<EOF
+import json
+import os
+
+settings_path = '/home/codeuser/.local/share/code-server/User/settings.json'
+settings = {
+    'terminal.integrated.defaultProfile.linux': 'lshell',
+    'terminal.integrated.profiles.linux': {
+        'lshell': {'path': '/usr/local/bin/lshell'},
+        'bash': None,
+        'zsh': None,
+        'sh': None,
+        'dash': None,
+        'fish': None,
+        'csh': None,
+        'ksh': None
+    }
+}
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+
+os.chown(settings_path, 1000, 1000)
+EOF
+
 RUN chown -R codeuser:codeuser /home/codeuser
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
