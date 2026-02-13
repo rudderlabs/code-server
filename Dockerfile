@@ -114,30 +114,35 @@ RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/
 USER root
 COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-server/User/settings.json
 
-# Create settings.json with terminal profile configuration
+# ============================================
+# TERMINAL SECURITY: Restrict terminal profiles
+# ============================================
+# 1. Remove all shells except lshell from /etc/shells so code-server
+#    won't auto-detect them for the terminal profile picker.
+#    bash binary still exists (needed for scripts/startup) but users can't select it.
+# 2. Merge terminal settings into settings.json to set lshell as default.
+RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
+    echo "/usr/local/bin/lshell" >> /etc/shells
+
+# Merge terminal profile settings into the existing settings.json
 RUN python3 <<EOF
 import json
-import os
-
 settings_path = '/home/codeuser/.local/share/code-server/User/settings.json'
-settings = {
-    'terminal.integrated.defaultProfile.linux': 'lshell',
-    'terminal.integrated.profiles.linux': {
-        'lshell': {'path': '/usr/local/bin/lshell'},
-        'bash': None,
-        'zsh': None,
-        'sh': None,
-        'dash': None,
-        'fish': None,
-        'csh': None,
-        'ksh': None
-    }
+with open(settings_path, 'r') as f:
+    settings = json.load(f)
+settings['terminal.integrated.defaultProfile.linux'] = 'lshell'
+settings['terminal.integrated.profiles.linux'] = {
+    'lshell': {'path': '/usr/local/bin/lshell'},
+    'bash': None,
+    'zsh': None,
+    'sh': None,
+    'dash': None,
+    'fish': None,
+    'csh': None,
+    'ksh': None
 }
-
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
-
-os.chown(settings_path, 1000, 1000)
 EOF
 
 RUN chown -R codeuser:codeuser /home/codeuser
