@@ -117,35 +117,21 @@ COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-se
 # ============================================
 # TERMINAL SECURITY: Restrict terminal profiles
 # ============================================
-# 1. Remove all shells except lshell from /etc/shells so code-server
-#    won't auto-detect them for the terminal profile picker.
-#    bash binary still exists (needed for scripts/startup) but users can't select it.
-# 2. Merge terminal settings into settings.json to set lshell as default.
+# Remove all shells except lshell from /etc/shells so code-server
+# won't auto-detect them for the terminal profile picker.
+# Terminal profile restrictions are in settings.json (copied above).
+# Both files are owned by root and read-only for codeuser to prevent
+# users from re-enabling bash by editing these files.
 RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
-    echo "/usr/local/bin/lshell" >> /etc/shells
-
-# Merge terminal profile settings into the existing settings.json
-RUN python3 <<EOF
-import json
-settings_path = '/home/codeuser/.local/share/code-server/User/settings.json'
-with open(settings_path, 'r') as f:
-    settings = json.load(f)
-settings['terminal.integrated.defaultProfile.linux'] = 'lshell'
-settings['terminal.integrated.profiles.linux'] = {
-    'lshell': {'path': '/usr/local/bin/lshell'},
-    'bash': None,
-    'zsh': None,
-    'sh': None,
-    'dash': None,
-    'fish': None,
-    'csh': None,
-    'ksh': None
-}
-with open(settings_path, 'w') as f:
-    json.dump(settings, f, indent=2)
-EOF
+    echo "/usr/local/bin/lshell" >> /etc/shells && \
+    chmod 644 /etc/shells && chown root:root /etc/shells
 
 RUN chown -R codeuser:codeuser /home/codeuser
+
+# Lock settings.json AFTER chown -R (otherwise chown -R would undo the lock)
+# Root-owned, read-only for codeuser — prevents re-enabling bash via UI or file edits.
+RUN chown root:root /home/codeuser/.local/share/code-server/User/settings.json && \
+    chmod 644 /home/codeuser/.local/share/code-server/User/settings.json
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb

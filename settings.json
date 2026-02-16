@@ -7,5 +7,18 @@
     "sideBarSectionHeader.background": "#e9ebec",
     "editorGroupHeader.tabsBackground": "#e9ebec",
     "editorGroup.border": "#c0c0c0"
+  },
+  "terminal.integrated.defaultProfile.linux": "lshell",
+  "terminal.integrated.profiles.linux": {
+    "lshell": {
+      "path": "/usr/local/bin/lshell"
+    },
+    "bash": null,
+    "zsh": null,
+    "sh": null,
+    "dash": null,
+    "fish": null,
+    "csh": null,
+    "ksh": null
   }
 }
