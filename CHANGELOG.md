@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.8.1](https://github.com/rudderlabs/code-server/compare/v1.8.0...v1.8.1) (2026-02-16)
+
+
+### Bug Fixes
+
+* seed cline as active auxiliary bar view in workspace storage ([#130](https://github.com/rudderlabs/code-server/issues/130)) ([bb7486a](https://github.com/rudderlabs/code-server/commit/bb7486ab78dd85a584e4f9c7ff67a696e8731a4b))
+
 ## [1.8.0](https://github.com/rudderlabs/code-server/compare/v1.7.2...v1.8.0) (2026-02-16)
 
 
