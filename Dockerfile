@@ -10,8 +10,43 @@ RUN apt-get update && \
   apt-get install -y python3.10 python3-pip git curl wget sudo && \
   apt-get clean
 
-# Create a non-root user
-RUN useradd -m -s /bin/bash codeuser
+# Copy requirements.txt first
+COPY requirements.txt .
+
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
+
+# ============================================
+# RESTRICTED SHELL SECURITY (lshell)
+# ============================================
+
+# Install lshell FIRST (PyPI package name is 'limited-shell')
+RUN pip3 install limited-shell==0.10.1 || (echo "FATAL: lshell installation failed" && exit 1)
+
+# Verify lshell is installed
+RUN test -f /usr/local/bin/lshell || (echo "FATAL: lshell not found" && exit 1)
+
+# Create log directory with proper permissions
+RUN mkdir -p /var/log/lshell && chmod 755 /var/log/lshell
+
+# Copy lshell configuration from external file
+COPY config/lshell.conf /etc/lshell.conf
+
+# Validate lshell configuration syntax
+RUN python3 -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/lshell.conf')" || (echo "FATAL: Invalid lshell.conf syntax" && exit 1)
+
+# Set proper permissions on config file
+RUN chmod 644 /etc/lshell.conf
+
+# ============================================
+# NOW create user with lshell (shell exists now)
+# ============================================
+
+# Create a non-root user with RESTRICTED SHELL (lshell)
+RUN useradd -m -s /usr/local/bin/lshell codeuser
+
+# Fix log directory ownership for codeuser
+RUN chown -R codeuser:codeuser /var/log/lshell/
 
 # Create project directory
 RUN mkdir -p /home/codeuser/project
@@ -20,11 +55,7 @@ RUN mkdir -p /home/codeuser/project
 RUN mkdir -p /home/codeuser/.pb && \
   touch /home/codeuser/.pb/siteconfig.yaml
 
-# Copy requirements.txt first
-COPY requirements.txt .
-
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
+# ============================================
 
 COPY release-packages/* .
 COPY claude.vsix /claude.vsix
@@ -76,13 +107,31 @@ RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
-RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "inheritEnv": ["RUDDERSTACK_PAT","RAG_ADMIN_USERNAME","RAG_ADMIN_PASSWORD","RETRIEVAL_API_URL","IS_CLOUD_BASED"], "autoApprove": ["get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/scripts/start.sh", "args": [], "env": { "SHELL": "/bin/bash" }, "inheritEnv": ["RUDDERSTACK_PAT","RAG_ADMIN_USERNAME","RAG_ADMIN_PASSWORD","RETRIEVAL_API_URL","IS_CLOUD_BASED"], "autoApprove": ["get_existing_connections","search_profiles_docs","initialize_warehouse_connection","run_query","input_table_suggestions","describe_table","get_profiles_output_details","setup_new_profiles_project","evaluate_eligible_user_filters","validate_propensity_model_config"] }}}' > /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
 
 # Copy VS Code settings for sidebar layout and theme customizations
 # Set proper ownership and permissions
 USER root
 COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-server/User/settings.json
+
+# ============================================
+# TERMINAL SECURITY: Restrict terminal profiles
+# ============================================
+# Remove all shells except lshell from /etc/shells so code-server
+# won't auto-detect them for the terminal profile picker.
+# Terminal profile restrictions are in settings.json (copied above).
+# Both files are owned by root and read-only for codeuser to prevent
+# users from re-enabling bash by editing these files.
+RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
+    echo "/usr/local/bin/lshell" >> /etc/shells && \
+    chmod 644 /etc/shells && chown root:root /etc/shells
+
 RUN chown -R codeuser:codeuser /home/codeuser
+
+# Lock settings.json AFTER chown -R (otherwise chown -R would undo the lock)
+# Root-owned, read-only for codeuser — prevents re-enabling bash via UI or file edits.
+RUN chown root:root /home/codeuser/.local/share/code-server/User/settings.json && \
+    chmod 644 /home/codeuser/.local/share/code-server/User/settings.json
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb

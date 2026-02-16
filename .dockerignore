@@ -1,6 +1,7 @@
 **
 !release-packages
 !ci
+!config
 !*.vsix
 !safe-bash
 !clinerules.md
