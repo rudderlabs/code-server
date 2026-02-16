@@ -1,0 +1,13 @@
+Index: code-server/lib/vscode/src/vs/workbench/services/storage/browser/storageService.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/services/storage/browser/storageService.ts
++++ code-server/lib/vscode/src/vs/workbench/services/storage/browser/storageService.ts
+@@ -130,6 +130,8 @@ export class BrowserStorageService exten
+ 
+ 		await this.workspaceStorage.init();
+ 
++		this.workspaceStorage.set('workbench.auxiliarybar.activepanelid', 'workbench.view.extension.claude-dev-ActivityBar');
++
+ 		this.updateIsNew(this.workspaceStorage);
+ 	}
+ 

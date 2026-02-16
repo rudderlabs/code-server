@@ -131,7 +131,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
-@@ -71,6 +71,202 @@
+@@ -71,6 +71,203 @@
  	background-image: url('./letterpress-hcDark.svg');
  }
  
@@ -329,6 +329,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 +	align-items: stretch;
 +	justify-content: flex-start;
 +	overflow: hidden;
++	background: #f9fafb;
 +}
 +
  .monaco-workbench .part.editor > .content:not(.empty) .editor-group-container > .editor-group-watermark > .shortcuts,
