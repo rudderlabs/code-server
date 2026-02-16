@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.8.0](https://github.com/rudderlabs/code-server/compare/v1.7.2...v1.8.0) (2026-02-16)
+
+
+### Features
+
+* move to restricted terminal ([#126](https://github.com/rudderlabs/code-server/issues/126)) ([62b2f98](https://github.com/rudderlabs/code-server/commit/62b2f98263955e4b6d915b6cbc3948a8d84b5579))
+
+
+### Miscellaneous Chores
+
+* update Cline to 6.10.0 ([#128](https://github.com/rudderlabs/code-server/issues/128)) ([ecdd5d7](https://github.com/rudderlabs/code-server/commit/ecdd5d74cfe4b28cec8351a4c6a0c02f93f7019e))
+
 ## [1.7.2](https://github.com/rudderlabs/code-server/compare/v1.7.1...v1.7.2) (2026-02-09)
 
 
