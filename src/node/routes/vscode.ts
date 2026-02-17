@@ -84,9 +84,6 @@ let vscodeServerPromise: Promise<IVSCodeServerAPI> | undefined
 // without first calling and awaiting `ensureCodeServerLoaded`.
 let vscodeServer: IVSCodeServerAPI | undefined
 
-// Ensure session start is tracked only once even with concurrent requests.
-let sessionStartTracked = false
-
 /**
  * Ensure the VS Code server is loaded.
  */
@@ -99,14 +96,13 @@ export const ensureVSCodeLoaded = async (
     return next()
   }
   if (!vscodeServerPromise) {
-    vscodeServerPromise = loadVSCode(req)
+    vscodeServerPromise = loadVSCode(req).then((server) => {
+      trackSessionStarted()
+      return server
+    })
   }
   try {
     vscodeServer = await vscodeServerPromise
-    if (!sessionStartTracked) {
-      sessionStartTracked = true
-      trackSessionStarted()
-    }
   } catch (error) {
     vscodeServerPromise = undefined // Unset so we can try again.
     logError(logger, "CodeServerRouteWrapper", error)
