@@ -571,7 +571,6 @@ jobs:
           build-args: |
             TARGETARCH=${{ matrix.arch }}
             GITHUB_PAT=${{ secrets.PAT }}
-            RUDDERSTACK_PAT=${{ secrets.RUDDERSTACK_PAT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -779,7 +778,6 @@ jobs:
           build-args: |
             TARGETARCH=${{ matrix.arch }}
             GITHUB_PAT=${{ secrets.PAT }}
-            RUDDERSTACK_PAT=${{ secrets.RUDDERSTACK_PAT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
