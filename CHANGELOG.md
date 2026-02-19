@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.8.2](https://github.com/rudderlabs/code-server/compare/v1.8.1...v1.8.2) (2026-02-19)
+
+
+### Miscellaneous Chores
+
+* allow ssh in lshell ([#134](https://github.com/rudderlabs/code-server/issues/134)) ([baa163e](https://github.com/rudderlabs/code-server/commit/baa163e8ed39228d278969ae4961f77cd2675796))
+
 ## [1.8.1](https://github.com/rudderlabs/code-server/compare/v1.8.0...v1.8.1) (2026-02-16)
 
 
