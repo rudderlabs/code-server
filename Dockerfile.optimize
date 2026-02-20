@@ -3,7 +3,6 @@ FROM ubuntu:22.04 AS builder
 
 # Set build arguments
 ARG TARGETARCH=amd64
-ARG RUDDERSTACK_PAT
 
 # Install build dependencies and download external resources in one layer
 RUN apt-get update && \
@@ -23,7 +22,6 @@ FROM ubuntu:22.04
 
 # Set build arguments
 ARG TARGETARCH=amd64
-ARG RUDDERSTACK_PAT
 
 # Install all system dependencies, create user, and clean up in single layer
 RUN apt-get update && \
@@ -85,8 +83,7 @@ RUN cat > /home/codeuser/custom-strings.json << 'EOF'
 EOF
 
 # Configure profiles-mcp environment
-RUN echo "RUDDERSTACK_PAT=${RUDDERSTACK_PAT}" > /home/codeuser/profiles-mcp/.env && \
-    echo "IS_CLOUD_BASED=true" >> /home/codeuser/profiles-mcp/.env && \
+RUN echo "IS_CLOUD_BASED=true" > /home/codeuser/profiles-mcp/.env && \
     echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
 
 # Set ownership and permissions
