@@ -1,7 +1,7 @@
 {
   "name": "code-server",
   "license": "MIT",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Run VS Code on a remote server.",
   "homepage": "https://github.com/rudderlabs/code-server",
   "bugs": {
