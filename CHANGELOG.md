@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.9.0](https://github.com/rudderlabs/code-server/compare/v1.8.3...v1.9.0) (2026-02-23)
+
+
+### Features
+
+* remove RUDDERSTACK_PAT from Docker build ([#133](https://github.com/rudderlabs/code-server/issues/133)) ([f7593e7](https://github.com/rudderlabs/code-server/commit/f7593e75e3438c2a1340eaa2b1448dd305710b39))
+
 ## [1.8.3](https://github.com/rudderlabs/code-server/compare/v1.8.2...v1.8.3) (2026-02-20)
 
 
