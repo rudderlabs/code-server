@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.9.0](https://github.com/rudderlabs/code-server/compare/v1.8.3...v1.9.0) (2026-02-23)
+
+
+### Features
+
+* remove RUDDERSTACK_PAT from Docker build ([#133](https://github.com/rudderlabs/code-server/issues/133)) ([f7593e7](https://github.com/rudderlabs/code-server/commit/f7593e75e3438c2a1340eaa2b1448dd305710b39))
+
+## [1.8.3](https://github.com/rudderlabs/code-server/compare/v1.8.2...v1.8.3) (2026-02-20)
+
+
+### Miscellaneous Chores
+
+* update Cline to 6.11.0 ([#136](https://github.com/rudderlabs/code-server/issues/136)) ([e79c627](https://github.com/rudderlabs/code-server/commit/e79c627993fd1ccd72d47044d5190bb1eb78d74c))
+
+## [1.8.2](https://github.com/rudderlabs/code-server/compare/v1.8.1...v1.8.2) (2026-02-19)
+
+
+### Miscellaneous Chores
+
+* allow ssh in lshell ([#134](https://github.com/rudderlabs/code-server/issues/134)) ([baa163e](https://github.com/rudderlabs/code-server/commit/baa163e8ed39228d278969ae4961f77cd2675796))
+
 ## [1.8.1](https://github.com/rudderlabs/code-server/compare/v1.8.0...v1.8.1) (2026-02-16)
 
 
