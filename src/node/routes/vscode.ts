@@ -10,6 +10,7 @@ import { logError } from "../../common/util"
 import { CodeArgs, toCodeArgs } from "../cli"
 import { isDevMode, vsRootPath } from "../constants"
 import { authenticated, ensureAuthenticated, ensureOrigin, redirect, replaceTemplates, self } from "../http"
+import { trackSessionStarted, flushAndDispose } from "../rudderstack"
 import { SocketProxyProvider } from "../socket"
 import { isFile } from "../util"
 import { type WebsocketRequest, Router as WsRouter } from "../wsRouter"
@@ -95,7 +96,10 @@ export const ensureVSCodeLoaded = async (
     return next()
   }
   if (!vscodeServerPromise) {
-    vscodeServerPromise = loadVSCode(req)
+    vscodeServerPromise = loadVSCode(req).then((server) => {
+      trackSessionStarted()
+      return server
+    })
   }
   try {
     vscodeServer = await vscodeServerPromise
@@ -254,6 +258,7 @@ wsRouter.ws(/.*/, ensureOrigin, ensureAuthenticated, ensureVSCodeLoaded, async (
 })
 
 export function dispose() {
+  flushAndDispose()
   vscodeServer?.dispose()
   socketProxyProvider.stop()
 }
