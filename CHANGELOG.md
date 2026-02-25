@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.10.0](https://github.com/rudderlabs/code-server/compare/v1.9.0...v1.10.0) (2026-02-25)
+
+
+### Features
+
+* add RudderStack session start telemetry with load time tracking ([#132](https://github.com/rudderlabs/code-server/issues/132)) ([a7100d1](https://github.com/rudderlabs/code-server/commit/a7100d1729dc0f5dd5fa7550092eb491e2a19ff9))
+
+
+### Miscellaneous Chores
+
+* update Cline to 6.12.0 ([#140](https://github.com/rudderlabs/code-server/issues/140)) ([0cc208d](https://github.com/rudderlabs/code-server/commit/0cc208de73e1c01f266c3cbbbc8d3e93c5e5374e))
+
 ## [1.9.0](https://github.com/rudderlabs/code-server/compare/v1.8.3...v1.9.0) (2026-02-23)
 
 
