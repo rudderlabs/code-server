@@ -76,13 +76,12 @@ EOF
 # x-release-please-start-version
 ARG CODE_SERVER_VERSION=1.10.0
 # x-release-please-end
-RUN dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y && \
+RUN (dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y) && \
   rm -f /tmp/code-server_*.deb /tmp/code-server*.rpm /tmp/code-server*.tar.gz
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
-# Install extension as codeuser
-RUN code-server --install-extension /tmp/claude.vsix && rm -f /tmp/claude.vsix
+RUN code-server --install-extension /tmp/claude.vsix
 
 WORKDIR /home/codeuser
 
@@ -91,6 +90,7 @@ COPY src/browser/media/copilot-welcome.html .
 # Copy assets to code-server static directory (verify path matches code-server installation)
 # For .deb installations, code-server is typically at /usr/lib/code-server/
 USER root
+RUN rm -f /tmp/claude.vsix
 RUN mkdir -p /usr/lib/code-server/src/browser/media/
 COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/media/copilot-welcome.html
 USER codeuser
