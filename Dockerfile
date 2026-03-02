@@ -164,6 +164,7 @@ RUN setfacl -R -m u:codeuser:rx /usr/lib/code-server && \
     setfacl -m u:codeuser:r /etc/resolv.conf && \
     setfacl -m u:codeuser:r /etc/shells && \
     setfacl -m u:codeuser:r /etc/lshell.conf && \
+    setfacl -m u:codeuser:r /etc/gitconfig && \
     setfacl -m u:codeuser:r /etc/ld.so.cache && \
     setfacl -R -m u:codeuser:rx /etc/ld.so.conf.d 2>/dev/null; true
 # Grant lshell log access
