@@ -6,7 +6,7 @@ ARG TARGETARCH=amd64
 
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
-  apt-get install -y python3.10 python3-pip git curl wget sudo && \
+  apt-get install -y python3.10 python3-pip git curl wget sudo strace && \
   apt-get clean
 
 # Copy requirements.txt first
