@@ -6,7 +6,7 @@ ARG TARGETARCH=amd64
 
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
-  apt-get install -y python3.10 python3-pip git curl wget sudo strace && \
+  apt-get install -y python3.10 python3-pip git curl wget sudo acl && \
   apt-get clean
 
 # Copy requirements.txt first
@@ -135,6 +135,41 @@ RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
 RUN chmod 755 /home/codeuser/custom-strings.json
+
+# ============================================
+# FILESYSTEM RESTRICTION: Restrict codeuser to home directory
+# ============================================
+# Verified via strace (Phase 1) — these are the only system paths
+# code-server, git, pb, and Cline access at runtime.
+# /tmp is left as-is (1777). /proc and /sys are virtual FS (cannot restrict).
+
+# Strip "others" read+execute from sensitive directories
+RUN chmod o-rx /etc /opt /root /var /srv /run /boot 2>/dev/null; true
+
+# Grant codeuser targeted access via ACLs (strace-verified paths only)
+RUN setfacl -R -m u:codeuser:rx /usr/lib/code-server && \
+    setfacl -R -m u:codeuser:rx /usr/bin && \
+    setfacl -R -m u:codeuser:rx /usr/local/bin && \
+    setfacl -R -m u:codeuser:rx /lib && \
+    setfacl -R -m u:codeuser:rx /usr/lib && \
+    setfacl -R -m u:codeuser:rx /usr/lib/locale && \
+    setfacl -R -m u:codeuser:rx /usr/share/locale && \
+    setfacl -R -m u:codeuser:rx /usr/share/locale-langpack && \
+    setfacl -R -m u:codeuser:rx /etc/ssl && \
+    setfacl -m u:codeuser:rx /etc && \
+    setfacl -m u:codeuser:r /etc/passwd && \
+    setfacl -m u:codeuser:r /etc/group && \
+    setfacl -m u:codeuser:r /etc/nsswitch.conf && \
+    setfacl -m u:codeuser:r /etc/hosts && \
+    setfacl -m u:codeuser:r /etc/resolv.conf && \
+    setfacl -m u:codeuser:r /etc/shells && \
+    setfacl -m u:codeuser:r /etc/lshell.conf && \
+    setfacl -m u:codeuser:r /etc/ld.so.cache && \
+    setfacl -R -m u:codeuser:rx /etc/ld.so.conf.d 2>/dev/null; true
+# Grant lshell log access
+RUN setfacl -m u:codeuser:rx /var && \
+    setfacl -m u:codeuser:rx /var/log && \
+    setfacl -R -m u:codeuser:rwx /var/log/lshell
 
 # Switch back to codeuser
 USER codeuser

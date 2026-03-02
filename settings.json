@@ -20,5 +20,41 @@
     "fish": null,
     "csh": null,
     "ksh": null
+  },
+  "files.exclude": {
+    "/etc/**": true,
+    "/usr/**": true,
+    "/var/**": true,
+    "/opt/**": true,
+    "/root/**": true,
+    "/srv/**": true,
+    "/run/**": true,
+    "/boot/**": true,
+    "/lib/**": true,
+    "/sbin/**": true,
+    "/bin/**": true,
+    "/proc/**": true,
+    "/sys/**": true,
+    "/dev/**": true,
+    "/mnt/**": true,
+    "/media/**": true
+  },
+  "search.exclude": {
+    "/etc/**": true,
+    "/usr/**": true,
+    "/var/**": true,
+    "/opt/**": true,
+    "/root/**": true,
+    "/srv/**": true,
+    "/run/**": true,
+    "/boot/**": true,
+    "/lib/**": true,
+    "/sbin/**": true,
+    "/bin/**": true,
+    "/proc/**": true,
+    "/sys/**": true,
+    "/dev/**": true,
+    "/mnt/**": true,
+    "/media/**": true
   }
 }
