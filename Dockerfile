@@ -56,8 +56,8 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 # ============================================
 
-COPY release-packages/* .
-COPY claude.vsix /claude.vsix
+COPY release-packages/* /tmp/
+COPY claude.vsix /tmp/claude.vsix
 
 # Create custom-strings.json directly in the container
 RUN cat > /home/codeuser/custom-strings.json << 'EOF'
@@ -76,12 +76,13 @@ EOF
 # x-release-please-start-version
 ARG CODE_SERVER_VERSION=1.10.0
 # x-release-please-end
-RUN dpkg -i code-server_*_${TARGETARCH}.deb || apt-get install -f -y
+RUN dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y && \
+  rm -f /tmp/code-server_*.deb /tmp/code-server*.rpm /tmp/code-server*.tar.gz
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
 # Install extension as codeuser
-RUN code-server --install-extension /claude.vsix
+RUN code-server --install-extension /tmp/claude.vsix && rm -f /tmp/claude.vsix
 
 WORKDIR /home/codeuser
 
