@@ -9,6 +9,15 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribut
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
+@@ -37,7 +37,7 @@
+ import { IViewsService } from '../../../services/views/common/viewsService.js';
+ import { IListService, WorkbenchList } from '../../../../platform/list/browser/listService.js';
+ import { isSCMRepository } from './util.js';
+-import { SCMHistoryViewPane } from './scmHistoryViewPane.js';
++// import { SCMHistoryViewPane } from './scmHistoryViewPane.js';
+ import { QuickDiffModelService, IQuickDiffModelService } from './quickDiffModel.js';
+ import { QuickDiffEditorController } from './quickDiffWidget.js';
+ import { EditorContributionInstantiation, registerEditorContribution } from '../../../../editor/browser/editorExtensions.js';
 @@ -137,20 +137,20 @@
  }], viewContainer);
  
