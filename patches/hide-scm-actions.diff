@@ -1,0 +1,88 @@
+Hide unnecessary Source Control UI elements
+
+Strip the Source Control view down to only show the changed files list.
+Customers should not be able to stage, commit, or see the commit graph.
+This hides the commit message input, action buttons, inline stage/unstage
+actions, provider toolbar actions, and removes the Graph view entirely.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
+@@ -139,16 +139,16 @@ viewsRegistry.registerViews([{
+ }], viewContainer);
+
+-viewsRegistry.registerViews([{
+-	id: HISTORY_VIEW_PANE_ID,
+-	containerTitle,
+-	name: localize2('scmGraph', "Graph"),
+-	singleViewPaneContainerTitle: localize('source control graph', "Source Control Graph"),
+-	ctorDescriptor: new SyncDescriptor(SCMHistoryViewPane),
+-	canToggleVisibility: true,
+-	canMoveView: true,
+-	weight: 40,
+-	order: 2,
+-	when: ContextKeyExpr.and(
+-		ContextKeyExpr.has('scm.historyProviderCount'),
+-		ContextKeyExpr.notEquals('scm.historyProviderCount', 0),
+-	),
+-	containerIcon: sourceControlViewIcon
+-}], viewContainer);
++// viewsRegistry.registerViews([{
++// 	id: HISTORY_VIEW_PANE_ID,
++// 	containerTitle,
++// 	name: localize2('scmGraph', "Graph"),
++// 	singleViewPaneContainerTitle: localize('source control graph', "Source Control Graph"),
++// 	ctorDescriptor: new SyncDescriptor(SCMHistoryViewPane),
++// 	canToggleVisibility: true,
++// 	canMoveView: true,
++// 	weight: 40,
++// 	order: 2,
++// 	when: ContextKeyExpr.and(
++// 		ContextKeyExpr.has('scm.historyProviderCount'),
++// 		ContextKeyExpr.notEquals('scm.historyProviderCount', 0),
++// 	),
++// 	containerIcon: sourceControlViewIcon
++// }], viewContainer);
+
+ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
+Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
++++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
+@@ -683,3 +683,40 @@
+ 	border-radius: 2px;
+ 	opacity: 0.5;
+ }
++
++/* ---- code-server: hide SCM actions (PRO-5298) ---- */
++
++/* Hide the commit message input box */
++.scm-view .scm-input {
++	display: none !important;
++}
++
++/* Hide the commit/push/sync action button */
++.scm-view .button-container {
++	display: none !important;
++}
++
++/* Hide inline stage/unstage/discard actions on hover and focus */
++.scm-view .monaco-list .monaco-list-row:hover .resource-group > .actions,
++.scm-view .monaco-list .monaco-list-row.focused .resource-group > .actions,
++.scm-view .monaco-list .monaco-list-row:hover .resource > .name > .monaco-icon-label > .actions,
++.scm-view .monaco-list .monaco-list-row.focused .resource > .name > .monaco-icon-label > .actions,
++.scm-view .monaco-list:not(.selection-multiple) .monaco-list-row .resource:hover > .actions {
++	display: none !important;
++}
++
++/* Hide always-shown actions (when scm.alwaysShowActions is true) */
++.scm-view.show-actions > .monaco-list .monaco-list-row .resource-group > .actions,
++.scm-view.show-actions > .monaco-list .monaco-list-row .resource > .name > .monaco-icon-label > .actions {
++	display: none !important;
++}
++
++/* Hide the provider toolbar actions (checkout, refresh, more actions) */
++.scm-view .scm-provider > .actions {
++	display: none !important;
++}
