@@ -55,6 +55,21 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribut
 +// }], viewContainer);
  
  Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
+Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
+@@ -720,8 +720,8 @@
+ 	getHeight(element: TreeElement) {
+ 		if (isSCMInput(element)) {
+-			return this.inputRenderer.getHeight(element);
++			return 0;
+ 		} else if (isSCMActionButton(element)) {
+-			return ActionButtonRenderer.DEFAULT_HEIGHT + 8;
++			return 0;
+ 		} else {
+ 			return 22;
+ 		}
 Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
