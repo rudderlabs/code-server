@@ -59,7 +59,10 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.t
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
-@@ -720,8 +720,8 @@
+@@ -718,10 +718,10 @@
+-	constructor(private readonly inputRenderer: InputRenderer) { }
++	constructor(_inputRenderer: InputRenderer) { }
+ 
  	getHeight(element: TreeElement) {
  		if (isSCMInput(element)) {
 -			return this.inputRenderer.getHeight(element);
