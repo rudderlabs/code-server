@@ -113,21 +113,3 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
 +.scm-view .scm-provider > .actions {
 +	display: none !important;
 +}
-Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPaneContainer.ts
-===================================================================
---- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPaneContainer.ts
-+++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPaneContainer.ts
-@@ -39,8 +39,13 @@
- 	override create(parent: HTMLElement): void {
- 		super.create(parent);
- 		parent.classList.add('scm-viewlet');
- 	}
- 
-+	// code-server: suppress SCM title bar actions (PRO-5298)
-+	override get menuActions() {
-+		return undefined;
-+	}
-+
- 	override getOptimalWidth(): number {
- 		return 400;
- 	}
