@@ -77,7 +77,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
 +++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
-@@ -683,3 +683,35 @@
+@@ -683,3 +683,41 @@
  	border-radius: 2px;
  	opacity: 0.5;
  }
@@ -111,5 +111,11 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/media/scm.css
 +
 +/* Hide the provider toolbar actions (checkout, refresh, more actions) */
 +.scm-view .scm-provider > .actions {
++	display: none !important;
++}
++
++/* Hide SCM title bar actions (commit, refresh, more in the header) */
++.pane-composite-part:has(.scm-view) > .title > .title-actions,
++.pane-composite-part:has(.scm-view) > .title > .global-actions {
 +	display: none !important;
 +}
