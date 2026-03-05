@@ -26,8 +26,6 @@ signature-verification.diff
 rudderstack-plugin.diff
 remove-checkupdates.diff
 hide-activity-icons.diff
-hide-scm-actions.diff
-hide-scm-title-actions.diff
 editor-watermark-cta.diff
 hide-rudderstack-icon.diff
 cline-auxiliary-bar.diff
@@ -35,3 +33,5 @@ profiles-context-button.diff
 copilot-welcome-rootendpoint.diff
 auxiliary-bar-rudderstack-icon.diff
 cline-seed-storage.diff
+hide-scm-actions.diff
+hide-scm-title-actions.diff
