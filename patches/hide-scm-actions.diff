@@ -9,16 +9,15 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribut
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribution.ts
-@@ -37,7 +37,7 @@
+@@ -37,7 +37,6 @@
  import { IViewsService } from '../../../services/views/common/viewsService.js';
  import { IListService, WorkbenchList } from '../../../../platform/list/browser/listService.js';
  import { isSCMRepository } from './util.js';
 -import { SCMHistoryViewPane } from './scmHistoryViewPane.js';
-+// import { SCMHistoryViewPane } from './scmHistoryViewPane.js';
  import { QuickDiffModelService, IQuickDiffModelService } from './quickDiffModel.js';
  import { QuickDiffEditorController } from './quickDiffWidget.js';
  import { EditorContributionInstantiation, registerEditorContribution } from '../../../../editor/browser/editorExtensions.js';
-@@ -137,20 +137,20 @@
+@@ -137,20 +136,4 @@
  }], viewContainer);
  
 -viewsRegistry.registerViews([{
@@ -37,22 +36,6 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scm.contribut
 -	),
 -	containerIcon: sourceControlViewIcon
 -}], viewContainer);
-+// viewsRegistry.registerViews([{
-+// 	id: HISTORY_VIEW_PANE_ID,
-+// 	containerTitle,
-+// 	name: localize2('scmGraph', "Graph"),
-+// 	singleViewPaneContainerTitle: localize('source control graph', "Source Control Graph"),
-+// 	ctorDescriptor: new SyncDescriptor(SCMHistoryViewPane),
-+// 	canToggleVisibility: true,
-+// 	canMoveView: true,
-+// 	weight: 40,
-+// 	order: 2,
-+// 	when: ContextKeyExpr.and(
-+// 		ContextKeyExpr.has('scm.historyProviderCount'),
-+// 		ContextKeyExpr.notEquals('scm.historyProviderCount', 0),
-+// 	),
-+// 	containerIcon: sourceControlViewIcon
-+// }], viewContainer);
  
  Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 Index: code-server/lib/vscode/src/vs/workbench/contrib/scm/browser/scmViewPane.ts
