@@ -1,0 +1,23 @@
+name: Warm VS Code Cache
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  warm-cache:
+    uses: ./.github/workflows/build-vscode.yaml
+    with:
+      upload-artifact: false
+    secrets:
+      PAT: ${{ secrets.PAT }}
+      VSCODE_CACHE_VERSION: ${{ secrets.VSCODE_CACHE_VERSION }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

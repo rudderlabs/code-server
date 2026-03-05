@@ -1,0 +1,91 @@
+name: Build VS Code
+
+on:
+  workflow_call:
+    inputs:
+      upload-artifact:
+        description: "Upload the npm-package artifact (set to false for cache-warming only)"
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      PAT:
+        required: true
+      VSCODE_CACHE_VERSION:
+        required: true
+      CODECOV_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-vscode:
+    name: Build code-server
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      DISABLE_V8_COMPILE_CACHE: 1
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          submodules: true
+      - run: sudo apt update && sudo apt install -y libkrb5-dev
+      - uses: awalsh128/cache-apt-pkgs-action@4c82c3ccdc1344ee11e9775dbdbdf43aa8a5614e
+        with:
+          packages: quilt
+          version: 1.0
+      - run: quilt push -a
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            test/package-lock.json
+      - run: SKIP_SUBMODULE_DEPS=1 npm ci
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+      # Get Code's git hash. When this changes it means the content is
+      # different and we need to rebuild.
+      - name: Get latest lib/vscode rev
+        id: vscode-rev
+        run: echo "rev=$(git rev-parse HEAD:./lib/vscode)" >> $GITHUB_OUTPUT
+      # We need to rebuild when we have a new version of Code, when any of
+      # the patches changed, or when the code-server version changes (since
+      # it gets embedded into the code). Use VSCODE_CACHE_VERSION to
+      # force a rebuild.
+      - name: Fetch prebuilt Code package from cache
+        id: cache-vscode
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: lib/vscode-reh-web-*
+          key: vscode-reh-package-${{ secrets.VSCODE_CACHE_VERSION }}-${{ steps.vscode-rev.outputs.rev }}-${{ hashFiles('patches/*.diff', 'ci/build/build-vscode.sh') }}
+      - name: Build vscode
+        env:
+          VERSION: "0.0.0"
+        if: steps.cache-vscode.outputs.cache-hit != 'true'
+        run: |
+          pushd lib/vscode
+          npm ci
+          popd
+          npm run build:vscode
+      # The release package does not contain any native modules
+      # and is neutral to architecture/os/libc version.
+      - run: npm run release
+        if: inputs.upload-artifact && success()
+      # https://github.com/actions/upload-artifact/issues/38
+      - run: tar -czf package.tar.gz release
+        if: inputs.upload-artifact
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: inputs.upload-artifact
+        with:
+          name: npm-package
+          path: ./package.tar.gz
