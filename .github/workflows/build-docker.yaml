@@ -30,8 +30,6 @@ env:
   ecr_registry: 422074288268.dkr.ecr.us-east-1.amazonaws.com
   ecr_docker_images: |
     name=422074288268.dkr.ecr.us-east-1.amazonaws.com/rudderstack/profiles-code-server
-  dockerhub_docker_images: |
-    name=rudderstack/profiles-code-server
 
 # ==============================================================================
 # STAGE 1: BUILD VSCODE
@@ -228,112 +226,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-packages-${{ matrix.prefix }}
-          path: ./release-packages/*
-
-  package-macos-amd64:
-    name: x86-64 macOS build
-    runs-on: macos-15-intel
-    timeout-minutes: 15
-    needs: npm-version
-    # Only build macOS for releases
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    env:
-      GITHUB_TOKEN: ${{ secrets.PAT }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            test/package-lock.json
-
-      - run: SKIP_SUBMODULE_DEPS=1 npm ci
-
-      - name: Install nfpm
-        run: |
-          mkdir -p ~/.local/bin
-          curl -sSfL https://github.com/goreleaser/nfpm/releases/download/v2.3.1/nfpm_2.3.1_`uname -s`_`uname -m`.tar.gz | tar -C ~/.local/bin -zxv nfpm
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - run: brew install python-setuptools
-
-      - name: Download npm package
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: npm-release-package
-
-      - run: tar -xzf package.tar.gz
-      - run: npm run release:standalone
-      - run: npm run test:native
-
-      - name: Build packages with nfpm
-        env:
-          VERSION: ${{ needs.npm-version.outputs.version }}
-        run: npm run package
-
-      - name: Upload release packages
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: release-packages-macos-amd64
-          path: ./release-packages/*
-
-  package-macos-arm64:
-    name: arm64 macOS build
-    runs-on: macos-latest
-    timeout-minutes: 15
-    needs: npm-version
-    # Only build macOS for releases
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    env:
-      GITHUB_TOKEN: ${{ secrets.PAT }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - name: Install Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            test/package-lock.json
-
-      - run: SKIP_SUBMODULE_DEPS=1 npm ci
-
-      - name: Install nfpm
-        run: |
-          mkdir -p ~/.local/bin
-          curl -sSfL https://github.com/goreleaser/nfpm/releases/download/v2.3.1/nfpm_2.3.1_`uname -s`_`uname -m`.tar.gz | tar -C ~/.local/bin -zxv nfpm
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - run: brew install python-setuptools
-
-      - name: Download npm package
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: npm-release-package
-
-      - run: tar -xzf package.tar.gz
-      - run: npm run release:standalone
-      - run: npm run test:native
-
-      - name: Build packages with nfpm
-        env:
-          VERSION: ${{ needs.npm-version.outputs.version }}
-        run: npm run package
-
-      - name: Upload release packages
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: release-packages-macos-arm64
           path: ./release-packages/*
 
   # ==============================================================================
@@ -549,208 +441,6 @@ jobs:
           done <<< "${{ needs.docker-metadata-ecr.outputs.tags }}"
 
   # ==============================================================================
-  # STAGE 3B: DOCKER HUB (PR + release)
-  # ==============================================================================
-  docker-metadata-dockerhub:
-    runs-on: ubuntu-latest
-    needs: [npm-version, package-linux-cross]
-    outputs:
-      labels: ${{ steps.meta.outputs.labels }}
-      build-date: ${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-      version: ${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-      revision: ${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
-      tags: ${{ steps.meta.outputs.tags }}
-      arm64_tags: ${{ steps.arm64_meta.outputs.tags }}
-      arm64_labels: ${{ steps.arm64_meta.outputs.labels }}
-      amd64_tags: ${{ steps.amd64_meta.outputs.tags }}
-      amd64_labels: ${{ steps.amd64_meta.outputs.labels }}
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
-
-      - name: Determine Docker tag
-        id: docker-tag
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "tag=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: docker meta
-        id: meta
-        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
-        with:
-          images: ${{ env.dockerhub_docker_images }}
-          tags: |
-            type=raw,value=${{ steps.docker-tag.outputs.tag }}
-      - name: docker arm64 meta
-        id: arm64_meta
-        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
-        with:
-          images: ${{ env.dockerhub_docker_images }}
-          tags: |
-            type=raw,value=${{ steps.docker-tag.outputs.tag }}
-          flavor: |
-            suffix=-${{ env.arch_arm64 }},onlatest=true
-      - name: docker amd64 meta
-        id: amd64_meta
-        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
-        with:
-          images: ${{ env.dockerhub_docker_images }}
-          tags: |
-            type=raw,value=${{ steps.docker-tag.outputs.tag }}
-          flavor: |
-            suffix=-${{ env.arch_amd64 }},onlatest=true
-
-  docker-build-dockerhub:
-    needs: [docker-metadata-dockerhub, package-linux-cross]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: [self-hosted, Linux, ARM64, ubuntu-22]
-            arch: arm64
-          - os: ubuntu-latest
-            arch: amd64
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
-
-      - name: checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-        with:
-          lfs: true
-
-      - name: Download Cline Extension
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          CLINE_REF=$(cat .cline-version | tr -d '[:space:]')
-          echo "Cline reference: ${CLINE_REF}"
-
-          if [[ "$CLINE_REF" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Downloading cline-${CLINE_REF}.vsix from release v${CLINE_REF}..."
-            if ! gh release download "v${CLINE_REF}" \
-              --repo rudderlabs/cline \
-              --pattern "cline-${CLINE_REF}.vsix" \
-              --output claude.vsix; then
-              echo "Error: Failed to download release version ${CLINE_REF}"
-              exit 1
-            fi
-          else
-            echo "Fetching latest workflow run for branch ${CLINE_REF}..."
-            RUN_DATA=$(gh api \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "/repos/rudderlabs/cline/actions/workflows/build-artifacts.yml/runs?branch=${CLINE_REF}&status=success&per_page=1" \
-              --jq '.workflow_runs[0] | select(.id != null) | {id: .id, created_at: .created_at, head_sha: .head_sha}')
-
-            if [ -z "$RUN_DATA" ] || [ "$RUN_DATA" = "null" ]; then
-              echo "Error: No successful workflow runs found for branch ${CLINE_REF}"
-              exit 1
-            fi
-
-            RUN_ID=$(echo "$RUN_DATA" | jq -r '.id')
-            echo "Downloading artifact from run ${RUN_ID}..."
-
-            if ! gh run download ${RUN_ID} \
-              --repo rudderlabs/cline \
-              --name cline-vsix \
-              --dir ./cline-artifact; then
-              echo "Error: Failed to download artifact from workflow run"
-              exit 1
-            fi
-
-            VSIX_FILE=$(find ./cline-artifact -name "*.vsix" -type f | head -1)
-            mv "$VSIX_FILE" claude.vsix
-            rm -rf ./cline-artifact
-          fi
-
-          ls -lh claude.vsix
-
-      - name: Download release packages
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: release-packages-*
-          path: ./release-packages/
-          merge-multiple: true
-
-      - name: List downloaded files
-        run: |
-          pwd
-          ls -la
-          ls -la release-packages/
-
-      - name: setup buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: docker login
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Get tags and labels for this arch
-        id: arch-meta
-        run: |
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "tags=${{ needs.docker-metadata-dockerhub.outputs.arm64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-dockerhub.outputs.arm64_labels }}" >> $GITHUB_OUTPUT
-          else
-            echo "tags=${{ needs.docker-metadata-dockerhub.outputs.amd64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-dockerhub.outputs.amd64_labels }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: docker build
-        uses: rudderlabs/build-scan-push-action@6da37ae441adc487f22920ca87bf52d6fd715fd3 # v1.5.3
-        with:
-          context: .
-          platforms: linux/${{ matrix.arch }}
-          push: true
-          tags: ${{ steps.arch-meta.outputs.tags }}
-          labels: ${{ steps.arch-meta.outputs.labels }}
-          build-args: |
-            TARGETARCH=${{ matrix.arch }}
-            GITHUB_PAT=${{ secrets.PAT }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  docker-manifest-dockerhub:
-    runs-on: ubuntu-latest
-    needs: [docker-build-dockerhub, docker-metadata-dockerhub]
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
-
-      - name: setup buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: docker login
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: multi-arch manifest
-        run: |
-          while read -r tag; do
-            echo "$tag"
-            arm_tag=$(echo "${{ needs.docker-metadata-dockerhub.outputs.arm64_tags }}" | grep "$tag")
-            amd_tag=$(echo "${{ needs.docker-metadata-dockerhub.outputs.amd64_tags }}" | grep "$tag")
-            docker buildx imagetools create -t $tag $arm_tag $amd_tag
-          done <<< "${{ needs.docker-metadata-dockerhub.outputs.tags }}"
-
-  # ==============================================================================
   # STAGE 4: FINALIZE
   # ==============================================================================
   upload-release-assets:
@@ -760,10 +450,7 @@ jobs:
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs:
       - package-linux-cross
-      - package-macos-amd64
-      - package-macos-arm64
       - docker-manifest-ecr
-      - docker-manifest-dockerhub
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -816,7 +503,6 @@ jobs:
     if: github.event_name == 'pull_request'
     needs:
       - docker-manifest-ecr
-      - docker-manifest-dockerhub
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
@@ -828,7 +514,6 @@ jobs:
         with:
           script: |
             const ecrImage = `${{ env.ecr_registry }}/rudderstack/profiles-code-server:pr-${{ github.event.pull_request.number }}`;
-            const dockerhubImage = `rudderstack/profiles-code-server:pr-${{ github.event.pull_request.number }}`;
             const body = `## Docker Preview Images Ready
 
             Preview Docker images have been built for this PR:
@@ -838,18 +523,13 @@ jobs:
             docker pull ${ecrImage}
             \`\`\`
 
-            **DockerHub (public):**
-            \`\`\`bash
-            docker pull ${dockerhubImage}
-            \`\`\`
-
             **Image Details:**
             - Tag: \`pr-${{ github.event.pull_request.number }}\`
             - Platforms: \`linux/amd64\`, \`linux/arm64\`
 
             **Test the image:**
             \`\`\`bash
-            docker run --rm -p 8080:8080 ${dockerhubImage}
+            docker run --rm -p 8080:8080 ${ecrImage}
             \`\`\`
 
             > **Note:** These preview images will be overwritten on subsequent pushes to this PR.
