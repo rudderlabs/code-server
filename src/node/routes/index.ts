@@ -165,11 +165,10 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
 
   if (args.auth === AuthType.Password) {
     app.router.use("/login", login.router)
-    app.router.use("/logout", logout.router)
   } else {
     app.router.all("/login", (req, res) => redirect(req, res, "/", {}))
-    app.router.all("/logout", (req, res) => redirect(req, res, "/", {}))
   }
+  app.router.use("/logout", logout.router)
 
   app.router.use("/update", update.router)
 

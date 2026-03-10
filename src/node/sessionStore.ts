@@ -11,3 +11,7 @@ export function createSession(): string {
 export function isValidSession(token: string): boolean {
   return sessions.has(token)
 }
+
+export function deleteSession(token: string): void {
+  sessions.delete(token)
+}
