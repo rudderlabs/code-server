@@ -12,6 +12,8 @@ import { version as codeServerVersion } from "./constants"
 import { Heart } from "./heart"
 import { CoderSettings, SettingsProvider } from "./settings"
 import { UpdateProvider } from "./update"
+import { isJwtAuthEnabled } from "./jwt"
+import { isValidSession } from "./sessionStore"
 import {
   getPasswordMethod,
   IsCookieValidArgs,
@@ -115,17 +117,22 @@ export const ensureAuthenticated = async (
  * Return true if authenticated via cookies.
  */
 export const authenticated = async (req: express.Request): Promise<boolean> => {
+  const cookieValue = sanitizeString(req.cookies[CookieKeys.Session])
+
+  if (isJwtAuthEnabled()) {
+    return !!cookieValue && isValidSession(cookieValue)
+  }
+
   switch (req.args.auth) {
     case AuthType.None: {
       return true
     }
     case AuthType.Password: {
-      // The password is stored in the cookie after being hashed.
       const hashedPasswordFromArgs = req.args["hashed-password"]
       const passwordMethod = getPasswordMethod(hashedPasswordFromArgs)
       const isCookieValidArgs: IsCookieValidArgs = {
         passwordMethod,
-        cookieKey: sanitizeString(req.cookies[CookieKeys.Session]),
+        cookieKey: cookieValue,
         passwordFromArgs: req.args.password || "",
         hashedPasswordFromArgs: req.args["hashed-password"],
       }
@@ -181,6 +188,13 @@ export const constructRedirectPath = (req: express.Request, query: qs.ParsedQs, 
 }
 
 /**
+ * Strip token parameter from URLs before logging.
+ */
+export function stripUrl(url: string): string {
+  return url.replace(/([?&])token=[^&]*/g, "$1token=[REDACTED]")
+}
+
+/**
  * Redirect relatively to `/${to}`. Query variables on the current URI will be
  * preserved.  `to` should be a simple path without any query parameters
  * `override` will merge with the existing query (use `undefined` to unset).
@@ -199,7 +213,7 @@ export const redirect = (
   })
 
   const redirectPath = constructRedirectPath(req, query, to)
-  logger.debug(`redirecting from ${req.originalUrl} to ${redirectPath}`)
+  logger.debug(`redirecting from ${stripUrl(req.originalUrl)} to ${stripUrl(redirectPath)}`)
   res.redirect(redirectPath)
 }
 
