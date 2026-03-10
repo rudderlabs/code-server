@@ -27,3 +27,6 @@ test/test-results
 # Cline VSIX files
 claude-dev-*.vsix
 claude.vsix
+
+# Local scratch files
+.local/
