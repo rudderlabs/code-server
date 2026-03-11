@@ -33,5 +33,5 @@ router.get("/", async (req, res, next) => {
     domain: getCookieDomain(host, req.args["proxy-domain"]),
   })
 
-  res.redirect(302, req.path)
+  res.redirect(302, "/")
 })
