@@ -27,10 +27,7 @@ export interface JwksFixture {
 
 export const TEST_ISSUER = "test-token-service"
 
-export async function createJwksFixture(defaults: {
-  sessionId: string
-  workspaceId: string
-}): Promise<JwksFixture> {
+export async function createJwksFixture(defaults: { sessionId: string; workspaceId: string }): Promise<JwksFixture> {
   const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519")
 
   const jwk = publicKey.export({ format: "jwk" })
