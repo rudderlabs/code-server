@@ -102,13 +102,13 @@ describe("bootstrap", () => {
     await supertest.default(app).get("/?token=invalid-token").expect(401)
   })
 
-  it("should strip token from redirect URL preserving other params", async () => {
+  it("should redirect to path only, dropping all query params", async () => {
     const app = createApp()
     const token = fixture.createJwt()
 
     const res = await supertest.default(app).get(`/?token=${token}&foo=bar`).expect(302)
 
-    expect(res.headers.location).toBe("/?foo=bar")
+    expect(res.headers.location).toBe("/")
   })
 
   it("should reject replayed JWT", async () => {
