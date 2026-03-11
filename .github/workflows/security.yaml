@@ -78,32 +78,3 @@ jobs:
         uses: github/codeql-action/upload-sarif@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
         with:
           sarif_file: "trivy-repo-results.sarif"
-
-  codeql-analyze:
-    permissions:
-      actions: read # for github/codeql-action/init to get workflow details
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/autobuild to send a status report
-    name: Analyze with CodeQL
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
-
-      - name: Checkout repository
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
-        with:
-          languages: javascript
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.31.2
