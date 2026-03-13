@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.11.0](https://github.com/rudderlabs/code-server/compare/v1.10.0...v1.11.0) (2026-03-13)
+
+
+### Features
+
+* add CS_ALLOWED_ORIGINS env var module ([#149](https://github.com/rudderlabs/code-server/issues/149)) ([d15a04c](https://github.com/rudderlabs/code-server/commit/d15a04cca763927ff83fb2d0398055524581d4dd))
+* hide unnecessary Source Control UI elements ([#147](https://github.com/rudderlabs/code-server/issues/147)) ([b7a0b66](https://github.com/rudderlabs/code-server/commit/b7a0b66f1d7de1670690652b870ee20a47971788))
+* **sec-98:** JWT auth bootstrap + dual-mode auth ([#152](https://github.com/rudderlabs/code-server/issues/152)) ([0edcb67](https://github.com/rudderlabs/code-server/commit/0edcb672f68fc7b1a90cbcbac7ffbba676be86ab))
+
+
+### Bug Fixes
+
+* remove downloaded packages from final Docker image ([#144](https://github.com/rudderlabs/code-server/issues/144)) ([ff63df6](https://github.com/rudderlabs/code-server/commit/ff63df628028a82e35eb24ae3005712af7ac75c3))
+
 ## [1.10.0](https://github.com/rudderlabs/code-server/compare/v1.9.0...v1.10.0) (2026-02-25)
 
 
