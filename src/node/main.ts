@@ -6,6 +6,7 @@ import { Disposable } from "../common/emitter"
 import { plural } from "../common/util"
 import { createApp, ensureAddress } from "./app"
 import { AuthType, DefaultedArgs, Feature, toCodeArgs, UserProvidedArgs } from "./cli"
+import { isJwtAuthEnabled } from "./jwt"
 import { commit, version, vsRootPath } from "./constants"
 import { loadCustomStrings } from "./i18n"
 import { register } from "./routes"
@@ -158,6 +159,10 @@ export const runCodeServer = async (
     }
   } else {
     logger.info("  - Authentication is disabled")
+  }
+
+  if (isJwtAuthEnabled()) {
+    logger.info("  - JWT authentication is enabled")
   }
 
   if (args.cert) {

@@ -16,6 +16,7 @@ import { CoderSettings, SettingsProvider } from "../settings"
 import { UpdateProvider } from "../update"
 import { getMediaMime, paths } from "../util"
 import type { WebsocketRequest } from "../wsRouter"
+import * as bootstrap from "./bootstrap"
 import * as domainProxy from "./domainProxy"
 import { errorHandler, wsErrorHandler } from "./errors"
 import * as health from "./health"
@@ -91,6 +92,8 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
     next()
   })
 
+  app.router.use("/", bootstrap.router)
+
   app.router.use(/.*/, async (req, res, next) => {
     // If we're handling TLS ensure all requests are redirected to HTTPS.
     // TODO: This does *NOT* work if you have a base path since to specify the
@@ -162,11 +165,10 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
 
   if (args.auth === AuthType.Password) {
     app.router.use("/login", login.router)
-    app.router.use("/logout", logout.router)
   } else {
     app.router.all("/login", (req, res) => redirect(req, res, "/", {}))
-    app.router.all("/logout", (req, res) => redirect(req, res, "/", {}))
   }
+  app.router.use("/logout", logout.router)
 
   app.router.use("/update", update.router)
 
