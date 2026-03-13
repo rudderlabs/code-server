@@ -58,6 +58,8 @@ RUN mkdir -p /home/codeuser/.pb && \
 
 COPY release-packages/* /tmp/
 COPY claude.vsix /tmp/claude.vsix
+# pb-proxy replaces the pb binary — forwards commands to the executor pod
+COPY pb-proxy-${TARGETARCH} /usr/local/bin/pb
 
 # Create custom-strings.json directly in the container
 RUN cat > /home/codeuser/custom-strings.json << 'EOF'

@@ -356,6 +356,54 @@ jobs:
 
           ls -lh claude.vsix
 
+      - name: Download pb-proxy binary
+        if: false # temporarily disabled — using committed binaries for testing; revert before merging to main
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          PB_PROXY_REF=$(cat .pb-proxy-version | tr -d '[:space:]')
+          echo "pb-proxy reference: ${PB_PROXY_REF}"
+
+          if [[ "$PB_PROXY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Downloading pb-proxy from release ${PB_PROXY_REF}..."
+            if ! gh release download "${PB_PROXY_REF}" \
+              --repo rudderlabs/wht \
+              --pattern "pb-proxy_${PB_PROXY_REF}_linux_${{ matrix.arch }}.tar.gz" \
+              --output pb-proxy.tar.gz; then
+              echo "Error: Failed to download release ${PB_PROXY_REF}"
+              exit 1
+            fi
+          else
+            echo "Fetching latest workflow run for branch ${PB_PROXY_REF}..."
+            RUN_DATA=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/rudderlabs/wht/actions/workflows/build-pb-proxy.yaml/runs?branch=${PB_PROXY_REF}&status=success&per_page=1" \
+              --jq '.workflow_runs[0] | select(.id != null) | {id: .id}')
+
+            if [ -z "$RUN_DATA" ] || [ "$RUN_DATA" = "null" ]; then
+              echo "Error: No successful workflow runs found for branch ${PB_PROXY_REF}"
+              exit 1
+            fi
+
+            RUN_ID=$(echo "$RUN_DATA" | jq -r '.id')
+            echo "Downloading artifact from run ${RUN_ID}..."
+            if ! gh run download ${RUN_ID} \
+              --repo rudderlabs/wht \
+              --pattern "pb-proxy_*_linux_${{ matrix.arch }}.tar.gz" \
+              --dir ./pb-proxy-artifact; then
+              echo "Error: Failed to download artifact from workflow run"
+              exit 1
+            fi
+            mv pb-proxy-artifact/*.tar.gz pb-proxy.tar.gz
+            rm -rf ./pb-proxy-artifact
+          fi
+
+          tar -xzf pb-proxy.tar.gz
+          chmod +x pb-proxy
+          rm pb-proxy.tar.gz
+          ls -lh pb-proxy
+
       - name: Download release packages
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
