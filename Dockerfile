@@ -6,7 +6,7 @@ ARG TARGETARCH=amd64
 
 # Install Python, pip, git, curl, and wget
 RUN apt-get update && \
-  apt-get install -y python3.10 python3-pip git curl wget sudo && \
+  apt-get install -y python3.10 python3-pip git curl wget sudo strace && \
   apt-get clean
 
 # Copy requirements.txt first
@@ -78,6 +78,12 @@ ARG CODE_SERVER_VERSION=1.10.0
 # x-release-please-end
 RUN (dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y) && \
   rm -f /tmp/code-server_*.deb /tmp/code-server*.rpm /tmp/code-server*.tar.gz
+
+# Install landrun (Landlock sandbox CLI)
+ARG LANDRUN_VERSION=v0.1.14
+RUN curl -fsSL "https://github.com/Zouuup/landrun/releases/download/${LANDRUN_VERSION}/landrun-linux-amd64" \
+      -o /usr/local/bin/landrun && \
+    chmod 755 /usr/local/bin/landrun
 
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
