@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.12.0](https://github.com/rudderlabs/code-server/compare/v1.11.0...v1.12.0) (2026-03-17)
+
+
+### Features
+
+* landrun PRO-5324 ([#151](https://github.com/rudderlabs/code-server/issues/151)) ([03caf6d](https://github.com/rudderlabs/code-server/commit/03caf6d44596da0ca53714f8c5c8c8981962ffff))
+
 ## [1.11.0](https://github.com/rudderlabs/code-server/compare/v1.10.0...v1.11.0) (2026-03-17)
 
 
