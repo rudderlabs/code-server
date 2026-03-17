@@ -79,6 +79,12 @@ ARG CODE_SERVER_VERSION=1.11.0
 RUN (dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y) && \
   rm -f /tmp/code-server_*.deb /tmp/code-server*.rpm /tmp/code-server*.tar.gz
 
+# Install landrun (Landlock sandbox CLI)
+ARG LANDRUN_VERSION=v0.1.14
+RUN curl -fsSL "https://github.com/Zouuup/landrun/releases/download/${LANDRUN_VERSION}/landrun-linux-amd64" \
+      -o /usr/local/bin/landrun && \
+    chmod 755 /usr/local/bin/landrun
+
 # Switch to codeuser for extension installation and MCP setup
 USER codeuser
 RUN code-server --install-extension /tmp/claude.vsix
