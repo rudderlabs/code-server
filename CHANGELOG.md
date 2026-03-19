@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.12.1](https://github.com/rudderlabs/code-server/compare/v1.12.0...v1.12.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* escape % in lshell history_file path ([#160](https://github.com/rudderlabs/code-server/issues/160)) ([f0d0ad1](https://github.com/rudderlabs/code-server/commit/f0d0ad132a3fb46bc8d05da2e7cd1e1b71abf68d))
+* missing locked uid 1000 for codeuser ([#159](https://github.com/rudderlabs/code-server/issues/159)) ([f0821e3](https://github.com/rudderlabs/code-server/commit/f0821e3abff8ed09cd6b8b389baad6d709eb1331))
+
 ## [1.12.0](https://github.com/rudderlabs/code-server/compare/v1.11.0...v1.12.0) (2026-03-17)
 
 
