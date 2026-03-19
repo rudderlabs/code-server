@@ -42,7 +42,7 @@ RUN chmod 644 /etc/lshell.conf
 # ============================================
 
 # Create a non-root user with RESTRICTED SHELL (lshell)
-RUN useradd -m -s /usr/local/bin/lshell codeuser
+RUN useradd -m -u 1000 -s /usr/local/bin/lshell codeuser
 
 # Fix log directory ownership for codeuser
 RUN chown -R codeuser:codeuser /var/log/lshell/
