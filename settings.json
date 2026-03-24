@@ -8,12 +8,11 @@
     "editorGroupHeader.tabsBackground": "#e9ebec",
     "editorGroup.border": "#c0c0c0"
   },
-  "terminal.integrated.defaultProfile.linux": "lshell",
+  "terminal.integrated.defaultProfile.linux": "bash",
   "terminal.integrated.profiles.linux": {
-    "lshell": {
-      "path": "/usr/local/bin/lshell"
+    "bash": {
+      "path": "/bin/bash"
     },
-    "bash": null,
     "zsh": null,
     "sh": null,
     "dash": null,

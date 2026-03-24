@@ -16,36 +16,12 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 # ============================================
-# RESTRICTED SHELL SECURITY (lshell)
+# Create non-root user
 # ============================================
-
-# Install lshell FIRST (PyPI package name is 'limited-shell')
-RUN pip3 install limited-shell==0.10.1 || (echo "FATAL: lshell installation failed" && exit 1)
-
-# Verify lshell is installed
-RUN test -f /usr/local/bin/lshell || (echo "FATAL: lshell not found" && exit 1)
-
-# Create log directory with proper permissions
-RUN mkdir -p /var/log/lshell && chmod 755 /var/log/lshell
-
-# Copy lshell configuration from external file
-COPY config/lshell.conf /etc/lshell.conf
-
-# Validate lshell configuration syntax
-RUN python3 -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/lshell.conf')" || (echo "FATAL: Invalid lshell.conf syntax" && exit 1)
-
-# Set proper permissions on config file
-RUN chmod 644 /etc/lshell.conf
-
-# ============================================
-# NOW create user with lshell (shell exists now)
-# ============================================
-
-# Create a non-root user with RESTRICTED SHELL (lshell)
-RUN useradd -m -u 1000 -s /usr/local/bin/lshell codeuser
-
-# Fix log directory ownership for codeuser
-RUN chown -R codeuser:codeuser /var/log/lshell/
+# Note: lshell (restricted shell) removed for private beta to unblock
+# Cline/VSCode shell integration. Will be re-added before public release.
+# See config/lshell.conf for the original restricted shell configuration.
+RUN useradd -m -u 1000 -s /bin/bash codeuser
 
 # Create project directory
 RUN mkdir -p /home/codeuser/project
@@ -120,24 +96,11 @@ RUN echo '{"mcpServers":{ "Profiles": { "command": "/home/codeuser/profiles-mcp/
 USER root
 COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-server/User/settings.json
 
-# ============================================
-# TERMINAL SECURITY: Restrict terminal profiles
-# ============================================
-# Remove all shells except lshell from /etc/shells so code-server
-# won't auto-detect them for the terminal profile picker.
-# Terminal profile restrictions are in settings.json (copied above).
-# Both files are owned by root and read-only for codeuser to prevent
-# users from re-enabling bash by editing these files.
 RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
-    echo "/usr/local/bin/lshell" >> /etc/shells && \
+    echo "/bin/bash" >> /etc/shells && \
     chmod 644 /etc/shells && chown root:root /etc/shells
 
 RUN chown -R codeuser:codeuser /home/codeuser
-
-# Lock settings.json AFTER chown -R (otherwise chown -R would undo the lock)
-# Root-owned, read-only for codeuser — prevents re-enabling bash via UI or file edits.
-RUN chown root:root /home/codeuser/.local/share/code-server/User/settings.json && \
-    chmod 644 /home/codeuser/.local/share/code-server/User/settings.json
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
