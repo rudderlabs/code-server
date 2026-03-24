@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.13.0](https://github.com/rudderlabs/code-server/compare/v1.12.1...v1.13.0) (2026-03-24)
+
+
+### Features
+
+* remove lshell ([#167](https://github.com/rudderlabs/code-server/issues/167)) ([53417d8](https://github.com/rudderlabs/code-server/commit/53417d8fd44f6d0af868c0d6fac88de29091f6ac))
+* replace ubuntu .bashrc with minimal configuration ([#166](https://github.com/rudderlabs/code-server/issues/166)) ([983e8c4](https://github.com/rudderlabs/code-server/commit/983e8c49b257fc04fda50da0e5eb2b9bf01bd676))
+
+
+### Miscellaneous Chores
+
+* **sec:** remove redundant trivy docker scan workflow (SEC-120) ([#163](https://github.com/rudderlabs/code-server/issues/163)) ([a07854c](https://github.com/rudderlabs/code-server/commit/a07854caec93ceb3095cbd820565ba472680be99))
+* **sec:** remove redundant trivy docker workflow (SEC-120) ([a07854c](https://github.com/rudderlabs/code-server/commit/a07854caec93ceb3095cbd820565ba472680be99))
+
 ## [1.12.1](https://github.com/rudderlabs/code-server/compare/v1.12.0...v1.12.1) (2026-03-19)
 
 
