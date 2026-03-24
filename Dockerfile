@@ -78,7 +78,7 @@ COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/med
 USER codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone --branch feature/pro-5371-pb-query-parity https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch main https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
