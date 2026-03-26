@@ -47,8 +47,9 @@ jobs:
 
       # Strip out the v (v4.9.1 -> 4.9.1).
       - name: Get and set VERSION
+        env:
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.version || github.ref_name }}"
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - run: npm run publish:npm
@@ -84,8 +85,9 @@ jobs:
 
       # Strip out the v (v4.9.1 -> 4.9.1).
       - name: Get and set VERSION
+        env:
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.version || github.ref_name }}"
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - name: Bump code-server homebrew version
@@ -134,8 +136,9 @@ jobs:
 
       # Strip out the v (v4.9.1 -> 4.9.1).
       - name: Get and set VERSION
+        env:
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.version || github.ref_name }}"
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - name: Validate package
@@ -191,8 +194,9 @@ jobs:
 
       # Strip out the v (v4.9.1 -> 4.9.1).
       - name: Get and set VERSION
+        env:
+          TAG: ${{ github.event.inputs.version || github.ref_name }}
         run: |
-          TAG="${{ github.event.inputs.version || github.ref_name }}"
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
       - name: Download deb artifacts
