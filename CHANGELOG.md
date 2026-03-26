@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.13.1](https://github.com/rudderlabs/code-server/compare/v1.13.0...v1.13.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* include abs-proxy-base-path in JWT auth redirect ([#169](https://github.com/rudderlabs/code-server/issues/169)) ([4427335](https://github.com/rudderlabs/code-server/commit/442733571f39cd3b712e109fed3be28706976058))
+
+
+### Miscellaneous Chores
+
+* release MCP 1.4.0 ([#171](https://github.com/rudderlabs/code-server/issues/171)) ([7ca0364](https://github.com/rudderlabs/code-server/commit/7ca0364cb413bbe190b21dbcb6115f6ea1c0d560))
+
 ## [1.13.0](https://github.com/rudderlabs/code-server/compare/v1.12.1...v1.13.0) (2026-03-24)
 
 
