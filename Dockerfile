@@ -78,11 +78,11 @@ COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/med
 USER codeuser
 
 # Clone profiles-mcp as codeuser
-RUN git clone --branch v1.3.0 https://github.com/rudderlabs/profiles-mcp
+RUN git clone --branch v1.4.0 https://github.com/rudderlabs/profiles-mcp
 
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
-RUN echo "IS_CLOUD_BASED=true" > /home/codeuser/profiles-mcp/.env
+RUN echo "IS_CLOUD_BASED=true\nUSE_PB_QUERY=false" > /home/codeuser/profiles-mcp/.env
 
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
