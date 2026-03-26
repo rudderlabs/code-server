@@ -86,7 +86,7 @@ describe("bootstrap", () => {
     expect(sessionCookie).toContain("Secure")
     expect(sessionCookie).toContain("SameSite=None")
     expect(sessionCookie).toContain("Path=/test-session/")
-    expect(res.headers.location).toBe("/")
+    expect(res.headers.location).toBe("/test-session/")
   })
 
   it("should pass through when no token param", async () => {
@@ -108,7 +108,7 @@ describe("bootstrap", () => {
 
     const res = await supertest.default(app).get(`/?token=${token}&foo=bar`).expect(302)
 
-    expect(res.headers.location).toBe("/")
+    expect(res.headers.location).toBe("/test-session/")
   })
 
   it("should reject replayed JWT", async () => {
@@ -119,5 +119,33 @@ describe("bootstrap", () => {
 
     await supertest.default(app).get(`/?token=${token1}`).expect(302)
     await supertest.default(app).get(`/?token=${token2}`).expect(401)
+  })
+
+  it("should redirect to / when no abs-proxy-base-path is configured", async () => {
+    const { router } = require("../../../../src/node/routes/bootstrap")
+    const app = express.default()
+
+    app.use((req: any, _res: any, next: any) => {
+      req.args = {
+        "proxy-domain": [],
+      }
+      next()
+    })
+
+    app.use("/", router)
+
+    app.use(((err: any, _req: any, res: any, _next: any) => {
+      res.status(err.statusCode || 500).json({ error: err.message })
+    }) as express.ErrorRequestHandler)
+
+    const token = fixture.createJwt()
+    const res = await supertest.default(app).get(`/?token=${token}`).expect(302)
+
+    expect(res.headers.location).toBe("/")
+    const cookies = res.headers["set-cookie"]
+    const sessionCookie = Array.isArray(cookies)
+      ? cookies.find((c: string) => c.startsWith("code-server-session="))
+      : cookies
+    expect(sessionCookie).toContain("Path=/")
   })
 })
