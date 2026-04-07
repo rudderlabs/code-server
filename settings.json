@@ -8,7 +8,6 @@
     "editorGroupHeader.tabsBackground": "#e9ebec",
     "editorGroup.border": "#c0c0c0"
   },
-  "terminal.integrated.cwd": "/home/codeuser/project",
   "terminal.integrated.defaultProfile.linux": "lshell",
   "terminal.integrated.profiles.linux": {
     "lshell": {
