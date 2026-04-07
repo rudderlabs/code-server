@@ -1,3 +1,3 @@
 awscli==1.42.59
-profiles-mlcorelib
-profiles-rudderstack
+profiles-mlcorelib==0.8.11
+profiles-rudderstack==0.24.8
