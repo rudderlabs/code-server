@@ -8,3 +8,5 @@
 !requirements.txt
 !settings.json
 !src/browser/media/copilot-welcome.html
+!pb-proxy-amd64
+!pb-proxy-arm64
