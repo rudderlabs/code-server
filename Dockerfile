@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 # Base image
 FROM ubuntu:22.04@sha256:09506232a8004baa32c47d68f1e5c307d648fdd59f5e7eaa42aaf87914100db3
 
@@ -13,7 +14,10 @@ RUN apt-get update && \
 COPY requirements.txt .
 
 RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
+RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
+    pip3 install --no-cache-dir \
+      -i https://$(cat /run/secrets/PYPI_CONNECTION_STRING) \
+      -r requirements.txt && rm requirements.txt
 
 # ============================================
 # Create non-root user
@@ -35,18 +39,7 @@ RUN mkdir -p /home/codeuser/.pb && \
 COPY release-packages/* /tmp/
 COPY claude.vsix /tmp/claude.vsix
 
-# Create custom-strings.json directly in the container
-RUN cat > /home/codeuser/custom-strings.json << 'EOF'
-{
-"WELCOME": "Welcome to {{app}}",
-"LOGIN_TITLE": "{{app}} Access Portal",
-"LOGIN_BELOW": "Please enter the code to continue",
-"PASSWORD_PLACEHOLDER": "Enter Code",
-"LOGIN_PASSWORD": "",
-"LOGIN_USING_ENV_PASSWORD": "",
-"LOGIN_USING_HASHED_PASSWORD": ""
-}
-EOF
+COPY custom-strings.json /home/codeuser/custom-strings.json
 
 # Install code-server from .deb package
 # x-release-please-start-version
