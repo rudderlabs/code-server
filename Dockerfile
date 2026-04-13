@@ -10,14 +10,6 @@ RUN apt-get update && \
   apt-get install -y python3.10 python3-pip git curl wget sudo && \
   apt-get clean
 
-# Copy requirements.txt first
-COPY requirements.txt .
-
-RUN pip3 install --upgrade pip
-RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
-    pip3 install --no-cache-dir \
-      -i https://$(cat /run/secrets/PYPI_CONNECTION_STRING) \
-      -r requirements.txt && rm requirements.txt
 
 # ============================================
 # Create non-root user
@@ -26,6 +18,15 @@ RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
 # Cline/VSCode shell integration. Will be re-added before public release.
 # See config/lshell.conf for the original restricted shell configuration.
 RUN useradd -m -u 1000 -s /bin/bash codeuser
+
+# Copy requirements.txt first
+COPY requirements.txt .
+
+RUN pip3 install --upgrade pip
+RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
+    pip3 install --no-cache-dir \
+      -i https://$(cat /run/secrets/PYPI_CONNECTION_STRING) \
+      -r requirements.txt && rm requirements.txt
 
 # Create project directory
 RUN mkdir -p /home/codeuser/project
@@ -94,6 +95,8 @@ RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
     chmod 644 /etc/shells && chown root:root /etc/shells
 
 RUN chown -R codeuser:codeuser /home/codeuser
+RUN chown -R codeuser:codeuser /usr/local/lib/python3.10/
+
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
