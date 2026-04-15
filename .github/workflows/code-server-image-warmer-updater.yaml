@@ -1,0 +1,74 @@
+name: Update code-server image warmer
+
+run-name: Update code-server image warmer to ${{ github.event.inputs.image-tag || github.event.client_payload.image-tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: "The new image tag (e.g. v1.9.0)"
+        required: true
+  repository_dispatch:
+    types: [update-code-server-image-warmer]
+
+jobs:
+  update-image-warmers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout Repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Read Inputs
+        id: inputs
+        run: |
+          TAG="${{ github.event.inputs.image-tag || github.event.client_payload.image-tag }}"
+          echo "image-tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Update imageWarmer tags
+        run: |
+          TAG="${{ steps.inputs.outputs.image-tag }}"
+          IMAGE="422074288268.dkr.ecr.us-east-1.amazonaws.com/rudderstack/profiles-code-server"
+
+          FILES=(
+            "helm-charts/cluster-overprovisioner/values.dev.yaml"
+            "helm-charts/cluster-overprovisioner/values.enterprise-rudder.yaml"
+            "helm-charts/cluster-overprovisioner/values.enterprise1-eu.yaml"
+            "helm-charts/cluster-overprovisioner/values.multi-tenant-rudder.yaml"
+            "helm-charts/cluster-overprovisioner/values.multi-tenant-eu.yaml"
+          )
+
+          for file in "${FILES[@]}"; do
+            echo "Updating $file"
+            sed -i "s|${IMAGE}:[^ ]*|${IMAGE}:${TAG}|g" "$file"
+          done
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "chore(release): bump profiles-code-server image warmer to ${{ steps.inputs.outputs.image-tag }}"
+          committer: GitHub <noreply@github.com>
+          branch: "update-code-server-image-warmers-${{ steps.inputs.outputs.image-tag }}"
+          delete-branch: true
+          title: "chore(release): bump profiles-code-server image warmer to ${{ steps.inputs.outputs.image-tag }}"
+          body: |
+            ## Automated PR
+
+            Bumps `profiles-code-server` image warmer tag to `${{ steps.inputs.outputs.image-tag }}` across all clusters.
+
+            **Updated files:**
+            - `values.dev.yaml`
+            - `values.enterprise-rudder.yaml`
+            - `values.enterprise1-eu.yaml`
+            - `values.multi-tenant-rudder.yaml`
+            - `values.multi-tenant-eu.yaml`
+          labels: |
+            deploy
+            automated pr
+          draft: false
