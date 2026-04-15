@@ -289,7 +289,6 @@ jobs:
 
   docker-build-ecr:
     needs: [docker-metadata-ecr, package-linux-cross]
-    environment: build
     strategy:
       fail-fast: false
       matrix:
@@ -449,7 +448,6 @@ jobs:
   upload-release-assets:
     name: Upload assets to GitHub Release
     runs-on: ubuntu-latest
-    environment: build
     # Only run for releases
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs:
