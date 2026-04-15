@@ -95,7 +95,6 @@ RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
     chmod 644 /etc/shells && chown root:root /etc/shells
 
 RUN chown -R codeuser:codeuser /home/codeuser
-RUN chown -R codeuser:codeuser /usr/local/lib/python3.10/
 
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
