@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.14.0](https://github.com/rudderlabs/code-server/compare/v1.13.2...v1.14.0) (2026-04-15)
+
+
+### Features
+
+* support private PyPI server in Docker builds ([#181](https://github.com/rudderlabs/code-server/issues/181)) ([d737060](https://github.com/rudderlabs/code-server/commit/d737060feeee26ebf1990cc4a3d47498ec58de64))
+
 ## [1.13.2](https://github.com/rudderlabs/code-server/compare/v1.13.1...v1.13.2) (2026-03-31)
 
 
