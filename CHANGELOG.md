@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.14.0](https://github.com/rudderlabs/code-server/compare/v1.13.2...v1.14.0) (2026-04-15)
+
+
+### Features
+
+* support private PyPI server in Docker builds ([#181](https://github.com/rudderlabs/code-server/issues/181)) ([d737060](https://github.com/rudderlabs/code-server/commit/d737060feeee26ebf1990cc4a3d47498ec58de64))
+
+## [1.13.2](https://github.com/rudderlabs/code-server/compare/v1.13.1...v1.13.2) (2026-03-31)
+
+
+### Bug Fixes
+
+* update .env configuration for cloud-based setting ([#172](https://github.com/rudderlabs/code-server/issues/172)) ([2b89250](https://github.com/rudderlabs/code-server/commit/2b89250c0f40951de0dfbf5f91d6ddf39cf4dec6))
+* **vuln:** remediate GHA script injection ([#175](https://github.com/rudderlabs/code-server/issues/175)) ([4c8dfaa](https://github.com/rudderlabs/code-server/commit/4c8dfaae254770e3db1666b87f90f2552c413139))
+
+
+### Miscellaneous Chores
+
+* add USE_PB_QUERY in inherit env vars ([#176](https://github.com/rudderlabs/code-server/issues/176)) ([5fc7766](https://github.com/rudderlabs/code-server/commit/5fc77665772c22ea9a42bcbc13606335798bd802))
+* update Cline to 6.15.0 ([#177](https://github.com/rudderlabs/code-server/issues/177)) ([097cd56](https://github.com/rudderlabs/code-server/commit/097cd56dac96fa6be72dcf9002c222d84297e140))
+
 ## [1.13.1](https://github.com/rudderlabs/code-server/compare/v1.13.0...v1.13.1) (2026-03-26)
 
 
