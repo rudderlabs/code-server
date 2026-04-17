@@ -34,10 +34,7 @@ describe("frameAncestorsMiddleware", () => {
   })
 
   it("emits configured origins space-separated", () => {
-    ;(getAllowedOrigins as jest.Mock).mockReturnValue([
-      "https://app.rudderstack.com",
-      "https://app.dev.rudderlabs.com",
-    ])
+    ;(getAllowedOrigins as jest.Mock).mockReturnValue(["https://app.rudderstack.com", "https://app.dev.rudderlabs.com"])
     const { header } = invoke()
     expect(header).toBe("frame-ancestors https://app.rudderstack.com https://app.dev.rudderlabs.com")
   })
