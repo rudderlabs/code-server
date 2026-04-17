@@ -268,7 +268,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
       - name: docker arm64 meta
         id: arm64_meta
         uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
@@ -276,7 +276,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
           flavor: |
             suffix=-${{ env.arch_arm64 }},onlatest=true
       - name: docker amd64 meta
@@ -286,7 +286,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
           flavor: |
             suffix=-${{ env.arch_amd64 }},onlatest=true
 
