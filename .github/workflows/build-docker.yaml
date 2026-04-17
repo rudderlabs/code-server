@@ -390,12 +390,20 @@ jobs:
         id: arch-meta
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.arm64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.arm64_labels }}" >> $GITHUB_OUTPUT
+            TAGS="${{ needs.docker-metadata-ecr.outputs.arm64_tags }}"
+            LABELS="${{ needs.docker-metadata-ecr.outputs.arm64_labels }}"
           else
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.amd64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.amd64_labels }}" >> $GITHUB_OUTPUT
+            TAGS="${{ needs.docker-metadata-ecr.outputs.amd64_tags }}"
+            LABELS="${{ needs.docker-metadata-ecr.outputs.amd64_labels }}"
           fi
+          {
+            echo "tags<<TAGS_EOF"
+            echo "$TAGS"
+            echo "TAGS_EOF"
+            echo "labels<<LABELS_EOF"
+            echo "$LABELS"
+            echo "LABELS_EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: docker build
         uses: rudderlabs/build-scan-push-action@96d7bfca912dd2e8805dbb322dc2540504ecac1e # v2.1.0
