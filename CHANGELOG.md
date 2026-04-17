@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.15.0](https://github.com/rudderlabs/code-server/compare/v1.14.0...v1.15.0) (2026-04-17)
+
+
+### Features
+
+* **csp:** frame-ancestors header sourced from CS_ALLOWED_ORIGINS ([#186](https://github.com/rudderlabs/code-server/issues/186)) ([5b1296f](https://github.com/rudderlabs/code-server/commit/5b1296f1014f2c83cb52845a1d8b56216b6e7742))
+* **docker:** tag ECR images with `latest` on release ([74b92a6](https://github.com/rudderlabs/code-server/commit/74b92a6062383d5eea6e0c9d68e2826b5480c78d))
+* **docker:** tag ECR images with latest on release ([#188](https://github.com/rudderlabs/code-server/issues/188)) ([74b92a6](https://github.com/rudderlabs/code-server/commit/74b92a6062383d5eea6e0c9d68e2826b5480c78d))
+
+
+### Bug Fixes
+
+* **vuln:** pin and bump action refs (SEC-171) ([29733a3](https://github.com/rudderlabs/code-server/commit/29733a3d29f0c2c18e501f1c5849e3d67a4cbf98))
+
+
+### Miscellaneous Chores
+
+* **vuln:** pin and bump action refs (SEC-171) ([#180](https://github.com/rudderlabs/code-server/issues/180)) ([29733a3](https://github.com/rudderlabs/code-server/commit/29733a3d29f0c2c18e501f1c5849e3d67a4cbf98))
+
 ## [1.14.0](https://github.com/rudderlabs/code-server/compare/v1.13.2...v1.14.0) (2026-04-15)
 
 
