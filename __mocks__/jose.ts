@@ -31,7 +31,7 @@ function base64urlDecode(str: string): Buffer {
 }
 
 export function createRemoteJWKSet(url: URL): GetKeyFunction {
-  let cachedKeys: Record<string, crypto.KeyObject> = {}
+  const cachedKeys: Record<string, crypto.KeyObject> = {}
 
   return async (protectedHeader: { kid?: string }) => {
     if (!protectedHeader.kid || !cachedKeys[protectedHeader.kid]) {

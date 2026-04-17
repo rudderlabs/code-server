@@ -7,6 +7,7 @@ import * as tls from "tls"
 import { Disposable } from "../../common/emitter"
 import { HttpCode, HttpError } from "../../common/http"
 import { plural } from "../../common/util"
+import { getAllowedOrigins } from "../allowedOrigins"
 import { App } from "../app"
 import { AuthType, DefaultedArgs } from "../cli"
 import { commit, rootPath } from "../constants"
@@ -91,6 +92,8 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
 
     next()
   })
+
+  app.router.use(frameAncestorsMiddleware())
 
   app.router.use("/", bootstrap.router)
 
@@ -190,5 +193,19 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   return () => {
     heart.dispose()
     vscode.dispose()
+  }
+}
+
+/**
+ * `frame-ancestors` must be delivered as an HTTP header — browsers ignore it
+ * in `<meta>` tags. Origins are sourced from `CS_ALLOWED_ORIGINS`; when unset
+ * the value is `'none'`, denying embedding entirely.
+ */
+export function frameAncestorsMiddleware(): express.RequestHandler {
+  const allowed = getAllowedOrigins()
+  const value = allowed.length > 0 ? allowed.join(" ") : "'none'"
+  return (_req, res, next) => {
+    res.setHeader("Content-Security-Policy", `frame-ancestors ${value}`)
+    next()
   }
 }
