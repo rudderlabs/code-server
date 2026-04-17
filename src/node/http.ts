@@ -10,10 +10,10 @@ import { normalize } from "../common/util"
 import { AuthType, DefaultedArgs } from "./cli"
 import { version as codeServerVersion } from "./constants"
 import { Heart } from "./heart"
-import { CoderSettings, SettingsProvider } from "./settings"
-import { UpdateProvider } from "./update"
 import { isJwtAuthEnabled } from "./jwt"
 import { isValidSession } from "./sessionStore"
+import { CoderSettings, SettingsProvider } from "./settings"
+import { UpdateProvider } from "./update"
 import {
   getPasswordMethod,
   IsCookieValidArgs,
