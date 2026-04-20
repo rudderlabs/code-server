@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.16.0](https://github.com/rudderlabs/code-server/compare/v1.15.0...v1.16.0) (2026-04-20)
+
+
+### Features
+
+* add lshell back with proper cline integration ([#178](https://github.com/rudderlabs/code-server/issues/178)) ([9d5bd8b](https://github.com/rudderlabs/code-server/commit/9d5bd8bc6ff09c5e7896b654deac99c7ff2473da))
+
 ## [1.15.0](https://github.com/rudderlabs/code-server/compare/v1.14.0...v1.15.0) (2026-04-17)
 
 
