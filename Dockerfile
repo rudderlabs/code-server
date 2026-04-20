@@ -12,12 +12,23 @@ RUN apt-get update && \
 
 
 # ============================================
+# RESTRICTED SHELL SECURITY (lshell)
+# ============================================
+# lshell (limited-shell) restricts terminal commands to a whitelist.
+# Cline bypasses shell integration by using node-pty to spawn lshell directly.
+# See config/lshell.conf for the whitelist configuration.
+RUN pip3 install limited-shell==0.10.1 || (echo "FATAL: lshell installation failed" && exit 1)
+RUN test -f /usr/local/bin/lshell || (echo "FATAL: lshell not found" && exit 1)
+RUN mkdir -p /var/log/lshell && chmod 755 /var/log/lshell
+COPY config/lshell.conf /etc/lshell.conf
+RUN python3 -c "import configparser; c = configparser.ConfigParser(); c.read('/etc/lshell.conf')" \
+    || (echo "FATAL: Invalid lshell.conf syntax" && exit 1)
+RUN chmod 644 /etc/lshell.conf
+
+# ============================================
 # Create non-root user
 # ============================================
-# Note: lshell (restricted shell) removed for private beta to unblock
-# Cline/VSCode shell integration. Will be re-added before public release.
-# See config/lshell.conf for the original restricted shell configuration.
-RUN useradd -m -u 1000 -s /bin/bash codeuser
+RUN useradd -m -u 1000 -s /usr/local/bin/lshell codeuser
 
 # Copy requirements.txt first
 COPY requirements.txt .
@@ -91,15 +102,19 @@ USER root
 COPY --chown=codeuser:codeuser settings.json /home/codeuser/.local/share/code-server/User/settings.json
 
 RUN echo "# /etc/shells: valid login shells" > /etc/shells && \
-    echo "/bin/bash" >> /etc/shells && \
+    echo "/usr/local/bin/lshell" >> /etc/shells && \
     chmod 644 /etc/shells && chown root:root /etc/shells
 
 RUN chown -R codeuser:codeuser /home/codeuser
-
+RUN chown -R codeuser:codeuser /var/log/lshell/
 RUN chmod 755 /home/codeuser/project
 RUN chmod 644 /home/codeuser/.pb/siteconfig.yaml
 RUN chmod 755 /home/codeuser/.pb
 RUN chmod 755 /home/codeuser/custom-strings.json
+
+# Lock settings.json to root to prevent users from changing terminal profile
+RUN chown root:root /home/codeuser/.local/share/code-server/User/settings.json && \
+    chmod 644 /home/codeuser/.local/share/code-server/User/settings.json
 
 # Switch back to codeuser
 USER codeuser
