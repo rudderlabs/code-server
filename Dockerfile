@@ -12,6 +12,16 @@ RUN apt-get update && \
 
 
 # ============================================
+# Install Go
+# ============================================
+ARG GO_VERSION=1.24.2
+RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${TARGETARCH}.tar.gz" \
+      -o /tmp/go.tar.gz && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# ============================================
 # RESTRICTED SHELL SECURITY (lshell)
 # ============================================
 # lshell (limited-shell) restricts terminal commands to a whitelist.
