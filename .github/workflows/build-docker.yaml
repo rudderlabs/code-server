@@ -70,14 +70,17 @@ jobs:
 
       - name: Get and set VERSION
         id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             VERSION="0.0.0-pr.${{ github.event.pull_request.number }}"
           elif [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
+            TAG="$RELEASE_TAG"
             VERSION="${TAG#v}"
           else
-            TAG="${{ inputs.version }}"
+            TAG="$INPUT_VERSION"
             VERSION="${TAG#v}"
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
@@ -252,13 +255,16 @@ jobs:
 
       - name: Determine Docker tag
         id: docker-tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "tag=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: docker meta
@@ -482,11 +488,14 @@ jobs:
 
       - name: Determine tag name
         id: tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload Release Assets

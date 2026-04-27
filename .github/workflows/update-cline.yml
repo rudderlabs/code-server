@@ -29,13 +29,17 @@ jobs:
 
       - name: Set version variables
         id: vars
+        env:
+          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            VERSION="${{ github.event.client_payload.version }}"
-            TAG="${{ github.event.client_payload.tag }}"
+            VERSION="$CLIENT_PAYLOAD_VERSION"
+            TAG="$CLIENT_PAYLOAD_TAG"
           else
-            VERSION="${{ github.event.inputs.version }}"
-            TAG="v${{ github.event.inputs.version }}"
+            VERSION="$INPUT_VERSION"
+            TAG="v$INPUT_VERSION"
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
