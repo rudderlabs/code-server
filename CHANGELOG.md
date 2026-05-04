@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.16.1](https://github.com/rudderlabs/code-server/compare/v1.16.0...v1.16.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* **iframe:** harden iframe postMessage to trusted parent origins ([#189](https://github.com/rudderlabs/code-server/issues/189)) ([25231c3](https://github.com/rudderlabs/code-server/commit/25231c30c108454ad8782979373e3bccea3a7c9a))
+
+
+### Miscellaneous Chores
+
+* bump build-scan-push-action from v2.1.0 to v2.2.0 ([#193](https://github.com/rudderlabs/code-server/issues/193)) ([c7969de](https://github.com/rudderlabs/code-server/commit/c7969de1331b30532c2e89723ac7685f5a5f8f51))
+* bump profiles-mlcorelib to 0.9.6 and profiles-rudderstack to 0.25.5 ([#199](https://github.com/rudderlabs/code-server/issues/199)) ([7521d64](https://github.com/rudderlabs/code-server/commit/7521d64dcd2ec50fa48f74b8030823cd02535994))
+* **vuln:** remediate template-injection findings (SEC-251) ([#196](https://github.com/rudderlabs/code-server/issues/196)) ([d14626c](https://github.com/rudderlabs/code-server/commit/d14626cfd57c1ea2fb04cc589f01514d542881a6))
+* **vuln:** scope workflow permissions to least privilege (SEC-167) ([#195](https://github.com/rudderlabs/code-server/issues/195)) ([33b554f](https://github.com/rudderlabs/code-server/commit/33b554f48055f8fcb9a33ad1f5ff6074873012e8))
+* **vuln:** zizmor --fix=all findings (SEC-199) ([#194](https://github.com/rudderlabs/code-server/issues/194)) ([8c7358c](https://github.com/rudderlabs/code-server/commit/8c7358c8c47c0932f00b13539ef47d3c3e209c23))
+
 ## [1.16.0](https://github.com/rudderlabs/code-server/compare/v1.15.0...v1.16.0) (2026-04-20)
 
 
