@@ -55,7 +55,7 @@ COPY custom-strings.json /home/codeuser/custom-strings.json
 
 # Install code-server from .deb package
 # x-release-please-start-version
-ARG CODE_SERVER_VERSION=1.16.0
+ARG CODE_SERVER_VERSION=1.16.1
 # x-release-please-end
 RUN (dpkg -i /tmp/code-server_*_${TARGETARCH}.deb || apt-get install -f -y) && \
   rm -f /tmp/code-server_*.deb /tmp/code-server*.rpm /tmp/code-server*.tar.gz
