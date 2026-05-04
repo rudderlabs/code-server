@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.16.2](https://github.com/rudderlabs/code-server/compare/v1.16.1...v1.16.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* latest build failure ([f7a3ddb](https://github.com/rudderlabs/code-server/commit/f7a3ddbabc48f359f77c0fb38245ed379855a1dc))
+* use heredoc syntax for multi-line GITHUB_OUTPUT in docker build ([#200](https://github.com/rudderlabs/code-server/issues/200)) ([f7a3ddb](https://github.com/rudderlabs/code-server/commit/f7a3ddbabc48f359f77c0fb38245ed379855a1dc))
+
 ## [1.16.1](https://github.com/rudderlabs/code-server/compare/v1.16.0...v1.16.1) (2026-05-04)
 
 
