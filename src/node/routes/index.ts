@@ -7,7 +7,7 @@ import * as tls from "tls"
 import { Disposable } from "../../common/emitter"
 import { HttpCode, HttpError } from "../../common/http"
 import { plural } from "../../common/util"
-import { getAllowedOrigins } from "../allowedOrigins"
+import { getAllowedOrigins, isOriginAllowed } from "../allowedOrigins"
 import { App } from "../app"
 import { AuthType, DefaultedArgs } from "../cli"
 import { commit, rootPath } from "../constants"
@@ -81,17 +81,7 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   app.router.use(common)
   app.wsRouter.use(common)
 
-  // Add CORS header to all responses
-  app.router.use((req, res, next) => {
-    const origin = req.headers.origin
-    const allowedOrigins = ["https://app.rudderstack.com", "https://app.dev.rudderlabs.com"]
-
-    if (origin && (allowedOrigins.includes(origin) || origin.match(/^https?:\/\/localhost(:\d+)?$/))) {
-      res.setHeader("Access-Control-Allow-Origin", origin)
-    }
-
-    next()
-  })
+  app.router.use(corsMiddleware())
 
   app.router.use(frameAncestorsMiddleware())
 
@@ -206,6 +196,21 @@ export function frameAncestorsMiddleware(): express.RequestHandler {
   const value = allowed.length > 0 ? allowed.join(" ") : "'none'"
   return (_req, res, next) => {
     res.setHeader("Content-Security-Policy", `frame-ancestors ${value}`)
+    next()
+  }
+}
+
+/**
+ * Reflect `Access-Control-Allow-Origin` only for origins listed in
+ * `CS_ALLOWED_ORIGINS`. Single source of truth with `frame-ancestors`.
+ */
+export function corsMiddleware(): express.RequestHandler {
+  return (req, res, next) => {
+    const origin = req.headers.origin
+    if (origin && isOriginAllowed(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin)
+      res.setHeader("Vary", "Origin")
+    }
     next()
   }
 }
