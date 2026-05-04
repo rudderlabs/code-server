@@ -396,11 +396,23 @@ jobs:
         id: arch-meta
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.arm64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.arm64_labels }}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<TAGS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.arm64_tags }}"
+              echo "TAGS_EOF"
+              echo "labels<<LABELS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.arm64_labels }}"
+              echo "LABELS_EOF"
+            } >> $GITHUB_OUTPUT
           else
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.amd64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.amd64_labels }}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<TAGS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.amd64_tags }}"
+              echo "TAGS_EOF"
+              echo "labels<<LABELS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.amd64_labels }}"
+              echo "LABELS_EOF"
+            } >> $GITHUB_OUTPUT
           fi
 
       - name: docker build
