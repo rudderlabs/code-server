@@ -274,7 +274,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
       - name: docker arm64 meta
         id: arm64_meta
         uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
@@ -282,7 +282,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
           flavor: |
             suffix=-${{ env.arch_arm64 }},onlatest=true
       - name: docker amd64 meta
@@ -292,7 +292,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
           flavor: |
             suffix=-${{ env.arch_amd64 }},onlatest=true
 
@@ -396,12 +396,20 @@ jobs:
         id: arch-meta
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.arm64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.arm64_labels }}" >> $GITHUB_OUTPUT
+            TAGS="${{ needs.docker-metadata-ecr.outputs.arm64_tags }}"
+            LABELS="${{ needs.docker-metadata-ecr.outputs.arm64_labels }}"
           else
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.amd64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.amd64_labels }}" >> $GITHUB_OUTPUT
+            TAGS="${{ needs.docker-metadata-ecr.outputs.amd64_tags }}"
+            LABELS="${{ needs.docker-metadata-ecr.outputs.amd64_labels }}"
           fi
+          {
+            echo "tags<<TAGS_EOF"
+            echo "$TAGS"
+            echo "TAGS_EOF"
+            echo "labels<<LABELS_EOF"
+            echo "$LABELS"
+            echo "LABELS_EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: docker build
         uses: rudderlabs/build-scan-push-action@865b4253caa57f8f20cd109e0efc1affe3a64939 # v2.2.0
