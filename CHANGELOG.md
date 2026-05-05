@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.17.0](https://github.com/rudderlabs/code-server/compare/v1.16.2...v1.17.0) (2026-05-05)
+
+
+### Features
+
+* **PRO-5511:** apply Figma color tokens as VS Code theme defaults ([#202](https://github.com/rudderlabs/code-server/issues/202)) ([71beebf](https://github.com/rudderlabs/code-server/commit/71beebfe8e171badffd327cd4ea11509d1087f19))
+
 ## [1.16.2](https://github.com/rudderlabs/code-server/compare/v1.16.1...v1.16.2) (2026-05-04)
 
 
