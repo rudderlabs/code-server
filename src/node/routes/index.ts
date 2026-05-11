@@ -7,6 +7,7 @@ import * as tls from "tls"
 import { Disposable } from "../../common/emitter"
 import { HttpCode, HttpError } from "../../common/http"
 import { plural } from "../../common/util"
+import { getAllowedOrigins, isOriginAllowed } from "../allowedOrigins"
 import { App } from "../app"
 import { AuthType, DefaultedArgs } from "../cli"
 import { commit, rootPath } from "../constants"
@@ -16,6 +17,7 @@ import { CoderSettings, SettingsProvider } from "../settings"
 import { UpdateProvider } from "../update"
 import { getMediaMime, paths } from "../util"
 import type { WebsocketRequest } from "../wsRouter"
+import * as bootstrap from "./bootstrap"
 import * as domainProxy from "./domainProxy"
 import { errorHandler, wsErrorHandler } from "./errors"
 import * as health from "./health"
@@ -79,17 +81,11 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   app.router.use(common)
   app.wsRouter.use(common)
 
-  // Add CORS header to all responses
-  app.router.use((req, res, next) => {
-    const origin = req.headers.origin
-    const allowedOrigins = ["https://app.rudderstack.com", "https://app.dev.rudderlabs.com"]
+  app.router.use(corsMiddleware())
 
-    if (origin && (allowedOrigins.includes(origin) || origin.match(/^https?:\/\/localhost(:\d+)?$/))) {
-      res.setHeader("Access-Control-Allow-Origin", origin)
-    }
+  app.router.use(frameAncestorsMiddleware())
 
-    next()
-  })
+  app.router.use("/", bootstrap.router)
 
   app.router.use(/.*/, async (req, res, next) => {
     // If we're handling TLS ensure all requests are redirected to HTTPS.
@@ -162,11 +158,10 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
 
   if (args.auth === AuthType.Password) {
     app.router.use("/login", login.router)
-    app.router.use("/logout", logout.router)
   } else {
     app.router.all("/login", (req, res) => redirect(req, res, "/", {}))
-    app.router.all("/logout", (req, res) => redirect(req, res, "/", {}))
   }
+  app.router.use("/logout", logout.router)
 
   app.router.use("/update", update.router)
 
@@ -188,5 +183,34 @@ export const register = async (app: App, args: DefaultedArgs): Promise<Disposabl
   return () => {
     heart.dispose()
     vscode.dispose()
+  }
+}
+
+/**
+ * `frame-ancestors` must be delivered as an HTTP header — browsers ignore it
+ * in `<meta>` tags. Origins are sourced from `CS_ALLOWED_ORIGINS`; when unset
+ * the value is `'none'`, denying embedding entirely.
+ */
+export function frameAncestorsMiddleware(): express.RequestHandler {
+  const allowed = getAllowedOrigins()
+  const value = allowed.length > 0 ? allowed.join(" ") : "'none'"
+  return (_req, res, next) => {
+    res.setHeader("Content-Security-Policy", `frame-ancestors ${value}`)
+    next()
+  }
+}
+
+/**
+ * Reflect `Access-Control-Allow-Origin` only for origins listed in
+ * `CS_ALLOWED_ORIGINS`. Single source of truth with `frame-ancestors`.
+ */
+export function corsMiddleware(): express.RequestHandler {
+  return (req, res, next) => {
+    const origin = req.headers.origin
+    if (origin && isOriginAllowed(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin)
+      res.setHeader("Vary", "Origin")
+    }
+    next()
   }
 }

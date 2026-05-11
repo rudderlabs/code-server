@@ -32,7 +32,6 @@ function getClient(): RudderAnalytics | undefined {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const Analytics = require("@rudderstack/rudder-sdk-node")
     client = new Analytics(writeKey, {
       dataPlaneUrl,

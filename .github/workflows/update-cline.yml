@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -29,13 +29,17 @@ jobs:
 
       - name: Set version variables
         id: vars
+        env:
+          CLIENT_PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            VERSION="${{ github.event.client_payload.version }}"
-            TAG="${{ github.event.client_payload.tag }}"
+            VERSION="$CLIENT_PAYLOAD_VERSION"
+            TAG="$CLIENT_PAYLOAD_TAG"
           else
-            VERSION="${{ github.event.inputs.version }}"
-            TAG="v${{ github.event.inputs.version }}"
+            VERSION="$INPUT_VERSION"
+            TAG="v$INPUT_VERSION"
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT

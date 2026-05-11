@@ -57,7 +57,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -70,14 +70,17 @@ jobs:
 
       - name: Get and set VERSION
         id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             VERSION="0.0.0-pr.${{ github.event.pull_request.number }}"
           elif [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
+            TAG="$RELEASE_TAG"
             VERSION="${TAG#v}"
           else
-            TAG="${{ inputs.version }}"
+            TAG="$INPUT_VERSION"
             VERSION="${TAG#v}"
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
@@ -246,19 +249,22 @@ jobs:
       amd64_labels: ${{ steps.amd64_meta.outputs.labels }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
       - name: Determine Docker tag
         id: docker-tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "tag=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: docker meta
@@ -268,6 +274,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
       - name: docker arm64 meta
         id: arm64_meta
         uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
@@ -275,6 +282,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
           flavor: |
             suffix=-${{ env.arch_arm64 }},onlatest=true
       - name: docker amd64 meta
@@ -284,6 +292,7 @@ jobs:
           images: ${{ env.ecr_docker_images }}
           tags: |
             type=raw,value=${{ steps.docker-tag.outputs.tag }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
           flavor: |
             suffix=-${{ env.arch_amd64 }},onlatest=true
 
@@ -300,7 +309,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -435,15 +444,27 @@ jobs:
         id: arch-meta
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.arm64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.arm64_labels }}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<TAGS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.arm64_tags }}"
+              echo "TAGS_EOF"
+              echo "labels<<LABELS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.arm64_labels }}"
+              echo "LABELS_EOF"
+            } >> $GITHUB_OUTPUT
           else
-            echo "tags=${{ needs.docker-metadata-ecr.outputs.amd64_tags }}" >> $GITHUB_OUTPUT
-            echo "labels=${{ needs.docker-metadata-ecr.outputs.amd64_labels }}" >> $GITHUB_OUTPUT
+            {
+              echo "tags<<TAGS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.amd64_tags }}"
+              echo "TAGS_EOF"
+              echo "labels<<LABELS_EOF"
+              echo "${{ needs.docker-metadata-ecr.outputs.amd64_labels }}"
+              echo "LABELS_EOF"
+            } >> $GITHUB_OUTPUT
           fi
 
       - name: docker build
-        uses: rudderlabs/build-scan-push-action@96d7bfca912dd2e8805dbb322dc2540504ecac1e # v2.1.0
+        uses: rudderlabs/build-scan-push-action@865b4253caa57f8f20cd109e0efc1affe3a64939 # v2.2.0
         with:
           context: .
           platforms: linux/${{ matrix.arch }}
@@ -453,6 +474,8 @@ jobs:
           build-args: |
             TARGETARCH=${{ matrix.arch }}
             GITHUB_PAT=${{ secrets.PAT }}
+          secrets: |
+            PYPI_CONNECTION_STRING=admin:${{ secrets.PYPI_PASSWORD }}@pypi.dev-rudder.rudderlabs.com/simple
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -461,7 +484,7 @@ jobs:
     needs: [docker-build-ecr, docker-metadata-ecr]
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -501,7 +524,7 @@ jobs:
       - docker-manifest-ecr
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -525,11 +548,14 @@ jobs:
 
       - name: Determine tag name
         id: tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload Release Assets
@@ -553,7 +579,7 @@ jobs:
       - docker-manifest-ecr
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 

@@ -1,0 +1,76 @@
+Index: code-server/lib/vscode/src/vs/base/common/product.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/base/common/product.ts
++++ code-server/lib/vscode/src/vs/base/common/product.ts
+@@ -57,6 +57,7 @@ export type ExtensionVirtualWorkspaceSup
+ 
+ export interface IProductConfiguration {
+ 	readonly codeServerVersion?: string
++	readonly codeServerParentOrigins?: readonly string[]
+ 	readonly rootEndpoint?: string
+ 	readonly updateEndpoint?: string
+ 	readonly logoutEndpoint?: string
+Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
++++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+@@ -346,8 +346,14 @@ export class WebClientServer {
+ 			linkProtectionTrustedDomains.push(...this._productService.linkProtectionTrustedDomains);
+ 		}
+ 
++		const codeServerParentOrigins: string[] = (process.env.CS_ALLOWED_ORIGINS ?? '')
++			.split(',')
++			.map(o => o.trim())
++			.filter(o => o.length > 0);
++
+ 		const productConfiguration: Partial<Mutable<IProductConfiguration>> = {
+ 			codeServerVersion: this._productService.codeServerVersion,
++			codeServerParentOrigins,
+ 			rootEndpoint: rootBase,
+ 			updateEndpoint: !this._environmentService.args['disable-update-check'] ? rootBase + '/update/check' : undefined,
+ 			logoutEndpoint: this._environmentService.args['auth'] && this._environmentService.args['auth'] !== "none" ? rootBase + '/logout' : undefined,
+Index: code-server/lib/vscode/src/vs/workbench/browser/client.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/client.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/client.ts
+@@ -22,14 +22,28 @@ export class CodeServerClient extends Di
+ 		const event = new CustomEvent('ide-ready');
+ 		window.dispatchEvent(event);
+ 
+-		if (parent) {
+-			// Tell the parent loading has completed.
+-			parent.postMessage({ event: 'loaded' }, '*');
++		const trustedParentOrigins = this.productService.codeServerParentOrigins ?? [];
++		if (parent && parent !== window && trustedParentOrigins.length > 0) {
++			// Tell the parent loading has completed. Post to each trusted origin
++			// individually rather than using a wildcard ('*') so the message is
++			// not delivered to an unexpected embedder.
++			for (const origin of trustedParentOrigins) {
++				parent.postMessage({ event: 'loaded' }, origin);
++			}
+ 
+ 			// Proxy or stop proxing events as requested by the parent.
+ 			const listeners = new Map<string, (event: Event) => void>();
+ 
+ 			window.addEventListener('message', parentEvent => {
++				// Reject messages from any window that is not our direct parent
++				// or from an origin we do not explicitly trust.
++				if (parentEvent.source !== parent) {
++					return;
++				}
++				if (!trustedParentOrigins.includes(parentEvent.origin)) {
++					return;
++				}
++
+ 				const eventName = parentEvent.data.bind || parentEvent.data.unbind;
+ 				if (eventName) {
+ 					const oldListener = listeners.get(eventName);
+@@ -45,7 +59,7 @@ export class CodeServerClient extends Di
+ 								event: parentEvent.data.event,
+ 								[parentEvent.data.prop]: event[parentEvent.data.prop as keyof Event],
+ 							},
+-							window.location.origin,
++							parentEvent.origin,
+ 						);
+ 					};
+ 					listeners.set(parentEvent.data.bind, listener);

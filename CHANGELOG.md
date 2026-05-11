@@ -7,6 +7,145 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.17.0](https://github.com/rudderlabs/code-server/compare/v1.16.2...v1.17.0) (2026-05-05)
+
+
+### Features
+
+* **PRO-5511:** apply Figma color tokens as VS Code theme defaults ([#202](https://github.com/rudderlabs/code-server/issues/202)) ([71beebf](https://github.com/rudderlabs/code-server/commit/71beebfe8e171badffd327cd4ea11509d1087f19))
+
+## [1.16.2](https://github.com/rudderlabs/code-server/compare/v1.16.1...v1.16.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* latest build failure ([f7a3ddb](https://github.com/rudderlabs/code-server/commit/f7a3ddbabc48f359f77c0fb38245ed379855a1dc))
+* use heredoc syntax for multi-line GITHUB_OUTPUT in docker build ([#200](https://github.com/rudderlabs/code-server/issues/200)) ([f7a3ddb](https://github.com/rudderlabs/code-server/commit/f7a3ddbabc48f359f77c0fb38245ed379855a1dc))
+
+## [1.16.1](https://github.com/rudderlabs/code-server/compare/v1.16.0...v1.16.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* **iframe:** harden iframe postMessage to trusted parent origins ([#189](https://github.com/rudderlabs/code-server/issues/189)) ([25231c3](https://github.com/rudderlabs/code-server/commit/25231c30c108454ad8782979373e3bccea3a7c9a))
+
+
+### Miscellaneous Chores
+
+* bump build-scan-push-action from v2.1.0 to v2.2.0 ([#193](https://github.com/rudderlabs/code-server/issues/193)) ([c7969de](https://github.com/rudderlabs/code-server/commit/c7969de1331b30532c2e89723ac7685f5a5f8f51))
+* bump profiles-mlcorelib to 0.9.6 and profiles-rudderstack to 0.25.5 ([#199](https://github.com/rudderlabs/code-server/issues/199)) ([7521d64](https://github.com/rudderlabs/code-server/commit/7521d64dcd2ec50fa48f74b8030823cd02535994))
+* **vuln:** remediate template-injection findings (SEC-251) ([#196](https://github.com/rudderlabs/code-server/issues/196)) ([d14626c](https://github.com/rudderlabs/code-server/commit/d14626cfd57c1ea2fb04cc589f01514d542881a6))
+* **vuln:** scope workflow permissions to least privilege (SEC-167) ([#195](https://github.com/rudderlabs/code-server/issues/195)) ([33b554f](https://github.com/rudderlabs/code-server/commit/33b554f48055f8fcb9a33ad1f5ff6074873012e8))
+* **vuln:** zizmor --fix=all findings (SEC-199) ([#194](https://github.com/rudderlabs/code-server/issues/194)) ([8c7358c](https://github.com/rudderlabs/code-server/commit/8c7358c8c47c0932f00b13539ef47d3c3e209c23))
+
+## [1.16.0](https://github.com/rudderlabs/code-server/compare/v1.15.0...v1.16.0) (2026-04-20)
+
+
+### Features
+
+* add lshell back with proper cline integration ([#178](https://github.com/rudderlabs/code-server/issues/178)) ([9d5bd8b](https://github.com/rudderlabs/code-server/commit/9d5bd8bc6ff09c5e7896b654deac99c7ff2473da))
+
+## [1.15.0](https://github.com/rudderlabs/code-server/compare/v1.14.0...v1.15.0) (2026-04-17)
+
+
+### Features
+
+* **csp:** frame-ancestors header sourced from CS_ALLOWED_ORIGINS ([#186](https://github.com/rudderlabs/code-server/issues/186)) ([5b1296f](https://github.com/rudderlabs/code-server/commit/5b1296f1014f2c83cb52845a1d8b56216b6e7742))
+* **docker:** tag ECR images with `latest` on release ([74b92a6](https://github.com/rudderlabs/code-server/commit/74b92a6062383d5eea6e0c9d68e2826b5480c78d))
+* **docker:** tag ECR images with latest on release ([#188](https://github.com/rudderlabs/code-server/issues/188)) ([74b92a6](https://github.com/rudderlabs/code-server/commit/74b92a6062383d5eea6e0c9d68e2826b5480c78d))
+
+
+### Bug Fixes
+
+* **vuln:** pin and bump action refs (SEC-171) ([29733a3](https://github.com/rudderlabs/code-server/commit/29733a3d29f0c2c18e501f1c5849e3d67a4cbf98))
+
+
+### Miscellaneous Chores
+
+* **vuln:** pin and bump action refs (SEC-171) ([#180](https://github.com/rudderlabs/code-server/issues/180)) ([29733a3](https://github.com/rudderlabs/code-server/commit/29733a3d29f0c2c18e501f1c5849e3d67a4cbf98))
+
+## [1.14.0](https://github.com/rudderlabs/code-server/compare/v1.13.2...v1.14.0) (2026-04-15)
+
+
+### Features
+
+* support private PyPI server in Docker builds ([#181](https://github.com/rudderlabs/code-server/issues/181)) ([d737060](https://github.com/rudderlabs/code-server/commit/d737060feeee26ebf1990cc4a3d47498ec58de64))
+
+## [1.13.2](https://github.com/rudderlabs/code-server/compare/v1.13.1...v1.13.2) (2026-03-31)
+
+
+### Bug Fixes
+
+* update .env configuration for cloud-based setting ([#172](https://github.com/rudderlabs/code-server/issues/172)) ([2b89250](https://github.com/rudderlabs/code-server/commit/2b89250c0f40951de0dfbf5f91d6ddf39cf4dec6))
+* **vuln:** remediate GHA script injection ([#175](https://github.com/rudderlabs/code-server/issues/175)) ([4c8dfaa](https://github.com/rudderlabs/code-server/commit/4c8dfaae254770e3db1666b87f90f2552c413139))
+
+
+### Miscellaneous Chores
+
+* add USE_PB_QUERY in inherit env vars ([#176](https://github.com/rudderlabs/code-server/issues/176)) ([5fc7766](https://github.com/rudderlabs/code-server/commit/5fc77665772c22ea9a42bcbc13606335798bd802))
+* update Cline to 6.15.0 ([#177](https://github.com/rudderlabs/code-server/issues/177)) ([097cd56](https://github.com/rudderlabs/code-server/commit/097cd56dac96fa6be72dcf9002c222d84297e140))
+
+## [1.13.1](https://github.com/rudderlabs/code-server/compare/v1.13.0...v1.13.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* include abs-proxy-base-path in JWT auth redirect ([#169](https://github.com/rudderlabs/code-server/issues/169)) ([4427335](https://github.com/rudderlabs/code-server/commit/442733571f39cd3b712e109fed3be28706976058))
+
+
+### Miscellaneous Chores
+
+* release MCP 1.4.0 ([#171](https://github.com/rudderlabs/code-server/issues/171)) ([7ca0364](https://github.com/rudderlabs/code-server/commit/7ca0364cb413bbe190b21dbcb6115f6ea1c0d560))
+
+## [1.13.0](https://github.com/rudderlabs/code-server/compare/v1.12.1...v1.13.0) (2026-03-24)
+
+
+### Features
+
+* remove lshell ([#167](https://github.com/rudderlabs/code-server/issues/167)) ([53417d8](https://github.com/rudderlabs/code-server/commit/53417d8fd44f6d0af868c0d6fac88de29091f6ac))
+* replace ubuntu .bashrc with minimal configuration ([#166](https://github.com/rudderlabs/code-server/issues/166)) ([983e8c4](https://github.com/rudderlabs/code-server/commit/983e8c49b257fc04fda50da0e5eb2b9bf01bd676))
+
+
+### Miscellaneous Chores
+
+* **sec:** remove redundant trivy docker scan workflow (SEC-120) ([#163](https://github.com/rudderlabs/code-server/issues/163)) ([a07854c](https://github.com/rudderlabs/code-server/commit/a07854caec93ceb3095cbd820565ba472680be99))
+* **sec:** remove redundant trivy docker workflow (SEC-120) ([a07854c](https://github.com/rudderlabs/code-server/commit/a07854caec93ceb3095cbd820565ba472680be99))
+
+## [1.12.1](https://github.com/rudderlabs/code-server/compare/v1.12.0...v1.12.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* escape % in lshell history_file path ([#160](https://github.com/rudderlabs/code-server/issues/160)) ([f0d0ad1](https://github.com/rudderlabs/code-server/commit/f0d0ad132a3fb46bc8d05da2e7cd1e1b71abf68d))
+* missing locked uid 1000 for codeuser ([#159](https://github.com/rudderlabs/code-server/issues/159)) ([f0821e3](https://github.com/rudderlabs/code-server/commit/f0821e3abff8ed09cd6b8b389baad6d709eb1331))
+
+## [1.12.0](https://github.com/rudderlabs/code-server/compare/v1.11.0...v1.12.0) (2026-03-17)
+
+
+### Features
+
+* landrun PRO-5324 ([#151](https://github.com/rudderlabs/code-server/issues/151)) ([03caf6d](https://github.com/rudderlabs/code-server/commit/03caf6d44596da0ca53714f8c5c8c8981962ffff))
+
+## [1.11.0](https://github.com/rudderlabs/code-server/compare/v1.10.0...v1.11.0) (2026-03-17)
+
+
+### Features
+
+* add CS_ALLOWED_ORIGINS env var module ([#149](https://github.com/rudderlabs/code-server/issues/149)) ([d15a04c](https://github.com/rudderlabs/code-server/commit/d15a04cca763927ff83fb2d0398055524581d4dd))
+* hide unnecessary Source Control UI elements ([#147](https://github.com/rudderlabs/code-server/issues/147)) ([b7a0b66](https://github.com/rudderlabs/code-server/commit/b7a0b66f1d7de1670690652b870ee20a47971788))
+* **sec-98:** JWT auth bootstrap + dual-mode auth ([#152](https://github.com/rudderlabs/code-server/issues/152)) ([0edcb67](https://github.com/rudderlabs/code-server/commit/0edcb672f68fc7b1a90cbcbac7ffbba676be86ab))
+* store lshell commands history ([#154](https://github.com/rudderlabs/code-server/issues/154)) ([726a16c](https://github.com/rudderlabs/code-server/commit/726a16ce08013667afe8204af536f7e2482efd95))
+
+
+### Bug Fixes
+
+* remove downloaded packages from final Docker image ([#144](https://github.com/rudderlabs/code-server/issues/144)) ([ff63df6](https://github.com/rudderlabs/code-server/commit/ff63df628028a82e35eb24ae3005712af7ac75c3))
+
+
+### Miscellaneous Chores
+
+* update Cline to 6.13.0 ([#155](https://github.com/rudderlabs/code-server/issues/155)) ([ac1eef7](https://github.com/rudderlabs/code-server/commit/ac1eef7d47fc9287ad009e20901b10fd3573bb0c))
+
 ## [1.10.0](https://github.com/rudderlabs/code-server/compare/v1.9.0...v1.10.0) (2026-02-25)
 
 
