@@ -372,7 +372,7 @@ jobs:
           PB_PROXY_REF=$(cat .pb-proxy-version | tr -d '[:space:]')
           echo "pb-proxy reference: ${PB_PROXY_REF}"
 
-          if [[ "$PB_PROXY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$PB_PROXY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
             echo "Downloading pb-proxy from release ${PB_PROXY_REF}..."
             if ! gh release download "${PB_PROXY_REF}" \
               --repo rudderlabs/wht \
