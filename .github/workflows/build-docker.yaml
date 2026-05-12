@@ -366,7 +366,6 @@ jobs:
           ls -lh claude.vsix
 
       - name: Download pb-proxy binary
-        if: false # temporarily disabled — using committed binaries for testing; revert before merging to main
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
