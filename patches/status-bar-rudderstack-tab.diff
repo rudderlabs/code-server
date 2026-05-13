@@ -1,0 +1,87 @@
+Add right-aligned "RudderStack tab" status bar entry (PRO-5528)
+
+Match the Figma "IDE Footer" (node 101-3202) by introducing a small
+workbench contribution that registers a static, non-clickable status
+bar entry on the right edge, just left of the notifications bell.
+
+The contribution lives under a new code-server-owned folder
+`contrib/codeServerProfiles/browser/` so we don't have to touch any
+existing stock contribution. It registers at `WorkbenchPhase.Restored`
+(after the layout and other status bar entries have settled) and uses
+a priority value picked to sit immediately to the left of the bell
+(which uses `Number.NEGATIVE_INFINITY`).
+
+The visible copy is a placeholder; the design team has not yet locked
+the final string. See the inline TODO comment in the contribution file.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.ts
+===================================================================
+--- /dev/null
++++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.ts
+@@ -0,0 +1,52 @@
++/* eslint-disable header/header */
++/*---------------------------------------------------------------------------------------------
++ *  code-server: PRO-5528 RudderStack tab status bar entry.
++ *  Renders a non-clickable label on the right edge of the status bar so
++ *  the IDE footer matches the Figma design at
++ *  https://www.figma.com/design/SDpW683dzIqtXeGsAyQqyt/Profiles-%7C-Feb-26th-2026?node-id=101-3202
++ *--------------------------------------------------------------------------------------------*/
++
++import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
++import { localize } from '../../../../nls.js';
++import { Registry } from '../../../../platform/registry/common/platform.js';
++import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
++import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
++import { IStatusbarEntryAccessor, IStatusbarService, StatusbarAlignment } from '../../../services/statusbar/browser/statusbar.js';
++
++// PRO-5528: placeholder copy; pending design confirmation. Once Figma
++// freezes the final label, swap this nls.localize key with the real one.
++const RUDDERSTACK_TAB_LABEL = localize('codeServer.rudderstackTab', "RudderStack tab");
++
++// The notifications bell registers itself at Number.NEGATIVE_INFINITY so it
++// is always last. We use a small finite negative number so we land just to
++// the left of the bell but right of every other RIGHT-aligned entry that
++// uses a positive priority (e.g. the editor-status entries at ~100).
++const RUDDERSTACK_TAB_PRIORITY = -100;
++
++class RudderstackTabStatusBarContribution extends Disposable implements IWorkbenchContribution {
++
++	static readonly ID = 'workbench.contrib.codeServerProfiles.rudderstackTab';
++
++	private readonly entry = this._register(new MutableDisposable<IStatusbarEntryAccessor>());
++
++	constructor(
++		@IStatusbarService private readonly statusbarService: IStatusbarService,
++	) {
++		super();
++
++		this.entry.value = this.statusbarService.addEntry(
++			{
++				name: RUDDERSTACK_TAB_LABEL,
++				text: RUDDERSTACK_TAB_LABEL,
++				ariaLabel: RUDDERSTACK_TAB_LABEL,
++				tooltip: RUDDERSTACK_TAB_LABEL,
++			},
++			'codeServerProfiles.rudderstackTab',
++			StatusbarAlignment.RIGHT,
++			RUDDERSTACK_TAB_PRIORITY,
++		);
++	}
++}
++
++Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
++	.registerWorkbenchContribution(RudderstackTabStatusBarContribution, LifecyclePhase.Restored);
+Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts
++++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+@@ -421,6 +421,9 @@ import './contrib/dropOrPasteInto/browse
+ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
+
+
+ import './contrib/rudderstack/browser/rudderstack.contribution.js';
+
++// code-server: PRO-5528 RudderStack tab status bar entry
++import './contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.js';
++
+ //#endregion
