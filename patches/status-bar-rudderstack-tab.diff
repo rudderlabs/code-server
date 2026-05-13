@@ -6,7 +6,8 @@ bar entry on the right edge, just left of the notifications bell.
 
 The contribution lives under a new code-server-owned folder
 `contrib/codeServerProfiles/browser/` so we don't have to touch any
-existing stock contribution. It registers at `WorkbenchPhase.Restored`
+existing stock contribution. It registers via the modern
+`registerWorkbenchContribution2` API at `WorkbenchPhase.AfterRestored`
 (after the layout and other status bar entries have settled) and uses
 a priority value picked to sit immediately to the left of the bell
 (which uses `Number.NEGATIVE_INFINITY`).
@@ -18,7 +19,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.ts
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,46 @@
 +/* eslint-disable header/header */
 +/*---------------------------------------------------------------------------------------------
 + *  code-server: PRO-5528 RudderStack tab status bar entry.
@@ -29,9 +30,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +
 +import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
 +import { localize } from '../../../../nls.js';
-+import { Registry } from '../../../../platform/registry/common/platform.js';
-+import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
-+import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
++import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 +import { IStatusbarEntryAccessor, IStatusbarService, StatusbarAlignment } from '../../../services/statusbar/browser/statusbar.js';
 +
 +// PRO-5528: placeholder copy; pending design confirmation. Once Figma
@@ -46,8 +45,6 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +
 +class RudderstackTabStatusBarContribution extends Disposable implements IWorkbenchContribution {
 +
-+	static readonly ID = 'workbench.contrib.codeServerProfiles.rudderstackTab';
-+
 +	private readonly entry = this._register(new MutableDisposable<IStatusbarEntryAccessor>());
 +
 +	constructor(
@@ -60,7 +57,6 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +				name: RUDDERSTACK_TAB_LABEL,
 +				text: RUDDERSTACK_TAB_LABEL,
 +				ariaLabel: RUDDERSTACK_TAB_LABEL,
-+				tooltip: RUDDERSTACK_TAB_LABEL,
 +			},
 +			'codeServerProfiles.rudderstackTab',
 +			StatusbarAlignment.RIGHT,
@@ -69,8 +65,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +	}
 +}
 +
-+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-+	.registerWorkbenchContribution(RudderstackTabStatusBarContribution, LifecyclePhase.Restored);
++registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.rudderstackTab', RudderstackTabStatusBarContribution, WorkbenchPhase.AfterRestored);
 Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts

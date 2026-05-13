@@ -37,7 +37,6 @@ hide-scm-actions.diff
 hide-scm-title-actions.diff
 hide-stock-status-bar-items.diff
 hide-explorer-title-actions.diff
-hide-editor-tabs-actions.diff
 status-bar-rudderstack-tab.diff
 harden-iframe-postmessage.diff
 match-figma-font-sizes.diff

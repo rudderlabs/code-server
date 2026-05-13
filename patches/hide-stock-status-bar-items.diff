@@ -6,66 +6,129 @@ VS Code's built-in editor-status contribution and by the web keyboard
 layout picker have no configuration toggle, so we short-circuit the
 registration paths to drop them.
 
-Each affected update* method early-returns and clears its
-MutableDisposable so that nothing leaks into the status bar; the
+Each affected update* method has its body replaced with just a clear()
+on the MutableDisposable so that nothing leaks into the status bar; the
 surrounding state-tracking logic and command palette commands stay
-intact. Users can still re-enable the items by overriding the relevant
-settings (where they exist) or by carrying their own fork.
+intact. The bodies are fully replaced (not prepended with `return;`)
+to avoid TS7027 under `allowUnreachableCode: false`. Users can still
+re-enable the items by overriding the relevant settings (where they
+exist) or by carrying their own fork.
 
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
-@@ -494,6 +494,9 @@ class EditorStatus extends Disposable {
+@@ -494,100 +494,28 @@ class EditorStatus extends Disposable {
  	}
 
  	private updateSelectionElement(text: string | undefined): void {
+-		if (!text) {
+-			this.selectionElement.clear();
+-			return;
+-		}
+-
+-		const editorURI = getCodeEditor(this.editorService.activeTextEditorControl)?.getModel()?.uri;
+-		if (editorURI?.scheme === Schemas.vscodeNotebookCell) {
+-			this.selectionElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.selection', "Editor Selection"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('gotoLine', "Go to Line/Column"),
+-			command: 'workbench.action.gotoLine'
+-		};
+-
+-		this.updateElement(this.selectionElement, props, 'status.editor.selection', StatusbarAlignment.RIGHT, 100.5);
 +		// code-server: PRO-5559 hide Ln/Col status entry (not in Figma IDE Footer)
 +		this.selectionElement.clear();
-+		return;
- 		if (!text) {
- 			this.selectionElement.clear();
- 			return;
-@@ -517,6 +520,9 @@ class EditorStatus extends Disposable {
  	}
 
  	private updateIndentationElement(text: string | undefined): void {
+-		if (!text) {
+-			this.indentationElement.clear();
+-			return;
+-		}
+-
+-		const editorURI = getCodeEditor(this.editorService.activeTextEditorControl)?.getModel()?.uri;
+-		if (editorURI?.scheme === Schemas.vscodeNotebookCell) {
+-			this.indentationElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.indentation', "Editor Indentation"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectIndentation', "Select Indentation"),
+-			command: `changeEditorIndentation${this.targetWindowId}`
+-		};
+-
+-		this.updateElement(this.indentationElement, props, 'status.editor.indentation', StatusbarAlignment.RIGHT, 100.4);
 +		// code-server: PRO-5559 hide Spaces/Tabs indent status entry (not in Figma IDE Footer)
 +		this.indentationElement.clear();
-+		return;
- 		if (!text) {
- 			this.indentationElement.clear();
- 			return;
-@@ -540,6 +546,9 @@ class EditorStatus extends Disposable {
  	}
 
  	private updateEncodingElement(text: string | undefined): void {
+-		if (!text) {
+-			this.encodingElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.encoding', "Editor Encoding"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectEncoding', "Select Encoding"),
+-			command: 'workbench.action.editor.changeEncoding'
+-		};
+-
+-		this.updateElement(this.encodingElement, props, 'status.editor.encoding', StatusbarAlignment.RIGHT, 100.3);
 +		// code-server: PRO-5559 hide UTF-8/encoding status entry (not in Figma IDE Footer)
 +		this.encodingElement.clear();
-+		return;
- 		if (!text) {
- 			this.encodingElement.clear();
- 			return;
-@@ -557,6 +566,9 @@ class EditorStatus extends Disposable {
  	}
 
  	private updateEOLElement(text: string | undefined): void {
+-		if (!text) {
+-			this.eolElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.eol', "Editor End of Line"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectEOL', "Select End of Line Sequence"),
+-			command: 'workbench.action.editor.changeEOL'
+-		};
+-
+-		this.updateElement(this.eolElement, props, 'status.editor.eol', StatusbarAlignment.RIGHT, 100.2);
 +		// code-server: PRO-5559 hide LF/CRLF EOL status entry (not in Figma IDE Footer)
 +		this.eolElement.clear();
-+		return;
- 		if (!text) {
- 			this.eolElement.clear();
- 			return;
-@@ -574,6 +586,9 @@ class EditorStatus extends Disposable {
  	}
 
  	private updateLanguageIdElement(text: string | undefined): void {
+-		if (!text) {
+-			this.languageElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.mode', "Editor Language"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectLanguageMode', "Select Language Mode"),
+-			command: 'workbench.action.editor.changeLanguageMode'
+-		};
+-
+-		this.updateElement(this.languageElement, props, 'status.editor.mode', StatusbarAlignment.RIGHT, 100.1);
 +		// code-server: PRO-5559 hide language-mode status entry (not in Figma IDE Footer)
 +		this.languageElement.clear();
-+		return;
- 		if (!text) {
- 			this.languageElement.clear();
- 			return;
+ 	}
+
+ 	private updateMetadataElement(text: string | undefined): void {
 Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
