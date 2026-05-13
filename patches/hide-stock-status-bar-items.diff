@@ -1,0 +1,128 @@
+Hide stock status bar editor / keyboard-layout items (PRO-5559)
+
+The RudderStack "IDE Footer" design (Figma node 101-3202) keeps only the
+git branch, problems counts and notifications bell. Items added by
+VS Code's built-in editor-status contribution and by the web keyboard
+layout picker have no configuration toggle, so we short-circuit the
+registration paths to drop them.
+
+Each affected update* method early-returns and clears its
+MutableDisposable so that nothing leaks into the status bar; the
+surrounding state-tracking logic and command palette commands stay
+intact. Users can still re-enable the items by overriding the relevant
+settings (where they exist) or by carrying their own fork.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
+@@ -494,6 +494,9 @@ class EditorStatus extends Disposable {
+ 	}
+
+ 	private updateSelectionElement(text: string | undefined): void {
++		// code-server: PRO-5559 hide Ln/Col status entry (not in Figma IDE Footer)
++		this.selectionElement.clear();
++		return;
+ 		if (!text) {
+ 			this.selectionElement.clear();
+ 			return;
+@@ -517,6 +520,9 @@ class EditorStatus extends Disposable {
+ 	}
+
+ 	private updateIndentationElement(text: string | undefined): void {
++		// code-server: PRO-5559 hide Spaces/Tabs indent status entry (not in Figma IDE Footer)
++		this.indentationElement.clear();
++		return;
+ 		if (!text) {
+ 			this.indentationElement.clear();
+ 			return;
+@@ -540,6 +546,9 @@ class EditorStatus extends Disposable {
+ 	}
+
+ 	private updateEncodingElement(text: string | undefined): void {
++		// code-server: PRO-5559 hide UTF-8/encoding status entry (not in Figma IDE Footer)
++		this.encodingElement.clear();
++		return;
+ 		if (!text) {
+ 			this.encodingElement.clear();
+ 			return;
+@@ -557,6 +566,9 @@ class EditorStatus extends Disposable {
+ 	}
+
+ 	private updateEOLElement(text: string | undefined): void {
++		// code-server: PRO-5559 hide LF/CRLF EOL status entry (not in Figma IDE Footer)
++		this.eolElement.clear();
++		return;
+ 		if (!text) {
+ 			this.eolElement.clear();
+ 			return;
+@@ -574,6 +586,9 @@ class EditorStatus extends Disposable {
+ 	}
+
+ 	private updateLanguageIdElement(text: string | undefined): void {
++		// code-server: PRO-5559 hide language-mode status entry (not in Figma IDE Footer)
++		this.languageElement.clear();
++		return;
+ 		if (!text) {
+ 			this.languageElement.clear();
+ 			return;
+Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
+@@ -30,52 +30,10 @@ export class KeyboardLayoutPickerContrib
+ 		@IKeyboardLayoutService private readonly keyboardLayoutService: IKeyboardLayoutService,
+ 		@IStatusbarService private readonly statusbarService: IStatusbarService,
+ 	) {
+ 		super();
+
+-		const name = nls.localize('status.workbench.keyboardLayout', "Keyboard Layout");
+-
+-		const layout = this.keyboardLayoutService.getCurrentKeyboardLayout();
+-		if (layout) {
+-			const layoutInfo = parseKeyboardLayoutDescription(layout);
+-			const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
+-
+-			this.pickerElement.value = this.statusbarService.addEntry(
+-				{
+-					name,
+-					text,
+-					ariaLabel: text,
+-					command: KEYBOARD_LAYOUT_OPEN_PICKER
+-				},
+-				'status.workbench.keyboardLayout',
+-				StatusbarAlignment.RIGHT
+-			);
+-		}
+-
+-		this._register(this.keyboardLayoutService.onDidChangeKeyboardLayout(() => {
+-			const layout = this.keyboardLayoutService.getCurrentKeyboardLayout();
+-			const layoutInfo = parseKeyboardLayoutDescription(layout);
+-
+-			if (this.pickerElement.value) {
+-				const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
+-				this.pickerElement.value.update({
+-					name,
+-					text,
+-					ariaLabel: text,
+-					command: KEYBOARD_LAYOUT_OPEN_PICKER
+-				});
+-			} else {
+-				const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
+-				this.pickerElement.value = this.statusbarService.addEntry(
+-					{
+-						name,
+-						text,
+-						ariaLabel: text,
+-						command: KEYBOARD_LAYOUT_OPEN_PICKER
+-					},
+-					'status.workbench.keyboardLayout',
+-					StatusbarAlignment.RIGHT
+-				);
+-			}
+-		}));
++		// code-server: PRO-5559 suppress the "Layout: U.S." status bar entry registered by
++		// the web keyboard layout picker contribution. The picker quick-open command stays
++		// wired up so power users can still invoke it from the command palette.
+ 	}
+ }

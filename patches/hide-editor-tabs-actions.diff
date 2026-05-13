@@ -1,0 +1,26 @@
+Hide editor tab strip right-side action icons (PRO-5559)
+
+Force the editor tab strip to never populate the right-side actions
+toolbar — "Open in split editor", "More actions" and the `…` overflow
+menu — regardless of any user override of
+`workbench.editor.editorActionsLocation`.
+
+`updateEditorActionsToolbar` short-circuits before it asks the group
+view for actions, so no menu commands are wired up. The toolbar
+container itself is left in place (the layout reserves the slot via
+`createEditorActionsToolBar`) and close-on-active and other tab
+behaviour is untouched.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorTabsControl.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorTabsControl.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorTabsControl.ts
+@@ -251,6 +251,8 @@ export abstract class EditorTabsControl extends Themable implements IEditorTabsControl {
+ 	}
+
+ 	protected updateEditorActionsToolbar(): void {
++		// code-server: PRO-5559 suppress the editor tab strip right-side actions toolbar
++		return;
+ 		if (!this.editorActionsEnabled) {
+ 			return;
+ 		}

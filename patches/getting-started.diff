@@ -205,7 +205,7 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -373,6 +373,53 @@ export class WebClientServer {
+@@ -373,6 +373,58 @@ export class WebClientServer {
  			userDataPath: this._environmentService.userDataPath,
  			isEnabledFileDownloads: !this._environmentService.args['disable-file-downloads'],
  			isEnabledFileUploads: !this._environmentService.args['disable-file-uploads'],
@@ -219,6 +219,11 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 +				'window.commandCenter': false,
 +				'workbench.layoutControl.enabled': false,
 +				'workbench.activityBar.location': 'hidden',
++				'editor.minimap.enabled': false, // PRO-5559: minimap not in Figma
++				'breadcrumbs.enabled': false, // PRO-5559: breadcrumbs not in Figma
++				'editor.stickyScroll.enabled': false, // PRO-5559: sticky scroll not in Figma
++				'telemetry.feedback.enabled': false, // PRO-5559: hide feedback / issue reporter surfaces
++				'workbench.editor.editorActionsLocation': 'hidden', // PRO-5559: hide split/more-actions icons on the editor tab strip
 +				'workbench.colorCustomizations': {
 +					'sideBar.background': '#fafbfc',
 +					'sideBar.foreground': '#353a44',
