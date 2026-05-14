@@ -40,7 +40,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
-@@ -557,4 +557,69 @@
+@@ -557,4 +557,70 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:last-child.drop-target-left::after,
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:first-child.drop-target-right::before {
  	width: 2px;
@@ -73,12 +73,13 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 +}
 +
 +/*
-+ * Tighter inner padding per Figma. Note: this has equal specificity to the
-+ * stock `.tab.close-action-off.dirty:not(.dirty-border-top):not(.sticky-compact)
-+ * { padding-right: 0 }` rule above (line 488) but appears later, so dirty
-+ * tabs in close-action-off mode will also pick up 6px right padding. This is
-+ * intentional — consistent compact padding across all tab states matches the
-+ * Figma spec better than preserving the stock edge-case exception.
++ * Tighter inner padding per Figma. Stock's
++ * `.tab.close-action-off.dirty:not(.dirty-border-top):not(.sticky-compact)
++ * { padding-right: 0 }` rule above (line 488) has higher specificity (extra
++ * .close-action-off, .dirty, and two :not()s), so dirty tabs in
++ * close-action-off mode will keep their stock 0 right-padding. That edge
++ * case is academic for code-server (close-action is on by default), and
++ * preserving the stock exception there is the safer outcome anyway.
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
 +	padding: 4px 6px;
