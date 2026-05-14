@@ -20,7 +20,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
 @@ -494,100 +494,28 @@ class EditorStatus extends Disposable {
  	}
-
+ 
  	private updateSelectionElement(text: string | undefined): void {
 -		if (!text) {
 -			this.selectionElement.clear();
@@ -45,7 +45,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +		// code-server: PRO-5559 hide Ln/Col status entry (not in Figma IDE Footer)
 +		this.selectionElement.clear();
  	}
-
+ 
  	private updateIndentationElement(text: string | undefined): void {
 -		if (!text) {
 -			this.indentationElement.clear();
@@ -70,7 +70,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +		// code-server: PRO-5559 hide Spaces/Tabs indent status entry (not in Figma IDE Footer)
 +		this.indentationElement.clear();
  	}
-
+ 
  	private updateEncodingElement(text: string | undefined): void {
 -		if (!text) {
 -			this.encodingElement.clear();
@@ -89,7 +89,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +		// code-server: PRO-5559 hide UTF-8/encoding status entry (not in Figma IDE Footer)
 +		this.encodingElement.clear();
  	}
-
+ 
  	private updateEOLElement(text: string | undefined): void {
 -		if (!text) {
 -			this.eolElement.clear();
@@ -108,7 +108,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +		// code-server: PRO-5559 hide LF/CRLF EOL status entry (not in Figma IDE Footer)
 +		this.eolElement.clear();
  	}
-
+ 
  	private updateLanguageIdElement(text: string | undefined): void {
 -		if (!text) {
 -			this.languageElement.clear();
@@ -127,7 +127,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus
 +		// code-server: PRO-5559 hide language-mode status entry (not in Figma IDE Footer)
 +		this.languageElement.clear();
  	}
-
+ 
  	private updateMetadataElement(text: string | undefined): void {
 Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 ===================================================================
@@ -138,7 +138,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
  		@IStatusbarService private readonly statusbarService: IStatusbarService,
  	) {
  		super();
-
+ 
 -		const name = nls.localize('status.workbench.keyboardLayout', "Keyboard Layout");
 -
 -		const layout = this.keyboardLayoutService.getCurrentKeyboardLayout();

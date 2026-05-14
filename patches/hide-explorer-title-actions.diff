@@ -20,7 +20,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/files/browser/explorerVie
  		super.create(parent);
  		parent.classList.add('explorer-viewlet');
  	}
-
+ 
 +	// code-server: PRO-5559 suppress Explorer title bar actions (new file, new folder, refresh, collapse, overflow)
 +	override get menuActions() {
 +		return undefined;

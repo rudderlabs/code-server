@@ -72,10 +72,10 @@ Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
 +++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
 @@ -421,6 +421,9 @@ import './contrib/dropOrPasteInto/browse
  import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
-
-
+ 
+ 
  import './contrib/rudderstack/browser/rudderstack.contribution.js';
-
+ 
 +// code-server: PRO-5528 RudderStack tab status bar entry
 +import './contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.js';
 +
