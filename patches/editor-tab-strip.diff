@@ -1,0 +1,91 @@
+Restyle editor tab strip per Figma (PRO-5562)
+
+Apply compact tab styling to the multi-editor tab strip to match the Figma
+"Profiles | Feb 26th 2026" design:
+
+- 36px tab row height (stock VS Code default is 35px) via the
+  `--editor-group-tab-height` custom property.
+- Tighter inner padding (4px vertical, 6px horizontal) so tabs read as
+  compact rather than VS Code's stock spacious layout.
+- Hide the filetype icon on the tab strip; sidebar/explorer/breadcrumb
+  icons remain untouched because the selector is scoped to the editor
+  `.tabs-container`.
+- Hide the close button on inactive tabs by default and reveal it on
+  hover. `visibility: hidden` preserves the layout so tabs do not reflow
+  on hover. The `:not(.dirty):not(.sticky)` guard keeps the dirty dot
+  and the sticky pin visible — both are rendered inside the same
+  `.tab-actions .action-label` element via ::before content swap, so
+  hiding the container would regress those indicators.
+
+Tab background/foreground colors are still driven by the
+`--vscode-tab-*` and `--vscode-editorGroupHeader-tabsBackground` CSS
+variables, set centrally via `workbench.colorCustomizations` defaults
+in getting-started.diff (PRO-5511 palette + this ticket's tab.activeBackground
+correction). No hex values are hardcoded here.
+
+Single-editor tab control (`singleeditortabscontrol.css`) does not
+render a `.tabs-container`/`.tab` strip — it only renders a single
+`.label-container > .title-label`. None of these rules match there, so
+no parallel CSS is needed for that mode.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+@@ -557,4 +557,56 @@
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:last-child.drop-target-left::after,
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:first-child.drop-target-right::before {
+ 	width: 2px;
++}
++
++/* ---- code-server: PRO-5562 restyle editor tab strip (Figma compact tabs) ---- */
++
++/*
++ * Compact 36px tab strip per Figma. Stock VS Code default is 35px (see
++ * EditorTabsControl.EDITOR_TAB_HEIGHT.normal). We bump the CSS custom property
++ * so both the tabs row and the editor-actions toolbar inherit the height
++ * consistently. Inner padding is tightened (4px vertical, 6px horizontal) to
++ * match the Figma spec; stock uses 10px left padding on .tab.
++ *
++ * Tab background/foreground colors are still driven by --vscode-tab-* and
++ * --vscode-editorGroupHeader-tabsBackground variables, which we set via the
++ * workbench.colorCustomizations defaults in getting-started.diff (PRO-5511 +
++ * PRO-5562 active-bg correction). Do not hardcode hex values here.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
++	--editor-group-tab-height: 36px;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
++	padding-top: 4px;
++	padding-bottom: 4px;
++	padding-left: 6px;
++	padding-right: 6px;
++}
++
++/*
++ * Hide the filetype icon on tab strip per Figma. The icon is rendered as a
++ * ::before pseudo on .monaco-icon-label (the element that also carries the
++ * .tab-label class on tabs). This selector is narrowly scoped to tabs inside
++ * the editor part so sidebar/explorer/breadcrumb icons are not affected
++ * (their .monaco-icon-label lives in a different DOM scope).
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
++	display: none;
+ }
++
++/*
++ * Hide close button on inactive tabs by default; reveal on hover. We use
++ * visibility: hidden (not display: none) so layout space is preserved and
++ * tabs do not reflow when the user mouses over.
++ *
++ * Critically, the :not(.dirty):not(.sticky) guard keeps the dirty indicator
++ * and the sticky pin indicator visible — VS Code renders these inside the
++ * same .tab-actions .action-label element (via ::before content swap between
++ * circle-filled / pinned / close icons). Hiding .tab-actions on a dirty tab
++ * would suppress the dirty dot, which the acceptance criteria explicitly
++ * forbid.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
++	visibility: hidden;
++}

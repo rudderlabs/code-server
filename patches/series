@@ -40,4 +40,5 @@ match-figma-font-sizes.diff
 hide-stock-status-bar-items.diff
 hide-explorer-title-actions.diff
 status-bar-rudderstack-tab.diff
+editor-tab-strip.diff
 hide-stock-vscode-defaults.diff
