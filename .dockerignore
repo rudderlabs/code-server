@@ -11,3 +11,5 @@
 !src/browser/media/copilot-welcome.html
 !pb-proxy-amd64
 !pb-proxy-arm64
+!profiles-mcp.env
+!cline_mcp_settings.json
