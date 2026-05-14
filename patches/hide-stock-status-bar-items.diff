@@ -6,13 +6,23 @@ VS Code's built-in editor-status contribution and by the web keyboard
 layout picker have no configuration toggle, so we short-circuit the
 registration paths to drop them.
 
-Each affected update* method has its body replaced with just a clear()
-on the MutableDisposable so that nothing leaks into the status bar; the
-surrounding state-tracking logic and command palette commands stay
-intact. The bodies are fully replaced (not prepended with `return;`)
-to avoid TS7027 under `allowUnreachableCode: false`. Users can still
-re-enable the items by overriding the relevant settings (where they
-exist) or by carrying their own fork.
+For `editorStatus.ts`, each affected update* method has its body replaced
+with just a clear() on the MutableDisposable so that nothing leaks into
+the status bar; the surrounding state-tracking logic and command palette
+commands stay intact. The bodies are fully replaced (not prepended with
+`return;`) to avoid TS7027 under `allowUnreachableCode: false`.
+
+For `keyboardLayoutPicker.ts`, the class is left fully intact and only
+the `registerWorkbenchContribution2(...)` call is commented out so the
+contribution never instantiates. Emptying the constructor body left the
+imports / fields / DI params unused, which trips TS6133/TS6138 under the
+project's `noUnusedLocals: true`; commenting out the registration sidesteps
+all of that by simply not running the constructor at all. The picker
+quick-open command (registered via `registerAction2` further down the file)
+stays wired up so power users can still invoke it from the command palette.
+
+Users can still re-enable any of these items by overriding the relevant
+settings (where they exist) or by carrying their own fork.
 
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
 ===================================================================
@@ -133,57 +143,13 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
-@@ -32,51 +32,9 @@ export class KeyboardLayoutPickerContrib
- 	) {
- 		super();
- 
--		const name = nls.localize('status.workbench.keyboardLayout', "Keyboard Layout");
--
--		const layout = this.keyboardLayoutService.getCurrentKeyboardLayout();
--		if (layout) {
--			const layoutInfo = parseKeyboardLayoutDescription(layout);
--			const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
--
--			this.pickerElement.value = this.statusbarService.addEntry(
--				{
--					name,
--					text,
--					ariaLabel: text,
--					command: KEYBOARD_LAYOUT_OPEN_PICKER
--				},
--				'status.workbench.keyboardLayout',
--				StatusbarAlignment.RIGHT
--			);
--		}
--
--		this._register(this.keyboardLayoutService.onDidChangeKeyboardLayout(() => {
--			const layout = this.keyboardLayoutService.getCurrentKeyboardLayout();
--			const layoutInfo = parseKeyboardLayoutDescription(layout);
--
--			if (this.pickerElement.value) {
--				const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
--				this.pickerElement.value.update({
--					name,
--					text,
--					ariaLabel: text,
--					command: KEYBOARD_LAYOUT_OPEN_PICKER
--				});
--			} else {
--				const text = nls.localize('keyboardLayout', "Layout: {0}", layoutInfo.label);
--				this.pickerElement.value = this.statusbarService.addEntry(
--					{
--						name,
--						text,
--						ariaLabel: text,
--						command: KEYBOARD_LAYOUT_OPEN_PICKER
--					},
--					'status.workbench.keyboardLayout',
--					StatusbarAlignment.RIGHT
--				);
--			}
--		}));
-+		// code-server: PRO-5559 suppress the "Layout: U.S." status bar entry registered by
-+		// the web keyboard layout picker contribution. The picker quick-open command stays
-+		// wired up so power users can still invoke it from the command palette.
- 	}
+@@ -81,4 +81,8 @@ export class KeyboardLayoutPickerContrib
  }
+ 
+-registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
++// code-server: PRO-5559 do not register the keyboard layout picker contribution
++// so the "Layout: U.S." status bar entry is never added. The picker quick-open
++// command stays wired up via registerAction2 below, so users can still invoke
++// it from the command palette.
++// registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
+ 
