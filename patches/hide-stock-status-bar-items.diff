@@ -133,9 +133,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
-@@ -30,52 +30,10 @@ export class KeyboardLayoutPickerContrib
- 		@IKeyboardLayoutService private readonly keyboardLayoutService: IKeyboardLayoutService,
- 		@IStatusbarService private readonly statusbarService: IStatusbarService,
+@@ -32,51 +32,9 @@ export class KeyboardLayoutPickerContrib
  	) {
  		super();
  
