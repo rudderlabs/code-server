@@ -143,6 +143,11 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
+@@ -9,3 +9,3 @@ import { parseKeyboardLayoutDescription
+ import { parseKeyboardLayoutDescription, areKeyboardLayoutsEqual, getKeyboardLayoutId, IKeyboardLayoutService, IKeyboardLayoutInfo } from '../../../../platform/keyboardLayout/common/keyboardLayout.js';
+-import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
++import { IWorkbenchContribution } from '../../../common/contributions.js';
+ import { KEYBOARD_LAYOUT_OPEN_PICKER } from '../common/preferences.js';
 @@ -81,4 +81,8 @@ export class KeyboardLayoutPickerContrib
  }
  
