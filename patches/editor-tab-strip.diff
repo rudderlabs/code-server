@@ -4,7 +4,20 @@ Apply compact tab styling to the multi-editor tab strip to match the Figma
 "Profiles | Feb 26th 2026" design:
 
 - 36px tab row height (stock VS Code default is 35px) via the
-  `--editor-group-tab-height` custom property.
+  `--editor-group-tab-height` custom property. Stock VS Code sets this
+  variable inline on `.editor-group-container > .title` from
+  `editorTabsControl.ts::updateTabHeight()`. Because inline styles win
+  over a stylesheet rule targeting the same element, we override on the
+  same `.title` element with `!important`. This covers BOTH multi-tab
+  mode (where the value cascades down to `.tabs-and-actions-container`
+  > `.tabs-container` and the sibling `.editor-actions` toolbar that
+  also reads the variable in `multieditortabscontrol.css`) AND single-
+  tab mode (where `singleeditortabscontrol.css` reads the variable on
+  `.label-container`, `.title-label`, `.breadcrumbs-control`, and
+  `.title-actions`). A single `!important` rule keeps the tab row and
+  the editor-actions toolbar aligned at exactly the same height in both
+  modes — without this, the sibling toolbar would render at 35px while
+  tabs render at 36px (1px misalignment).
 - Tighter inner padding (4px vertical, 6px horizontal) so tabs read as
   compact rather than VS Code's stock spacious layout.
 - Hide the filetype icon on the tab strip; sidebar/explorer/breadcrumb
@@ -23,16 +36,11 @@ variables, set centrally via `workbench.colorCustomizations` defaults
 in getting-started.diff (PRO-5511 palette + this ticket's tab.activeBackground
 correction). No hex values are hardcoded here.
 
-Single-editor tab control (`singleeditortabscontrol.css`) does not
-render a `.tabs-container`/`.tab` strip — it only renders a single
-`.label-container > .title-label`. None of these rules match there, so
-no parallel CSS is needed for that mode.
-
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
-@@ -557,4 +557,56 @@
+@@ -557,4 +557,69 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:last-child.drop-target-left::after,
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:first-child.drop-target-right::before {
  	width: 2px;
@@ -41,26 +49,39 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 +/* ---- code-server: PRO-5562 restyle editor tab strip (Figma compact tabs) ---- */
 +
 +/*
-+ * Compact 36px tab strip per Figma. Stock VS Code default is 35px (see
-+ * EditorTabsControl.EDITOR_TAB_HEIGHT.normal). We bump the CSS custom property
-+ * so both the tabs row and the editor-actions toolbar inherit the height
-+ * consistently. Inner padding is tightened (4px vertical, 6px horizontal) to
-+ * match the Figma spec; stock uses 10px left padding on .tab.
++ * Compact 36px tab strip per Figma. Stock VS Code default is 35px (set
++ * inline on .editor-group-container > .title by
++ * EditorTabsControl::updateTabHeight via parent.style.setProperty). Because
++ * an inline style on .title beats a stylesheet rule that targets the same
++ * element, we MUST use !important to override the variable at the same
++ * element. Targeting the same element (.title) — rather than only a child
++ * like .tabs-and-actions-container — lets a single rule cover BOTH multi-tab
++ * mode (where .tabs-container and the sibling .editor-actions toolbar both
++ * read the variable) AND single-tab mode (where .label-container,
++ * .title-label, .breadcrumbs-control, and .title-actions read it). Without
++ * this single-source override, the sibling .editor-actions toolbar in multi-
++ * tab mode would still resolve to the inline 35px while .tabs-container
++ * rendered at 36px, producing a 1px vertical misalignment.
 + *
 + * Tab background/foreground colors are still driven by --vscode-tab-* and
 + * --vscode-editorGroupHeader-tabsBackground variables, which we set via the
 + * workbench.colorCustomizations defaults in getting-started.diff (PRO-5511 +
 + * PRO-5562 active-bg correction). Do not hardcode hex values here.
 + */
-+.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container {
-+	--editor-group-tab-height: 36px;
++.monaco-workbench .part.editor > .content .editor-group-container > .title {
++	--editor-group-tab-height: 36px !important;
 +}
 +
++/*
++ * Tighter inner padding per Figma. Note: this has equal specificity to the
++ * stock `.tab.close-action-off.dirty:not(.dirty-border-top):not(.sticky-compact)
++ * { padding-right: 0 }` rule above (line 488) but appears later, so dirty
++ * tabs in close-action-off mode will also pick up 6px right padding. This is
++ * intentional — consistent compact padding across all tab states matches the
++ * Figma spec better than preserving the stock edge-case exception.
++ */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-+	padding-top: 4px;
-+	padding-bottom: 4px;
-+	padding-left: 6px;
-+	padding-right: 6px;
++	padding: 4px 6px;
 +}
 +
 +/*
