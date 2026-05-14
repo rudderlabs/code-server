@@ -1,0 +1,115 @@
+Open *_context.md as markdown preview on first workspace visit (PRO-5526)
+
+On workbench restore in a fresh workspace that contains a top-level
+`*_context.md` file and has no persisted editors, open that file as a
+rendered markdown preview via the built-in `markdown.showPreview`
+command. A workspace-scoped `IStorageService` flag (key
+`code-server.profilesContextMd.firstVisitHandled`) gates the behavior
+so it only fires once per workspace; the flag is set before any async
+work so a failure mid-flight cannot retrigger the open.
+
+The implementation lives entirely in a new code-server-owned file
+under `contrib/codeServerProfiles/` and is registered through the
+modern `registerWorkbenchContribution2` API at
+`WorkbenchPhase.AfterRestored` so editors have already restored by
+the time we consult `IEditorService.editors`.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/openContextMdContribution.ts
+===================================================================
+--- /dev/null
++++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/openContextMdContribution.ts
+@@ -0,0 +1,82 @@
++/* eslint-disable header/header */
++/*---------------------------------------------------------------------------------------------
++ *  code-server: PRO-5526 open *_context.md as markdown preview on first workspace visit.
++ *
++ *  On workbench restore, if this workspace has never been handled before
++ *  and no editors are restored, find the alphabetically-first file at the
++ *  workspace root whose name matches `*_context.md` and open it as a
++ *  rendered markdown preview via the built-in markdown-language-features
++ *  command. A workspace-scoped storage flag ensures this only fires on the
++ *  very first visit. See https://linear.app/rudderstack/issue/PRO-5526.
++ *--------------------------------------------------------------------------------------------*/
++
++import { Disposable } from '../../../../base/common/lifecycle.js';
++import { ICommandService } from '../../../../platform/commands/common/commands.js';
++import { IFileService } from '../../../../platform/files/common/files.js';
++import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
++import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
++import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
++import { IEditorService } from '../../../services/editor/common/editorService.js';
++
++const STORAGE_KEY = 'code-server.profilesContextMd.firstVisitHandled';
++// Matches any file whose name ends with `_context.md` (case-insensitive).
++const CONTEXT_MD_PATTERN = /_context\.md$/i;
++
++class OpenContextMdContribution extends Disposable implements IWorkbenchContribution {
++
++	constructor(
++		@IStorageService private readonly storageService: IStorageService,
++		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
++		@IFileService private readonly fileService: IFileService,
++		@IEditorService private readonly editorService: IEditorService,
++		@ICommandService private readonly commandService: ICommandService,
++	) {
++		super();
++		// Fire and forget. We do not want to block workbench startup on file IO,
++		// and any failure inside this handler must not propagate to the workbench.
++		this.maybeOpenContextMd().catch(err => console.error('[code-server PRO-5526] failed to open *_context.md preview:', err));
++	}
++
++	private async maybeOpenContextMd(): Promise<void> {
++		if (this.storageService.getBoolean(STORAGE_KEY, StorageScope.WORKSPACE, false)) {
++			return;
++		}
++
++		// Mark the flag immediately so we never re-trigger even if any downstream
++		// step (file resolve, command execution) fails or throws.
++		this.storageService.store(STORAGE_KEY, true, StorageScope.WORKSPACE, StorageTarget.USER);
++
++		// Honor restored editors: if the user has persisted tabs, do not force
++		// the preview open over them.
++		if (this.editorService.editors.length > 0) {
++			return;
++		}
++
++		// Profiles IDE only ever uses single-folder workspaces.
++		if (this.workspaceContextService.getWorkbenchState() !== WorkbenchState.FOLDER) {
++			return;
++		}
++		const folder = this.workspaceContextService.getWorkspace().folders[0];
++		if (!folder) {
++			return;
++		}
++
++		// List root-level entries and pick the alphabetically-first match.
++		const stat = await this.fileService.resolve(folder.uri);
++		const matches = (stat.children ?? [])
++			.filter(c => !c.isDirectory && CONTEXT_MD_PATTERN.test(c.name))
++			.sort((a, b) => a.name.localeCompare(b.name));
++		if (matches.length === 0) {
++			return;
++		}
++		const target = matches[0].resource;
++
++		// Open as rendered preview only (no accompanying source editor) via the
++		// built-in markdown-language-features command. Verified by reading
++		// `extensions/markdown-language-features/src/commands/showPreview.ts`
++		// and `extensions/markdown-language-features/package.json`.
++		await this.commandService.executeCommand('markdown.showPreview', target);
++	}
++}
++
++registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.openContextMd', OpenContextMdContribution, WorkbenchPhase.AfterRestored);
+Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts
++++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+@@ -426,4 +426,7 @@ import './contrib/rudderstack/browser/ru
+ // code-server: PRO-5528 RudderStack tab status bar entry
+ import './contrib/codeServerProfiles/browser/rudderstackTabStatusBar.contribution.js';
+ 
++// code-server: PRO-5526 open *_context.md as markdown preview on first visit
++import './contrib/codeServerProfiles/browser/openContextMdContribution.js';
++
+ //#endregion
