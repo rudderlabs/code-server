@@ -425,7 +425,6 @@ jobs:
           labels: ${{ steps.arch-meta.outputs.labels }}
           build-args: |
             TARGETARCH=${{ matrix.arch }}
-            GITHUB_PAT=${{ secrets.PAT }}
           secrets: |
             PYPI_CONNECTION_STRING=admin:${{ secrets.PYPI_PASSWORD }}@pypi.dev-rudder.rudderlabs.com/simple
           cache-from: type=gha
