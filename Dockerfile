@@ -82,24 +82,17 @@ USER root
 RUN rm -f /tmp/claude.vsix
 RUN mkdir -p /usr/lib/code-server/src/browser/media/
 COPY src/browser/media/copilot-welcome.html /usr/lib/code-server/src/browser/media/copilot-welcome.html
-# At runtime, /home/codeuser/profiles-mcp is backed by an EFS PVC shared with the
-# executor pod, so any image-baked content under that path would be masked by the
-# mount. Stage the source tree at /opt/profiles-mcp-stage instead; main.sh seeds
-# the EFS-backed mount from this stage and runs setup.sh at the runtime path so
-# the venv's shebangs and .pth files reference /home/codeuser/profiles-mcp/.
-RUN mkdir -p /opt/profiles-mcp-stage && chown codeuser:codeuser /opt/profiles-mcp-stage
 USER codeuser
 
-# Clone profiles-mcp source into the non-mounted stage path (see comment above).
-RUN git clone --branch feat.samepathstubproject https://github.com/rudderlabs/profiles-mcp /opt/profiles-mcp-stage
+# Clone profiles-mcp as codeuser
+RUN git clone --branch feat.samepathstubproject https://github.com/rudderlabs/profiles-mcp
 
-# Set up the Python script in the stage (will be copied to the runtime mount at boot)
-RUN echo '#!/usr/bin/env python3' > /opt/profiles-mcp-stage/scripts/update_mcp_config.py
-COPY --chown=codeuser:codeuser profiles-mcp.env /opt/profiles-mcp-stage/.env
+# Set up the Python script
+RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
+COPY --chown=codeuser:codeuser profiles-mcp.env /home/codeuser/profiles-mcp/.env
 
-# Intentionally NOT running `setup.sh` here — it must run at the runtime path
-# (/home/codeuser/profiles-mcp/) so the venv has correct absolute paths and is
-# shareable with the executor pod over EFS.
+# Run setup as codeuser
+RUN cd /home/codeuser/profiles-mcp && bash setup.sh
 
 # Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
