@@ -3,7 +3,7 @@ Restyle editor tab strip per Figma (PRO-5562)
 Apply compact tab styling to the multi-editor tab strip to match the Figma
 "Profiles | Feb 26th 2026" design:
 
-- 36px tab row height (stock VS Code default is 35px) via the
+- 30px tab row height (stock VS Code default is 35px) via the
   `--editor-group-tab-height` custom property. Stock VS Code sets this
   variable inline on `.editor-group-container > .title` from
   `editorTabsControl.ts::updateTabHeight()`. Because inline styles win
@@ -17,9 +17,11 @@ Apply compact tab styling to the multi-editor tab strip to match the Figma
   `.title-actions`). A single `!important` rule keeps the tab row and
   the editor-actions toolbar aligned at exactly the same height in both
   modes — without this, the sibling toolbar would render at 35px while
-  tabs render at 36px (1px misalignment).
-- Tighter inner padding (4px vertical, 6px horizontal) so tabs read as
-  compact rather than VS Code's stock spacious layout.
+  tabs render at 30px (5px misalignment).
+- Tighter inner padding (0 vertical, 6px horizontal). Vertical centering
+  is delegated to the existing line-height (set on `.tab-label` in
+  stock) so the filename text sits in the middle of the 30px row
+  without extra vertical padding making the tab feel chunky.
 - Hide the filetype icon on the tab strip; sidebar/explorer/breadcrumb
   icons remain untouched because the selector is scoped to the editor
   `.tabs-container`.
@@ -49,7 +51,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 +/* ---- code-server: PRO-5562 restyle editor tab strip (Figma compact tabs) ---- */
 +
 +/*
-+ * Compact 36px tab strip per Figma. Stock VS Code default is 35px (set
++ * Compact 30px tab strip per Figma. Stock VS Code default is 35px (set
 + * inline on .editor-group-container > .title by
 + * EditorTabsControl::updateTabHeight via parent.style.setProperty). Because
 + * an inline style on .title beats a stylesheet rule that targets the same
@@ -61,7 +63,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 + * .title-label, .breadcrumbs-control, and .title-actions read it). Without
 + * this single-source override, the sibling .editor-actions toolbar in multi-
 + * tab mode would still resolve to the inline 35px while .tabs-container
-+ * rendered at 36px, producing a 1px vertical misalignment.
++ * rendered at 30px, producing a 5px vertical misalignment.
 + *
 + * Tab background/foreground colors are still driven by --vscode-tab-* and
 + * --vscode-editorGroupHeader-tabsBackground variables, which we set via the
@@ -69,7 +71,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 + * PRO-5562 active-bg correction). Do not hardcode hex values here.
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title {
-+	--editor-group-tab-height: 36px !important;
++	--editor-group-tab-height: 30px !important;
 +}
 +
 +/*
@@ -82,7 +84,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 + * preserving the stock exception there is the safer outcome anyway.
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-+	padding: 4px 6px;
++	padding: 0 6px;
 +}
 +
 +/*
