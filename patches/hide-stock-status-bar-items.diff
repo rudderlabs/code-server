@@ -143,12 +143,17 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
 +++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
-@@ -9,3 +9,3 @@ import { parseKeyboardLayoutDescription
+@@ -7,7 +7,7 @@ import * as nls from '../../../../nls.js
+ import { StatusbarAlignment, IStatusbarService, IStatusbarEntryAccessor } from '../../../services/statusbar/browser/statusbar.js';
+ import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
  import { parseKeyboardLayoutDescription, areKeyboardLayoutsEqual, getKeyboardLayoutId, IKeyboardLayoutService, IKeyboardLayoutInfo } from '../../../../platform/keyboardLayout/common/keyboardLayout.js';
 -import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 +import { IWorkbenchContribution } from '../../../common/contributions.js';
  import { KEYBOARD_LAYOUT_OPEN_PICKER } from '../common/preferences.js';
-@@ -81,4 +81,8 @@ export class KeyboardLayoutPickerContrib
+ import { isMacintosh, isWindows } from '../../../../base/common/platform.js';
+ import { QuickPickInput, IQuickInputService, IQuickPickItem } from '../../../../platform/quickinput/common/quickInput.js';
+@@ -80,7 +80,11 @@ export class KeyboardLayoutPickerContrib
+ 	}
  }
  
 -registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
@@ -158,3 +163,56 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keybo
 +// it from the command palette.
 +// registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
  
+ interface LayoutQuickPickItem extends IQuickPickItem {
+ 	layout: IKeyboardLayoutInfo;
+Index: code-server/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
+@@ -3,8 +3,13 @@
+  *  Licensed under the MIT License. See License.txt in the project root for license information.
+  *--------------------------------------------------------------------------------------------*/
+ 
+-import { wrapInHotClass1 } from '../../../../platform/observable/common/wrapInHotClass.js';
+-import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
+-import { InlineCompletionLanguageStatusBarContribution } from './inlineCompletionLanguageStatusBarContribution.js';
+-
+-registerWorkbenchContribution2(InlineCompletionLanguageStatusBarContribution.Id, wrapInHotClass1(InlineCompletionLanguageStatusBarContribution.hot), WorkbenchPhase.Eventually);
++// code-server PRO-5559: drop the "$(copilot) inline suggestions" Editor
++// Language Status entry from the status bar (right side). The Copilot
++// inline-completions feature itself is not affected -- only the status
++// surface that surfaces its readiness state. All imports are dropped to
++// avoid TS6133 (unused imports) under noUnusedLocals.
++//
++// import { wrapInHotClass1 } from '../../../../platform/observable/common/wrapInHotClass.js';
++// import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
++// import { InlineCompletionLanguageStatusBarContribution } from './inlineCompletionLanguageStatusBarContribution.js';
++// registerWorkbenchContribution2(InlineCompletionLanguageStatusBarContribution.Id, wrapInHotClass1(InlineCompletionLanguageStatusBarContribution.hot), WorkbenchPhase.Eventually);
+Index: code-server/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
+@@ -10,7 +10,9 @@ import { LifecyclePhase } from '../../..
+ import { TunnelFactoryContribution } from './tunnelFactory.js';
+ import { RemoteAgentConnectionStatusListener, RemoteMarkers } from './remote.js';
+ import { RemoteStatusIndicator } from './remoteIndicator.js';
+-import { AutomaticPortForwarding, ForwardedPortsView, PortRestore } from './remoteExplorer.js';
++// code-server PRO-5559: ForwardedPortsView import dropped; its registration
++// is commented out below to hide the "Forwarded Ports" status bar entry.
++import { AutomaticPortForwarding, PortRestore } from './remoteExplorer.js';
+ import { InitialRemoteConnectionHealthContribution } from './remoteConnectionHealth.js';
+ 
+ const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
+@@ -18,7 +20,11 @@ registerWorkbenchContribution2(ShowCandi
+ registerWorkbenchContribution2(TunnelFactoryContribution.ID, TunnelFactoryContribution, WorkbenchPhase.BlockRestore);
+ workbenchContributionsRegistry.registerWorkbenchContribution(RemoteAgentConnectionStatusListener, LifecyclePhase.Eventually);
+ registerWorkbenchContribution2(RemoteStatusIndicator.ID, RemoteStatusIndicator, WorkbenchPhase.BlockStartup);
+-workbenchContributionsRegistry.registerWorkbenchContribution(ForwardedPortsView, LifecyclePhase.Restored);
++// code-server PRO-5559: hide the "Forwarded Ports" status bar entry per
++// the Figma IDE Footer. ForwardedPortsView also drives an activity bar
++// badge for ports but that activity area is already hidden by the
++// Profiles IDE customisation, so this is the cleanest removal.
++// workbenchContributionsRegistry.registerWorkbenchContribution(ForwardedPortsView, LifecyclePhase.Restored);
+ workbenchContributionsRegistry.registerWorkbenchContribution(PortRestore, LifecyclePhase.Eventually);
+ workbenchContributionsRegistry.registerWorkbenchContribution(AutomaticPortForwarding, LifecyclePhase.Eventually);
+ workbenchContributionsRegistry.registerWorkbenchContribution(RemoteMarkers, LifecyclePhase.Eventually);
