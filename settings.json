@@ -14,5 +14,14 @@
     "fish": null,
     "csh": null,
     "ksh": null
+  },
+  "files.exclude": {
+    "**/.nfs*": true
+  },
+  "search.exclude": {
+    "**/.nfs*": true
+  },
+  "files.watcherExclude": {
+    "**/.nfs*": true
   }
 }
