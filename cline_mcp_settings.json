@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "Profiles": {
+      "command": "/home/codeuser/profiles-mcp/scripts/start.sh",
+      "args": [],
+      "env": {
+        "SHELL": "/bin/bash"
+      },
+      "inheritEnv": [
+        "RAG_ADMIN_USERNAME",
+        "RAG_ADMIN_PASSWORD",
+        "RETRIEVAL_API_URL",
+        "IS_CLOUD_BASED",
+        "USE_PB_QUERY",
+        "USE_FIX_PATH_FOR_STUB_PROJECT",
+        "PB_EXECUTOR_ADDR",
+        "PB_PROJECT_DIR",
+        "PB_EXECUTOR_TOKEN_FILE"
+      ],
+      "autoApprove": [
+        "get_existing_connections",
+        "search_profiles_docs",
+        "initialize_warehouse_connection",
+        "run_query",
+        "input_table_suggestions",
+        "describe_table",
+        "get_profiles_output_details",
+        "setup_new_profiles_project",
+        "evaluate_eligible_user_filters",
+        "validate_propensity_model_config"
+      ]
+    }
+  }
+}
