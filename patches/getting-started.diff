@@ -234,7 +234,7 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 +					'editor.background': '#ffffff',
 +					'editorGroup.border': '#ebeef1',
 +					'editorGroupHeader.tabsBackground': '#fafbfc',
-+					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
++					'tab.activeBackground': '#ffffff',
 +					'tab.activeForeground': '#353a44',
 +					'tab.inactiveBackground': '#fafbfc',
 +					'tab.inactiveForeground': '#6c7688',
