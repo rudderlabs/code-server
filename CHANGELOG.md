@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.18.1](https://github.com/rudderlabs/code-server/compare/v1.18.0...v1.18.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* **lshell:** allow pb to escape sudo_noexec wrapping ([#216](https://github.com/rudderlabs/code-server/issues/216)) ([e2f217f](https://github.com/rudderlabs/code-server/commit/e2f217f29c0ded08817209c5e7988ca8dd1c109b))
+
 ## [1.18.0](https://github.com/rudderlabs/code-server/compare/v1.17.0...v1.18.0) (2026-05-19)
 
 
