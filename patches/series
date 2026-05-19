@@ -36,3 +36,4 @@ cline-seed-storage.diff
 hide-scm-actions.diff
 hide-scm-title-actions.diff
 harden-iframe-postmessage.diff
+match-figma-font-sizes.diff
