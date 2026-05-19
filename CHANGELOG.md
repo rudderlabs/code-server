@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.18.2](https://github.com/rudderlabs/code-server/compare/v1.18.1...v1.18.2) (2026-05-19)
+
+
+### Bug Fixes
+
+* match sidebar, tab, and status bar font sizes to Figma design ([#218](https://github.com/rudderlabs/code-server/issues/218)) ([9dfbe18](https://github.com/rudderlabs/code-server/commit/9dfbe18641b935561d2215e81e230faa682b778a))
+
 ## [1.18.1](https://github.com/rudderlabs/code-server/compare/v1.18.0...v1.18.1) (2026-05-19)
 
 
