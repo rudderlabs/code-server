@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.18.0](https://github.com/rudderlabs/code-server/compare/v1.17.0...v1.18.0) (2026-05-19)
+
+
+### Features
+
+* **executor:** integrate pb-proxy as drop-in pb replacement for credential isolation INF-1910 ([#153](https://github.com/rudderlabs/code-server/issues/153)) ([9ad965a](https://github.com/rudderlabs/code-server/commit/9ad965ad2561d0307dcdbab4f376335b76f119e6))
+* update cline to 6.17.0 ([#215](https://github.com/rudderlabs/code-server/issues/215)) ([d35dc55](https://github.com/rudderlabs/code-server/commit/d35dc552f0c4d70c08c4544a6e4a6fa21e9b98f2))
+
+
+### Bug Fixes
+
+* **sec-89:** unify CORS allowlist under CS_ALLOWED_ORIGINS ([#198](https://github.com/rudderlabs/code-server/issues/198)) ([dad7462](https://github.com/rudderlabs/code-server/commit/dad746288362b6013d1fa2f711adb68e6377d8a9))
+
+
+### Miscellaneous Chores
+
+* remove GITHUB_PAT from Docker build args ([#213](https://github.com/rudderlabs/code-server/issues/213)) ([066368f](https://github.com/rudderlabs/code-server/commit/066368f0ae7ccd9ad04046d5907e7ac7fe51ce22))
+* update Cline to 6.17.0 ([d35dc55](https://github.com/rudderlabs/code-server/commit/d35dc552f0c4d70c08c4544a6e4a6fa21e9b98f2))
+
 ## [1.17.0](https://github.com/rudderlabs/code-server/compare/v1.16.2...v1.17.0) (2026-05-05)
 
 
