@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.19.0](https://github.com/rudderlabs/code-server/compare/v1.18.2...v1.19.0) (2026-05-20)
+
+
+### Features
+
+* **PRO-5526:** open *_context.md as markdown preview on first workspace visit ([#211](https://github.com/rudderlabs/code-server/issues/211)) ([d880b6b](https://github.com/rudderlabs/code-server/commit/d880b6bf2d7caf313dd6ccb7964a2b85419d5491))
+* **PRO-5559, PRO-5528:** force-hide stock VS Code UI surfaces and align status bar with Figma ([#209](https://github.com/rudderlabs/code-server/issues/209)) ([57aa7ce](https://github.com/rudderlabs/code-server/commit/57aa7ce3eb409e7d9b8336a023c3d505e30060b6))
+* **PRO-5562:** restyle editor tab strip to match Figma (compact, close-on-active only) ([#210](https://github.com/rudderlabs/code-server/issues/210)) ([5ac94dc](https://github.com/rudderlabs/code-server/commit/5ac94dc2699872155390bbae2aefebb50960216f))
+
 ## [1.18.2](https://github.com/rudderlabs/code-server/compare/v1.18.1...v1.18.2) (2026-05-19)
 
 
