@@ -45,20 +45,95 @@ yields the pre-close value and the empty-editor trigger never sees
 Bursty events (a typical openEditor fires 3 events in one tick)
 collapse into a single update via `updateScheduled`.
 
+Cross-session state: the maximize is a session-scoped response to a
+user action, not a saved preference, so this patch also prevents the
+maximized layout from leaking into the next workbench load via two
+additional layout.ts surgeries:
+
+  - At workbench startup, instead of upstream's auto-restore of the
+    maximized auxbar (which would briefly hide the sidebar before the
+    empty-group restoration unmaximizes), we restore the pre-maximize
+    visibility from AUXILIARYBAR_LAST_NON_MAXIMIZED_VISIBILITY and clear
+    AUXILIARYBAR_WAS_LAST_MAXIMIZED. The grid descriptor then deserializes
+    with the prior layout on the very first frame -- no flash.
+  - At shutdown (`onWillSaveState`), if our maximize is currently active,
+    we persist AUXILIARYBAR_SIZE as AUXILIARYBAR_LAST_NON_MAXIMIZED_SIZE
+    (the pre-maximize width) instead of the current maximized width.
+    Otherwise the saved width would dominate the next session's grid
+    proportions even after the visibility states are restored.
+
 Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/layout.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/layout.ts
-@@ -1572,7 +1572,7 @@ export abstract class Layout extends Dis
- 			// also hidden and not present, breaking the layout.
- 			// Workaround is to make editor visible so that its parent view gets
- 			// added properly and then enter maximized mode of auxiliary bar.
--			this.setAuxiliaryBarMaximized(true, true /* fromInit */);
-+			this.setAuxiliaryBarMaximized(true, { fromInit: true });
- 		}
+@@ -1553,6 +1553,31 @@ export abstract class Layout extends Dis
+ 			[Parts.AUXILIARYBAR_PART]: this.auxiliaryBarPartView
+ 		};
  
++		// code-server PRO-5561: instead of upstream's auto-restore of maximized
++		// auxiliary bar at startup, actively undo the persisted maximize so each
++		// workbench visit starts in the default layout (watermark visible, auxbar
++		// at its prior non-maximized width). The PR #212 contribution maximizes
++		// via setAuxiliaryBarMaximized when the user closes the last tab in a
++		// session; the API persists EDITOR_HIDDEN / PANEL_HIDDEN /
++		// AUXILIARYBAR_WAS_LAST_MAXIMIZED which would otherwise carry the "AI
++		// took over" state into the next session. Since the takeover is a
++		// session-scoped response (not a saved preference), restore the prior
++		// layout values from AUXILIARYBAR_LAST_NON_MAXIMIZED_VISIBILITY *before*
++		// the grid deserializes -- the grid descriptor reads the runtime
++		// visibility state, so resetting it here gives us a clean restore with
++		// no flash. The user must explicitly re-open + close again to trigger
++		// the takeover in a new session.
++		if (this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_WAS_LAST_MAXIMIZED)) {
++			const lastNonMax = this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_LAST_NON_MAXIMIZED_VISIBILITY);
++			const lastNonMaxSize = this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_LAST_NON_MAXIMIZED_SIZE);
++			this.stateModel.setRuntimeValue(LayoutStateKeys.SIDEBAR_HIDDEN, !lastNonMax.sideBarVisible);
++			this.stateModel.setRuntimeValue(LayoutStateKeys.EDITOR_HIDDEN, !lastNonMax.editorVisible);
++			this.stateModel.setRuntimeValue(LayoutStateKeys.PANEL_HIDDEN, !lastNonMax.panelVisible);
++			this.stateModel.setRuntimeValue(LayoutStateKeys.AUXILIARYBAR_HIDDEN, !lastNonMax.auxiliaryBarVisible);
++			this.stateModel.setInitializationValue(LayoutStateKeys.AUXILIARYBAR_SIZE, lastNonMaxSize);
++			this.stateModel.setRuntimeValue(LayoutStateKeys.AUXILIARYBAR_WAS_LAST_MAXIMIZED, false);
++		}
++
+ 		const fromJSON = ({ type }: { type: Parts }) => viewMap[type];
+ 		const workbenchGrid = SerializableGrid.deserialize(
+ 			this.createGridDescriptor(),
+@@ -1565,16 +1590,6 @@ export abstract class Layout extends Dis
+ 		this.workbenchGrid = workbenchGrid;
+ 		this.workbenchGrid.edgeSnapping = this.state.runtime.mainWindowFullscreen;
+ 
+-		if (this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_WAS_LAST_MAXIMIZED)) {
+-			// TODO@benibenj this is a workaround for the grid not being able to
+-			// restore the maximized auxiliary bar on startup when it was maximised
+-			// It seems that since editor and panel are hidden, the parent node is
+-			// also hidden and not present, breaking the layout.
+-			// Workaround is to make editor visible so that its parent view gets
+-			// added properly and then enter maximized mode of auxiliary bar.
+-			this.setAuxiliaryBarMaximized(true, true /* fromInit */);
+-		}
+-
  		for (const part of [titleBar, editorPart, activityBar, panelPart, sideBar, statusBar, auxiliaryBarPart, bannerPart]) {
-@@ -2040,7 +2040,9 @@ export abstract class Layout extends Dis
+ 			this._register(part.onDidVisibilityChange(visible => {
+ 				if (!this.inMaximizedAuxiliaryBarTransition) {
+@@ -1618,9 +1633,16 @@ export abstract class Layout extends Dis
+ 			this.stateModel.setInitializationValue(LayoutStateKeys.PANEL_SIZE, panelSize as number);
+ 
+ 			// Auxiliary Bar Size
++			// code-server PRO-5561: when our contribution-driven maximize is active
++			// (see auxBarExpandOnEmpty.contribution.ts), the auxbar's current width is
++			// the maximized one. Persisting it would carry the maximized layout into
++			// the next session. Use the pre-maximize size instead so the workbench
++			// lays out at its prior proportions on next load.
+ 			const auxiliaryBarSize = this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_HIDDEN)
+ 				? this.workbenchGrid.getViewCachedVisibleSize(this.auxiliaryBarPartView)
+-				: this.workbenchGrid.getViewSize(this.auxiliaryBarPartView).width;
++				: this.isAuxiliaryBarMaximized()
++					? this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_LAST_NON_MAXIMIZED_SIZE)
++					: this.workbenchGrid.getViewSize(this.auxiliaryBarPartView).width;
+ 			this.stateModel.setInitializationValue(LayoutStateKeys.AUXILIARYBAR_SIZE, auxiliaryBarSize as number);
+ 
+ 			this.stateModel.save(true, true);
+@@ -2040,7 +2062,9 @@ export abstract class Layout extends Dis
  		this.setAuxiliaryBarMaximized(!this.isAuxiliaryBarMaximized());
  	}
  
@@ -69,7 +144,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
  		if (
  			this.inMaximizedAuxiliaryBarTransition ||			// prevent re-entrance
  			(!maximized && !this.maximizedAuxiliaryBarState)	// return early if not maximizing and no state
-@@ -2080,7 +2082,7 @@ export abstract class Layout extends Dis
+@@ -2080,7 +2104,7 @@ export abstract class Layout extends Dis
  					const size = this.workbenchGrid.getViewSize(this.auxiliaryBarPartView).width;
  					this.stateModel.setRuntimeValue(LayoutStateKeys.AUXILIARYBAR_LAST_NON_MAXIMIZED_SIZE, size);
  				}
@@ -78,7 +153,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
  					this.setSideBarHidden(true);
  				}
  				if (state.panelVisible) {
-@@ -2104,7 +2106,9 @@ export abstract class Layout extends Dis
+@@ -2104,7 +2128,9 @@ export abstract class Layout extends Dis
  			try {
  				this.setEditorHidden(!state?.editorVisible);	// this order of updating view visibility
  				this.setPanelHidden(!state?.panelVisible);		// helps in restoring the previous view
