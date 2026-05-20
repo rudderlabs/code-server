@@ -1,0 +1,163 @@
+Expand AuxiliaryBar to fill editor when all tabs are closed (PRO-5561)
+
+When the user closes the last editor in the main editor area, call the
+existing `setAuxiliaryBarMaximized(true)` API so VS Code's own grid
+hands the editor + panel space to the AuxiliaryBar (which hosts the
+Rudder AI panel). The default contract of that API also hides the
+sidebar, which the Figma keeps visible -- so this patch widens the
+API with an options bag and gates the sidebar hide / restore on a
+new `keepSideBar` flag.
+
+  setAuxiliaryBarMaximized(maximized, options?): boolean
+    options.fromInit?   // existing internal flag, now under options
+    options.keepSideBar?  // new: skip sidebar hide on maximize and
+                          // sidebar restore on unmaximize
+
+The contribution (`auxBarExpandOnEmpty.contribution.ts`, registered at
+`WorkbenchPhase.Eventually`) subscribes to `IEditorService.onDidEditorsChange`
+and, whenever the total editor count drops to 0 while the AuxiliaryBar
+is visible, calls `setAuxiliaryBarMaximized(true, { keepSideBar: true })`.
+
+We do not need to call the unmaximize side: when an editor re-opens,
+VS Code's own `setEditorHidden(false)` path at `layout.ts:1780`
+already invokes `setAuxiliaryBarMaximized(false)` on our behalf, which
+restores the editor + panel. The `state.sideBarVisible` captured at
+maximize time was `true` (we never hid it), so the unmaximize's
+`setSideBarHidden(!true)` becomes a no-op and the sidebar stays put.
+
+User-triggered manual `toggleMaximizedAuxiliaryBar` is unchanged: it
+calls the API without `keepSideBar`, preserving upstream behavior
+(sidebar hides like upstream VS Code).
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/layout.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/layout.ts
+@@ -1572,7 +1572,7 @@ export abstract class Layout extends Dis
+ 			// also hidden and not present, breaking the layout.
+ 			// Workaround is to make editor visible so that its parent view gets
+ 			// added properly and then enter maximized mode of auxiliary bar.
+-			this.setAuxiliaryBarMaximized(true, true /* fromInit */);
++			this.setAuxiliaryBarMaximized(true, { fromInit: true });
+ 		}
+ 
+ 		for (const part of [titleBar, editorPart, activityBar, panelPart, sideBar, statusBar, auxiliaryBarPart, bannerPart]) {
+@@ -2040,7 +2040,9 @@ export abstract class Layout extends Dis
+ 		this.setAuxiliaryBarMaximized(!this.isAuxiliaryBarMaximized());
+ 	}
+ 
+-	setAuxiliaryBarMaximized(maximized: boolean, fromInit?: boolean): boolean {
++	setAuxiliaryBarMaximized(maximized: boolean, options?: { fromInit?: boolean; keepSideBar?: boolean }): boolean {
++		const fromInit = options?.fromInit;
++		const keepSideBar = options?.keepSideBar;
+ 		if (
+ 			this.inMaximizedAuxiliaryBarTransition ||			// prevent re-entrance
+ 			(!maximized && !this.maximizedAuxiliaryBarState)	// return early if not maximizing and no state
+@@ -2080,7 +2082,7 @@ export abstract class Layout extends Dis
+ 					const size = this.workbenchGrid.getViewSize(this.auxiliaryBarPartView).width;
+ 					this.stateModel.setRuntimeValue(LayoutStateKeys.AUXILIARYBAR_LAST_NON_MAXIMIZED_SIZE, size);
+ 				}
+-				if (state.sideBarVisible) {
++				if (state.sideBarVisible && !keepSideBar) {
+ 					this.setSideBarHidden(true);
+ 				}
+ 				if (state.panelVisible) {
+@@ -2104,7 +2106,9 @@ export abstract class Layout extends Dis
+ 			try {
+ 				this.setEditorHidden(!state?.editorVisible);	// this order of updating view visibility
+ 				this.setPanelHidden(!state?.panelVisible);		// helps in restoring the previous view
+-				this.setSideBarHidden(!state?.sideBarVisible);	// sizes we had
++				if (!keepSideBar) {								// sizes we had
++					this.setSideBarHidden(!state?.sideBarVisible);
++				}
+ 
+ 				const size = this.workbenchGrid.getViewSize(this.auxiliaryBarPartView);
+ 				this.workbenchGrid.resizeView(this.auxiliaryBarPartView, {
+Index: code-server/lib/vscode/src/vs/workbench/services/layout/browser/layoutService.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/services/layout/browser/layoutService.ts
++++ code-server/lib/vscode/src/vs/workbench/services/layout/browser/layoutService.ts
+@@ -252,7 +252,7 @@ export interface IWorkbenchLayoutService
+ 	 *
+ 	 * @returns `true` if there was a change in the maximization state.
+ 	 */
+-	setAuxiliaryBarMaximized(maximized: boolean): boolean;
++	setAuxiliaryBarMaximized(maximized: boolean, options?: { keepSideBar?: boolean }): boolean;
+ 
+ 	/**
+ 	 * Returns true if the auxiliary sidebar is maximized.
+Index: code-server/lib/vscode/src/vs/workbench/test/browser/workbenchTestServices.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/test/browser/workbenchTestServices.ts
++++ code-server/lib/vscode/src/vs/workbench/test/browser/workbenchTestServices.ts
+@@ -663,7 +663,7 @@ export class TestLayoutService implement
+ 	toggleMaximizedPanel(): void { }
+ 	isPanelMaximized(): boolean { return false; }
+ 	toggleMaximizedAuxiliaryBar(): void { }
+-	setAuxiliaryBarMaximized(maximized: boolean): boolean { return false; }
++	setAuxiliaryBarMaximized(maximized: boolean, options?: { keepSideBar?: boolean }): boolean { return false; }
+ 	isAuxiliaryBarMaximized(): boolean { return false; }
+ 	getMenubarVisibility(): MenuBarVisibility { throw new Error('not implemented'); }
+ 	toggleMenuBar(): void { }
+Index: code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/workbench.common.main.ts
++++ code-server/lib/vscode/src/vs/workbench/workbench.common.main.ts
+@@ -429,4 +429,7 @@ import './contrib/codeServerProfiles/bro
+ // code-server: PRO-5526 open *_context.md as markdown preview on first visit
+ import './contrib/codeServerProfiles/browser/openContextMdContribution.js';
+ 
++// code-server: PRO-5561 expand AuxiliaryBar to fill editor area when all tabs are closed
++import './contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.js';
++
+ //#endregion
+Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
+===================================================================
+--- /dev/null
++++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
+@@ -0,0 +1,45 @@
++/* eslint-disable header/header */
++/*---------------------------------------------------------------------------------------------
++ *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area when all tabs are closed.
++ *
++ *  When the user closes the last editor in the main editor area, call the
++ *  patched `setAuxiliaryBarMaximized(true, { keepSideBar: true })` so the
++ *  workbench grid hands the editor + panel space to the AuxiliaryBar (which
++ *  hosts the Rudder AI panel) while the left sidebar stays put for file
++ *  navigation. When an editor re-opens, VS Code's own `setEditorHidden(false)`
++ *  path auto-unmaximizes via `layout.ts:1780`, so we do not need to do
++ *  anything on the return trip.
++ *
++ *  Matches the Figma "All tabs closed" state at node 108:1233.
++ *--------------------------------------------------------------------------------------------*/
++
++import { Disposable } from '../../../../base/common/lifecycle.js';
++import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
++import { IEditorService } from '../../../services/editor/common/editorService.js';
++import { IWorkbenchLayoutService, Parts } from '../../../services/layout/browser/layoutService.js';
++
++class AuxBarExpandOnEmptyContribution extends Disposable implements IWorkbenchContribution {
++
++	constructor(
++		@IEditorService private readonly editorService: IEditorService,
++		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
++	) {
++		super();
++
++		this._register(this.editorService.onDidEditorsChange(() => this.update()));
++		// Run once at startup so a workspace restored with no editors maximizes too.
++		this.update();
++	}
++
++	private update(): void {
++		if (!this.layoutService.isVisible(Parts.AUXILIARYBAR_PART)) {
++			// User hid the auxiliary bar entirely; do not force it open.
++			return;
++		}
++		if (this.editorService.count === 0 && !this.layoutService.isAuxiliaryBarMaximized()) {
++			this.layoutService.setAuxiliaryBarMaximized(true, { keepSideBar: true });
++		}
++	}
++}
++
++registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.auxBarExpandOnEmpty', AuxBarExpandOnEmptyContribution, WorkbenchPhase.Eventually);
