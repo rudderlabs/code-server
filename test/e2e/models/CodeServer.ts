@@ -82,10 +82,23 @@ export class CodeServer {
       path.join(dir, "Machine/settings.json"),
       JSON.stringify({
         "workbench.startupEditor": "none",
-        // getting-started.diff hides the menubar via a configurationDefault for production,
-        // but the upstream e2e tests drive Save As / Terminal / etc. through it via
-        // navigateMenus -- re-enable it at the machine-settings layer (higher precedence).
-        "window.menuBarVisibility": "classic",
+      }),
+      "utf8",
+    )
+
+    // getting-started.diff sets `window.menuBarVisibility: 'hidden'` and
+    // `workbench.activityBar.location: 'hidden'` as configurationDefaults for
+    // production. The upstream e2e tests drive Save As / Terminal / etc. through
+    // the Application Menu via navigateMenus, which only exists in the compact
+    // menubar -- and the compact menubar only renders inside a visible activity
+    // bar. Both settings are APPLICATION-scoped, so override them in
+    // User/settings.json (Machine/settings.json doesn't apply to APPLICATION scope).
+    await fs.mkdir(path.join(dir, "User"), { recursive: true })
+    await fs.writeFile(
+      path.join(dir, "User/settings.json"),
+      JSON.stringify({
+        "window.menuBarVisibility": "compact",
+        "workbench.activityBar.location": "default",
       }),
       "utf8",
     )
