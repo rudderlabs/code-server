@@ -82,6 +82,10 @@ export class CodeServer {
       path.join(dir, "Machine/settings.json"),
       JSON.stringify({
         "workbench.startupEditor": "none",
+        // getting-started.diff hides the menubar via a configurationDefault for production,
+        // but the upstream e2e tests drive Save As / Terminal / etc. through it via
+        // navigateMenus -- re-enable it at the machine-settings layer (higher precedence).
+        "window.menuBarVisibility": "classic",
       }),
       "utf8",
     )
