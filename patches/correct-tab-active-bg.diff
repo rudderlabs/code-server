@@ -1,0 +1,27 @@
+Correct tab.activeBackground from white to Figma blue-50 (PRO-5562)
+
+PRO-5511 landed with `workbench.colorCustomizations.tab.activeBackground`
+set to #ffffff. The Figma editor header strip
+(https://www.figma.com/design/SDpW683dzIqtXeGsAyQqyt/Profiles-Feb-26th-2026?node-id=101-3107)
+specifies blue-50 (#ebf3fd) for the active tab background. This patch
+flips that single hex value to match the spec.
+
+The fix lives in a dedicated patch (not in getting-started.diff) so
+that PRO-5562 changes are isolated from the older PRO-5511 onboarding
+defaults. VS Code automatically exposes the value as
+`--vscode-tab-activeBackground`, which the tab DOM already consumes --
+no other CSS or theme changes are required.
+
+Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
++++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+@@ -420,7 +420,7 @@ export class WebClientServer {
+ 					'editor.background': '#ffffff',
+ 					'editorGroup.border': '#ebeef1',
+ 					'editorGroupHeader.tabsBackground': '#fafbfc',
+-					'tab.activeBackground': '#ffffff',
++					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
+ 					'tab.activeForeground': '#353a44',
+ 					'tab.inactiveBackground': '#fafbfc',
+ 					'tab.inactiveForeground': '#6c7688',
