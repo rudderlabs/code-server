@@ -29,6 +29,14 @@ User-triggered manual `toggleMaximizedAuxiliaryBar` is unchanged: it
 calls the API without `keepSideBar`, preserving upstream behavior
 (sidebar hides like upstream VS Code).
 
+The contribution defers each update to the next microtask:
+`onDidEditorsChange` fires during the close transition, before
+`IEditorService.count` is updated, so reading the count synchronously
+yields the pre-close value and the empty-editor trigger never sees
+`count === 0` on a close. `queueMicrotask` lets the service settle.
+Bursty events (a typical openEditor fires 3 events in one tick)
+collapse into a single update via `updateScheduled`.
+
 Index: code-server/lib/vscode/src/vs/workbench/browser/layout.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/layout.ts
@@ -115,7 +123,7 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,66 @@
 +/* eslint-disable header/header */
 +/*---------------------------------------------------------------------------------------------
 + *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area when all tabs are closed.
@@ -127,6 +135,13 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 + *  navigation. When an editor re-opens, VS Code's own `setEditorHidden(false)`
 + *  path auto-unmaximizes via `layout.ts:1780`, so we do not need to do
 + *  anything on the return trip.
++ *
++ *  The check is deferred via `queueMicrotask`: `onDidEditorsChange` fires
++ *  during the close transition, before `IEditorService.count` is updated,
++ *  so reading the count synchronously yields the pre-close value and our
++ *  trigger condition never sees `count === 0` on a close. Deferring to the
++ *  next microtask gives the service time to settle. Multiple bursty events
++ *  in the same tick collapse into one update via `updateScheduled`.
 + *
 + *  Matches the Figma "All tabs closed" state at node 108:1233.
 + *--------------------------------------------------------------------------------------------*/
@@ -144,9 +159,23 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +	) {
 +		super();
 +
-+		this._register(this.editorService.onDidEditorsChange(() => this.update()));
++		this._register(this.editorService.onDidEditorsChange(() => this.scheduleUpdate()));
 +		// Run once at startup so a workspace restored with no editors maximizes too.
 +		this.update();
++	}
++
++	private updateScheduled = false;
++
++	private scheduleUpdate(): void {
++		if (this.updateScheduled) {
++			return;
++		}
++		this.updateScheduled = true;
++		// Defer: onDidEditorsChange fires before the count is updated.
++		queueMicrotask(() => {
++			this.updateScheduled = false;
++			this.update();
++		});
 +	}
 +
 +	private update(): void {
