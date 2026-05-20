@@ -1,0 +1,39 @@
+Hide stock VS Code surfaces via configurationDefaults (PRO-5559)
+
+Adds five configurationDefaults keys to the workbench bootstrap so the
+Profiles IDE matches the Figma reference (node 101-3202) without
+extra source patches:
+
+  - editor.minimap.enabled = false
+  - breadcrumbs.enabled = false
+  - editor.stickyScroll.enabled = false
+  - telemetry.feedback.enabled = false (hides the feedback / issue
+    reporter surfaces)
+  - workbench.editor.editorActionsLocation = 'hidden' (hides the
+    split-editor / more-actions icons on the right of the tab strip)
+
+These keys live in `webClientServer.ts` alongside the other Profiles
+configurationDefaults set by `getting-started.diff`. Splitting them
+into a dedicated patch keeps the PRO-5559 intent separable from the
+older PRO-5511 onboarding defaults and lets us drop / iterate them
+without touching `getting-started.diff` (the user can still override
+any of the keys via settings.json -- configurationDefaults are the
+shipped defaults, not forced values).
+
+Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
++++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+@@ -399,6 +399,12 @@ export class WebClientServer {
+ 				'window.commandCenter': false,
+ 				'workbench.layoutControl.enabled': false,
+ 				'workbench.activityBar.location': 'hidden',
++				// PRO-5559: hide stock VS Code surfaces not in Figma
++				'editor.minimap.enabled': false, // PRO-5559: minimap not in Figma
++				'breadcrumbs.enabled': false, // PRO-5559: breadcrumbs not in Figma
++				'editor.stickyScroll.enabled': false, // PRO-5559: sticky scroll not in Figma
++				'telemetry.feedback.enabled': false, // PRO-5559: hide feedback / issue reporter surfaces
++				'workbench.editor.editorActionsLocation': 'hidden', // PRO-5559: hide split/more-actions icons on the editor tab strip
+ 				'workbench.colorCustomizations': {
+ 					'sideBar.background': '#fafbfc',
+ 					'sideBar.foreground': '#353a44',

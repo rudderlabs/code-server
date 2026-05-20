@@ -1,0 +1,218 @@
+Hide stock status bar editor / keyboard-layout items (PRO-5559)
+
+The RudderStack "IDE Footer" design (Figma node 101-3202) keeps only the
+git branch, problems counts and notifications bell. Items added by
+VS Code's built-in editor-status contribution and by the web keyboard
+layout picker have no configuration toggle, so we short-circuit the
+registration paths to drop them.
+
+For `editorStatus.ts`, each affected update* method has its body replaced
+with just a clear() on the MutableDisposable so that nothing leaks into
+the status bar; the surrounding state-tracking logic and command palette
+commands stay intact. The bodies are fully replaced (not prepended with
+`return;`) to avoid TS7027 under `allowUnreachableCode: false`.
+
+For `keyboardLayoutPicker.ts`, the class is left fully intact and only
+the `registerWorkbenchContribution2(...)` call is commented out so the
+contribution never instantiates. Emptying the constructor body left the
+imports / fields / DI params unused, which trips TS6133/TS6138 under the
+project's `noUnusedLocals: true`; commenting out the registration sidesteps
+all of that by simply not running the constructor at all. The picker
+quick-open command (registered via `registerAction2` further down the file)
+stays wired up so power users can still invoke it from the command palette.
+
+Users can still re-enable any of these items by overriding the relevant
+settings (where they exist) or by carrying their own fork.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorStatus.ts
+@@ -494,100 +494,28 @@ class EditorStatus extends Disposable {
+ 	}
+ 
+ 	private updateSelectionElement(text: string | undefined): void {
+-		if (!text) {
+-			this.selectionElement.clear();
+-			return;
+-		}
+-
+-		const editorURI = getCodeEditor(this.editorService.activeTextEditorControl)?.getModel()?.uri;
+-		if (editorURI?.scheme === Schemas.vscodeNotebookCell) {
+-			this.selectionElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.selection', "Editor Selection"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('gotoLine', "Go to Line/Column"),
+-			command: 'workbench.action.gotoLine'
+-		};
+-
+-		this.updateElement(this.selectionElement, props, 'status.editor.selection', StatusbarAlignment.RIGHT, 100.5);
++		// code-server: PRO-5559 hide Ln/Col status entry (not in Figma IDE Footer)
++		this.selectionElement.clear();
+ 	}
+ 
+ 	private updateIndentationElement(text: string | undefined): void {
+-		if (!text) {
+-			this.indentationElement.clear();
+-			return;
+-		}
+-
+-		const editorURI = getCodeEditor(this.editorService.activeTextEditorControl)?.getModel()?.uri;
+-		if (editorURI?.scheme === Schemas.vscodeNotebookCell) {
+-			this.indentationElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.indentation', "Editor Indentation"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectIndentation', "Select Indentation"),
+-			command: `changeEditorIndentation${this.targetWindowId}`
+-		};
+-
+-		this.updateElement(this.indentationElement, props, 'status.editor.indentation', StatusbarAlignment.RIGHT, 100.4);
++		// code-server: PRO-5559 hide Spaces/Tabs indent status entry (not in Figma IDE Footer)
++		this.indentationElement.clear();
+ 	}
+ 
+ 	private updateEncodingElement(text: string | undefined): void {
+-		if (!text) {
+-			this.encodingElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.encoding', "Editor Encoding"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectEncoding', "Select Encoding"),
+-			command: 'workbench.action.editor.changeEncoding'
+-		};
+-
+-		this.updateElement(this.encodingElement, props, 'status.editor.encoding', StatusbarAlignment.RIGHT, 100.3);
++		// code-server: PRO-5559 hide UTF-8/encoding status entry (not in Figma IDE Footer)
++		this.encodingElement.clear();
+ 	}
+ 
+ 	private updateEOLElement(text: string | undefined): void {
+-		if (!text) {
+-			this.eolElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.eol', "Editor End of Line"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectEOL', "Select End of Line Sequence"),
+-			command: 'workbench.action.editor.changeEOL'
+-		};
+-
+-		this.updateElement(this.eolElement, props, 'status.editor.eol', StatusbarAlignment.RIGHT, 100.2);
++		// code-server: PRO-5559 hide LF/CRLF EOL status entry (not in Figma IDE Footer)
++		this.eolElement.clear();
+ 	}
+ 
+ 	private updateLanguageIdElement(text: string | undefined): void {
+-		if (!text) {
+-			this.languageElement.clear();
+-			return;
+-		}
+-
+-		const props: IStatusbarEntry = {
+-			name: localize('status.editor.mode', "Editor Language"),
+-			text,
+-			ariaLabel: text,
+-			tooltip: localize('selectLanguageMode', "Select Language Mode"),
+-			command: 'workbench.action.editor.changeLanguageMode'
+-		};
+-
+-		this.updateElement(this.languageElement, props, 'status.editor.mode', StatusbarAlignment.RIGHT, 100.1);
++		// code-server: PRO-5559 hide language-mode status entry (not in Figma IDE Footer)
++		this.languageElement.clear();
+ 	}
+ 
+ 	private updateMetadataElement(text: string | undefined): void {
+Index: code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/preferences/browser/keyboardLayoutPicker.ts
+@@ -7,7 +7,7 @@ import * as nls from '../../../../nls.js
+ import { StatusbarAlignment, IStatusbarService, IStatusbarEntryAccessor } from '../../../services/statusbar/browser/statusbar.js';
+ import { Disposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
+ import { parseKeyboardLayoutDescription, areKeyboardLayoutsEqual, getKeyboardLayoutId, IKeyboardLayoutService, IKeyboardLayoutInfo } from '../../../../platform/keyboardLayout/common/keyboardLayout.js';
+-import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
++import { IWorkbenchContribution } from '../../../common/contributions.js';
+ import { KEYBOARD_LAYOUT_OPEN_PICKER } from '../common/preferences.js';
+ import { isMacintosh, isWindows } from '../../../../base/common/platform.js';
+ import { QuickPickInput, IQuickInputService, IQuickPickItem } from '../../../../platform/quickinput/common/quickInput.js';
+@@ -80,7 +80,11 @@ export class KeyboardLayoutPickerContrib
+ 	}
+ }
+ 
+-registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
++// code-server: PRO-5559 do not register the keyboard layout picker contribution
++// so the "Layout: U.S." status bar entry is never added. The picker quick-open
++// command stays wired up via registerAction2 below, so users can still invoke
++// it from the command palette.
++// registerWorkbenchContribution2(KeyboardLayoutPickerContribution.ID, KeyboardLayoutPickerContribution, WorkbenchPhase.BlockStartup);
+ 
+ interface LayoutQuickPickItem extends IQuickPickItem {
+ 	layout: IKeyboardLayoutInfo;
+Index: code-server/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/inlineCompletions/browser/inlineCompletions.contribution.ts
+@@ -3,8 +3,13 @@
+  *  Licensed under the MIT License. See License.txt in the project root for license information.
+  *--------------------------------------------------------------------------------------------*/
+ 
+-import { wrapInHotClass1 } from '../../../../platform/observable/common/wrapInHotClass.js';
+-import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
+-import { InlineCompletionLanguageStatusBarContribution } from './inlineCompletionLanguageStatusBarContribution.js';
+-
+-registerWorkbenchContribution2(InlineCompletionLanguageStatusBarContribution.Id, wrapInHotClass1(InlineCompletionLanguageStatusBarContribution.hot), WorkbenchPhase.Eventually);
++// code-server PRO-5559: drop the "$(copilot) inline suggestions" Editor
++// Language Status entry from the status bar (right side). The Copilot
++// inline-completions feature itself is not affected -- only the status
++// surface that surfaces its readiness state. All imports are dropped to
++// avoid TS6133 (unused imports) under noUnusedLocals.
++//
++// import { wrapInHotClass1 } from '../../../../platform/observable/common/wrapInHotClass.js';
++// import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
++// import { InlineCompletionLanguageStatusBarContribution } from './inlineCompletionLanguageStatusBarContribution.js';
++// registerWorkbenchContribution2(InlineCompletionLanguageStatusBarContribution.Id, wrapInHotClass1(InlineCompletionLanguageStatusBarContribution.hot), WorkbenchPhase.Eventually);
+Index: code-server/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/remote/browser/remote.contribution.ts
+@@ -10,7 +10,9 @@ import { LifecyclePhase } from '../../..
+ import { TunnelFactoryContribution } from './tunnelFactory.js';
+ import { RemoteAgentConnectionStatusListener, RemoteMarkers } from './remote.js';
+ import { RemoteStatusIndicator } from './remoteIndicator.js';
+-import { AutomaticPortForwarding, ForwardedPortsView, PortRestore } from './remoteExplorer.js';
++// code-server PRO-5559: ForwardedPortsView import dropped; its registration
++// is commented out below to hide the "Forwarded Ports" status bar entry.
++import { AutomaticPortForwarding, PortRestore } from './remoteExplorer.js';
+ import { InitialRemoteConnectionHealthContribution } from './remoteConnectionHealth.js';
+ 
+ const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
+@@ -18,7 +20,11 @@ registerWorkbenchContribution2(ShowCandi
+ registerWorkbenchContribution2(TunnelFactoryContribution.ID, TunnelFactoryContribution, WorkbenchPhase.BlockRestore);
+ workbenchContributionsRegistry.registerWorkbenchContribution(RemoteAgentConnectionStatusListener, LifecyclePhase.Eventually);
+ registerWorkbenchContribution2(RemoteStatusIndicator.ID, RemoteStatusIndicator, WorkbenchPhase.BlockStartup);
+-workbenchContributionsRegistry.registerWorkbenchContribution(ForwardedPortsView, LifecyclePhase.Restored);
++// code-server PRO-5559: hide the "Forwarded Ports" status bar entry per
++// the Figma IDE Footer. ForwardedPortsView also drives an activity bar
++// badge for ports but that activity area is already hidden by the
++// Profiles IDE customisation, so this is the cleanest removal.
++// workbenchContributionsRegistry.registerWorkbenchContribution(ForwardedPortsView, LifecyclePhase.Restored);
+ workbenchContributionsRegistry.registerWorkbenchContribution(PortRestore, LifecyclePhase.Eventually);
+ workbenchContributionsRegistry.registerWorkbenchContribution(AutomaticPortForwarding, LifecyclePhase.Eventually);
+ workbenchContributionsRegistry.registerWorkbenchContribution(RemoteMarkers, LifecyclePhase.Eventually);

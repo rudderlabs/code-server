@@ -1,0 +1,48 @@
+Hide Explorer view container title bar (PRO-5559)
+
+The RudderStack sidebar design has no "EXPLORER" header and no
+new-file / new-folder / refresh / collapse-all / overflow icons. We
+override the `menuActions` getter on `ExplorerViewPaneContainer` (the
+same surgical override used by `hide-scm-title-actions.diff`) so the
+PaneComposite title toolbar receives no actions, and we add a tiny
+CSS rule keyed on the `.explorer-viewlet` body class that the
+container adds in `create()` to hide the entire composite title row.
+
+Both changes are reversible by the user via custom CSS or by
+rebinding `menuActions`; nothing here uses a settings lock.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/files/browser/explorerViewlet.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/files/browser/explorerViewlet.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/files/browser/explorerViewlet.ts
+@@ -180,8 +180,13 @@ export class ExplorerViewPaneContainer extends ViewPaneContainer {
+ 	override create(parent: HTMLElement): void {
+ 		super.create(parent);
+ 		parent.classList.add('explorer-viewlet');
+ 	}
+ 
++	// code-server: PRO-5559 suppress Explorer title bar actions (new file, new folder, refresh, collapse, overflow)
++	override get menuActions() {
++		return undefined;
++	}
++
+ 	protected override createView(viewDescriptor: IViewDescriptor, options: IViewletViewOptions): ViewPane {
+ 		if (viewDescriptor.id === VIEW_ID) {
+ 			return this.instantiationService.createInstance(ExplorerView, {
+Index: code-server/lib/vscode/src/vs/workbench/contrib/files/browser/media/explorerviewlet.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/files/browser/media/explorerviewlet.css
++++ code-server/lib/vscode/src/vs/workbench/contrib/files/browser/media/explorerviewlet.css
+@@ -110,3 +110,11 @@
+ .monaco-workbench.context-menu-visible .explorer-folders-view.highlight .monaco-list-row {
+ 	outline: none !important;
+ }
++
++/* code-server: PRO-5559 hide the entire Explorer composite title row
++ * (the "EXPLORER" label and any remaining title-actions toolbar). The
++ * `.explorer-viewlet` class is added to the content area by
++ * ExplorerViewPaneContainer.create(); :has() lets us walk up to the
++ * sidebar composite and hide the sibling .composite.title element. */
++.monaco-workbench .part.sidebar:has(.explorer-viewlet) > .composite.title {
++	display: none !important;
++}
