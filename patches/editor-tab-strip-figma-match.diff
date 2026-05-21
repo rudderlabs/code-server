@@ -37,17 +37,22 @@ for the icon), not inferred from screenshots:
        var(--Nuetral-grey-75, #EBEEF1)`. An earlier commit on this
        branch removed this line based on a screenshot read; Dev Mode
        confirms it should stay.
-     - `tab.activeBackground` -> `#fafbfc` (matches
-       `tabsBackground`). Figma Dev Mode on the active tab frame
-       shows no fill — tabs are transparent over the Header. The
-       active tab is differentiated from inactive only by text colour
-       and weight, not background. Earlier values (`#ffffff`,
-       `#ebf3fd`) were screenshot misreads.
+     - `tab.activeBackground` -> `#ffffff`. Figma Dev Mode on the
+       active tab wrapper (Frame 41521, node 101:3110) reports
+       `background: var(--Nuetral-grey-0, #FFF)`. A brief detour
+       through `#fafbfc` came from inspecting the INNER content frame
+       (Frame 41616) which has no fill of its own — the WRAPPER does.
+       Active tab is white (matches editor body for a "tab connected
+       to content" look); inactive tab wrapper has no fill so it
+       inherits the Header strip colour.
      - `tab.activeBorder` -> transparent. Figma shows no bottom
        indicator under the active tab; the only horizontal line is
        the `tabsBorder` below all tabs.
-     - `tab.border` -> transparent. Figma shows no vertical separator
-       between adjacent tabs.
+     - `tab.border` -> `#ebeef1`. Figma Dev Mode on the active tab
+       wrapper reports `border-right: 1px solid #EBEEF1` — VS Code
+       renders this as the vertical line between tabs via `tab.border`.
+       An earlier "no separator" interpretation removed it; Dev Mode
+       confirms the line is present.
      - `tab.activeBorderTop` -> transparent (unchanged).
 
 Close-button-on-inactive-tab hover behaviour and tab inner padding
@@ -152,13 +157,13 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 -					'tab.inactiveForeground': '#6c7688',
 -					'tab.border': '#ebeef1',
 +					'editorGroupHeader.tabsBorder': '#ebeef1', // PRO-5562: Figma Dev Mode on the Header frame (node 101:3107) reports `border-bottom: 1px solid var(--Nuetral-grey-75, #EBEEF1)`. An earlier interpretation removed this line; verified by Dev Mode it should stay.
-+					'tab.activeBackground': '#fafbfc', // PRO-5562: Figma Dev Mode on the active tab frame (node 101:3113) shows no fill — the tab sits transparent on the Header (`tabsBackground` #fafbfc), differentiated from inactive only by text colour and weight. Active and inactive tabs share the same background colour in the design.
++					'tab.activeBackground': '#ffffff', // PRO-5562: Figma Dev Mode on the active tab wrapper (node 101:3110, Frame 41521) reports `background: var(--Nuetral-grey-0, #FFF)`. The active tab is white — matching the editor body — so it reads as "tab connected to content". A brief detour through #fafbfc came from inspecting the inner content frame which has no fill; the wrapper has the fill.
 +					'tab.activeForeground': '#353a44', // PRO-5562: Figma Dev Mode (node 101:3119) → color: var(--Nuetral-grey-800, #353A44).
 +					'tab.activeBorderTop': '#00000000', // PRO-5562: Figma Dev Mode shows no top-of-tab accent line on the active tab. Default would draw the focusBorder (blue) here.
-+					'tab.activeBorder': '#00000000', // PRO-5562: Figma Dev Mode shows no bottom indicator under the active tab either; the only horizontal line in the tab strip area is the `editorGroupHeader.tabsBorder` below all tabs.
-+					'tab.inactiveBackground': '#fafbfc', // PRO-5562: matches `tabsBackground` per Figma (tabs are transparent over the strip).
++					'tab.activeBorder': '#00000000', // PRO-5562: Figma shows no bottom indicator under the active tab either; the only horizontal line in the tab strip area is the `editorGroupHeader.tabsBorder` below all tabs.
++					'tab.inactiveBackground': '#fafbfc', // PRO-5562: matches `tabsBackground` — inactive tab wrapper has no fill in Figma, so it inherits the Header strip colour.
 +					'tab.inactiveForeground': '#6c7688', // PRO-5562: Figma Dev Mode (node 101:3131) → color: var(--Nuetral-grey-500, #6C7688).
-+					'tab.border': '#00000000', // PRO-5562: Figma Dev Mode shows no vertical separator between adjacent tabs; tabs sit flush with `gap: 2px` only. Default `#ebeef1` would draw a visible 1px line between tabs.
++					'tab.border': '#ebeef1', // PRO-5562: Figma Dev Mode on the active tab wrapper (node 101:3110) reports `border-right: 1px solid var(--Nuetral-grey-75, #EBEEF1)`. VS Code renders this as `tab.border` (the 1px vertical line between adjacent tabs). An earlier interpretation removed it; verified by Dev Mode it should stay.
  					'statusBar.background': '#fafbfc',
  					'statusBar.foreground': '#596171',
  					'statusBar.border': '#ebeef1',
