@@ -14,17 +14,17 @@ hide / restore on a new `keepSideBar` flag.
                           // sidebar restore on unmaximize
 
 The contribution (`auxBarExpandOnEmpty.contribution.ts`, registered at
-`WorkbenchPhase.Eventually`) only fires the takeover after the editor
-count has *transitioned* from >0 to 0 within this workbench session.
-A session-scoped `hasOpenedEditor` flag arms on the first
-`IEditorService.onDidEditorsChange` event that sees `count > 0`, and
-the maximize only fires once `count === 0` is observed after arming.
-The flag is also seeded from `editorService.count` at construction
-so a workbench that comes back with editors restored from the previous
-session arms correctly. A workbench that simply starts empty (fresh
-workspace, or a reload where no editors were restored) leaves the
-default empty-editor watermark visible -- the takeover is a response
-to the user's explicit close-all action, not the empty state itself.
+`WorkbenchPhase.AfterRestored`) fires the takeover whenever the editor
+count is 0 AND the aux bar is visible. This covers BOTH the transition
+case (user opens then closes all tabs in a session) AND the initial-
+paint case (workspace restores with no tabs -- fresh workspace, OR a
+reload after the user previously closed everything). An earlier
+revision gated the takeover on a session-scoped `hasOpenedEditor`
+flag so the watermark would only hide after an explicit close-all in
+the current session; reported as a bug -- on dev, after closing all
+tabs the watermark would re-appear on the next page load. Removing
+the gate makes the takeover the consistent zero-editor state across
+sessions.
 
 We do not need to call the unmaximize side: when an editor re-opens,
 VS Code's own `setEditorHidden(false)` path at `layout.ts:1780`
@@ -206,37 +206,38 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 ===================================================================
 --- /dev/null
 +++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,86 @@
 +/* eslint-disable header/header */
 +/*---------------------------------------------------------------------------------------------
-+ *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area after the user
-+ *  has closed every editor they opened in this workbench session.
++ *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area whenever there
++ *  are zero editor tabs AND the auxiliary bar (which hosts the Rudder AI panel) is
++ *  visible.
 + *
-+ *  Trigger: editor count *transitions* from >0 to 0 within this session. We do NOT
-+ *  fire on a workbench that simply starts empty (fresh workspace, or a reload where
-+ *  no editors were restored from the previous session) -- in that case VS Code's
-+ *  default empty-editor state (the Copilot welcome watermark) renders normally.
++ *  Trigger: any state where `editorService.count === 0` AND aux bar is visible.
++ *  This covers BOTH the transition case (user opens then closes all tabs in a
++ *  session) AND the initial-paint case (workspace restores with no tabs, e.g. a
++ *  fresh workspace OR a reload after the user previously closed everything). An
++ *  earlier revision of this contribution only fired on the transition and left
++ *  the watermark visible on cold-start-empty; reported as a bug -- on dev, after
++ *  closing all tabs the watermark would re-appear on the next page load.
 + *
-+ *  Implementation: a session-scoped `hasOpenedEditor` flag arms on the first
-+ *  onDidEditorsChange event that sees `count > 0`. Once armed, a subsequent drop to
-+ *  `count === 0` calls the patched
++ *  Implementation: call the patched
 + *    setAuxiliaryBarMaximized(true, { keepSideBar: true })
-+ *  so VS Code's own grid hands the editor + panel space to the AuxiliaryBar (which
-+ *  hosts the Rudder AI panel) while the left sidebar stays put. When an editor
-+ *  re-opens, VS Code's own `setEditorHidden(false)` path auto-unmaximizes via
-+ *  `layout.ts:1780`, so we do not need to do anything on the return trip.
++ *  so VS Code's own grid hands the editor + panel space to the AuxiliaryBar while
++ *  the left sidebar stays put. When an editor re-opens, VS Code's own
++ *  `setEditorHidden(false)` path auto-unmaximizes via `layout.ts:1780`, so we do
++ *  not need to do anything on the return trip.
 + *
-+ *  The flag is also seeded from `editorService.count` at construction so a workbench
-+ *  that starts with editors restored from the previous session arms correctly --
-+ *  closing all those restored tabs in this session still triggers the takeover.
++ *  The check is deferred via `queueMicrotask`: `onDidEditorsChange` fires during
++ *  the close transition, before `IEditorService.count` is updated, so reading the
++ *  count synchronously yields the pre-close value. Deferring to the next
++ *  microtask gives the service time to settle. Multiple bursty events in the same
++ *  tick (a single openEditor fires three onDidEditorsChange in one tick) collapse
++ *  into a single update via `updateScheduled`.
 + *
-+ *  The check is deferred via `queueMicrotask`: `onDidEditorsChange` fires during the
-+ *  close transition, before `IEditorService.count` is updated, so reading the count
-+ *  synchronously yields the pre-close value and the empty-editor trigger never sees
-+ *  `count === 0` on a close. Deferring to the next microtask gives the service time
-+ *  to settle. Multiple bursty events in the same tick (a single openEditor fires
-+ *  three onDidEditorsChange in one tick) collapse into a single update via
-+ *  `updateScheduled`.
++ *  Registered at `WorkbenchPhase.AfterRestored` (earlier than `Eventually`) so the
++ *  initial-paint takeover fires as close to grid layout as possible, minimising
++ *  the visible flash of the default empty-editor watermark on cold-start-empty.
 + *
 + *  Matches the Figma "All tabs closed" state at node 108:1233.
 + *--------------------------------------------------------------------------------------------*/
@@ -248,7 +249,6 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +
 +class AuxBarExpandOnEmptyContribution extends Disposable implements IWorkbenchContribution {
 +
-+	private hasOpenedEditor = false;
 +	private updateScheduled = false;
 +
 +	constructor(
@@ -256,15 +256,12 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 +	) {
 +		super();
-+
-+		// Seed the flag from restored state: if the workbench came back with editors
-+		// already open (VS Code's normal session restore), treat that as already-armed
-+		// so a close-all in this session still triggers the takeover. If it starts
-+		// empty, leave the flag false -- the watermark renders normally and only an
-+		// explicit open-then-close-all in this session arms the trigger.
-+		this.hasOpenedEditor = this.editorService.count > 0;
-+
 +		this._register(this.editorService.onDidEditorsChange(() => this.scheduleUpdate()));
++		// Initial-paint check: if the workbench restored with zero editors AND the
++		// aux bar is visible, fire the takeover immediately. Without this the cold-
++		// start case (no tabs to restore from previous session) leaves the watermark
++		// visible.
++		this.scheduleUpdate();
 +	}
 +
 +	private scheduleUpdate(): void {
@@ -284,15 +281,15 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browse
 +			return;
 +		}
 +		if (this.editorService.count > 0) {
-+			// First editor of this session arms the trigger; subsequent count>0 events
-+			// are idempotent. The takeover only fires once count drops to 0 below.
-+			this.hasOpenedEditor = true;
++			// Editors are open -- editor part owns the layout. If we previously
++			// maximised the aux bar, VS Code's own setEditorHidden(false) path has
++			// already auto-unmaximised it (layout.ts:1780), so nothing to do here.
 +			return;
 +		}
-+		if (this.hasOpenedEditor && !this.layoutService.isAuxiliaryBarMaximized()) {
++		if (!this.layoutService.isAuxiliaryBarMaximized()) {
 +			this.layoutService.setAuxiliaryBarMaximized(true, { keepSideBar: true });
 +		}
 +	}
 +}
 +
-+registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.auxBarExpandOnEmpty', AuxBarExpandOnEmptyContribution, WorkbenchPhase.Eventually);
++registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.auxBarExpandOnEmpty', AuxBarExpandOnEmptyContribution, WorkbenchPhase.AfterRestored);
