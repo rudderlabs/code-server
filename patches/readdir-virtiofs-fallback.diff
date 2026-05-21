@@ -1,0 +1,43 @@
+Index: code-server/lib/vscode/src/vs/base/node/pfs.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/base/node/pfs.ts
++++ code-server/lib/vscode/src/vs/base/node/pfs.ts
+@@ -3,6 +3,7 @@
+  *  Licensed under the MIT License. See License.txt in the project root for license information.
+  *--------------------------------------------------------------------------------------------*/
+ 
++import { execSync } from 'child_process';
+ import * as fs from 'fs';
+ import { tmpdir } from 'os';
+ import { promisify } from 'util';
+@@ -121,7 +122,29 @@ async function safeReaddirWithFileTypes(
+ 	// such as explained in #115645 where we get entries
+ 	// from `readdir` that we can later not `lstat`.
+ 	const result: IDirent[] = [];
+-	const children = await readdir(path);
++	let children: string[];
++	try {
++		children = await readdir(path);
++	} catch (readdirError) {
++		// On virtiofs, the getdents64 syscall used by Node.js
++		// readdir (via libuv scandir) fails with EINVAL. However
++		// GNU ls (using C opendir/readdir) can retrieve partial
++		// results before the error. Fall back to shelling out to
++		// ls as a last resort.
++		console.warn('[node.js fs] readdir fallback also failed, trying ls: ', readdirError);
++		try {
++			const stdout = execSync(`ls -1a "${path}"`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
++			children = stdout.split('\n').filter(name => name.length > 0 && name !== '.' && name !== '..');
++		} catch (lsError: any) {
++			// ls may exit non-zero but still produce stdout with entries
++			if (lsError.stdout) {
++				children = lsError.stdout.split('\n').filter((name: string) => name.length > 0 && name !== '.' && name !== '..');
++			} else {
++				console.warn('[node.js fs] ls fallback also failed: ', lsError);
++				return [];
++			}
++		}
++	}
+ 	for (const child of children) {
+ 		let isFile = false;
+ 		let isDirectory = false;
