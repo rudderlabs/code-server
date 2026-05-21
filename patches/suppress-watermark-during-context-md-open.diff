@@ -43,7 +43,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
-@@ -43,6 +43,22 @@
+@@ -43,6 +43,31 @@
  	display: none;
  }
  
@@ -54,12 +54,21 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editor
 + * (editor group is still empty) and `markdown.showPreview` actually completing
 + * its async work, during which the default "Welcome to Profiles Copilot"
 + * watermark renders and obscures the preview that is about to open. The
-+ * contribution toggles `body.profiles-suppress-context-md-watermark` for the
-+ * duration of its async work; this rule keeps the watermark hidden during
-+ * that window. After the preview opens, the existing `:not(.empty)` rule
-+ * above takes over and the watermark stays hidden naturally.
++ * contribution toggles the `profiles-suppress-context-md-watermark` class on
++ * `<body>` for the duration of its async work; this rule keeps the watermark
++ * hidden during that window. After the preview opens, the existing
++ * `:not(.empty)` rule above takes over and the watermark stays hidden
++ * naturally.
++ *
++ * Note on the selector: in code-server's web build, `<body>` IS the workbench
++ * `mainContainer` (see `vs/code/browser/workbench/workbench.ts` calling
++ * `create(mainWindow.document.body, ...)` and `workbench.ts:316` adding the
++ * `monaco-workbench` class to that same container). So both classes sit on
++ * the same body element. A selector like `body.X .monaco-workbench ...` would
++ * look for `.monaco-workbench` as a DESCENDANT of body and miss; instead we
++ * combine the two classes on the same element with `.X.monaco-workbench`.
 + */
-+body.profiles-suppress-context-md-watermark .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark {
++.profiles-suppress-context-md-watermark.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark {
 +	display: none !important;
 +}
 +
