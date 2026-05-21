@@ -86,6 +86,23 @@ export class CodeServer {
       "utf8",
     )
 
+    // getting-started.diff sets `window.menuBarVisibility: 'hidden'` and
+    // `workbench.activityBar.location: 'hidden'` as configurationDefaults for
+    // production. The upstream e2e tests drive Save As / Terminal / etc. through
+    // the Application Menu via navigateMenus, which only exists in the compact
+    // menubar -- and the compact menubar only renders inside a visible activity
+    // bar. Both settings are APPLICATION-scoped, so override them in
+    // User/settings.json (Machine/settings.json doesn't apply to APPLICATION scope).
+    await fs.mkdir(path.join(dir, "User"), { recursive: true })
+    await fs.writeFile(
+      path.join(dir, "User/settings.json"),
+      JSON.stringify({
+        "window.menuBarVisibility": "compact",
+        "workbench.activityBar.location": "default",
+      }),
+      "utf8",
+    )
+
     const extensionsDir = path.join(__dirname, "../extensions")
     const languagepacksContent = {
       es: {
