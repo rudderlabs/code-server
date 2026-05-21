@@ -55,15 +55,44 @@ for the icon), not inferred from screenshots:
        confirms the line is present.
      - `tab.activeBorderTop` -> transparent (unchanged).
 
-Close-button-on-inactive-tab hover behaviour and tab inner padding
-are unchanged from PR #210 -- both already match the Figma (close is
-hidden on inactive non-hovered tabs, vertical padding is 0).
+  3. Inner layout to match Figma's "wrapper + pill" structure exactly.
+     Figma's 101:3110 active tab has `padding: 8px 4px` (outer wrapper);
+     101:3111 is an inner pill with `padding: 4px 6px 4px 4px` and
+     `border-radius: 6px`; 101:3113 is the icon+text container with
+     `gap: 2px`; 101:3114 is a 20×20 icon wrapper holding a 16×16 glyph;
+     101:3120 is a 20×20 close button with `padding: 4px`, `rounded-[6px]`
+     and a 14×14 icon. VS Code's flat DOM (.tab → .tab-label + .tab-actions)
+     can't host the inner pill as a separate element without invasive
+     changes, so we simulate it with CSS:
+
+       - `.tab` `padding: 8px 4px` (outer wrapper, node 101:3110).
+       - `.tab > .monaco-icon-label.tab-label` `padding-left: 4px` (pill
+         left padding, node 101:3111 `pl-[4px]`). The pill's 6px corner
+         radius isn't simulated — it's not visible because the wrapper
+         already paints the same white as the pill would.
+       - `.tab > .monaco-icon-label.tab-label::before` `width: 20px`,
+         `height: 20px`, `background-size: 16px`, `background-position:
+         center` (20×20 icon wrapper from 101:3114 with the 16×16 glyph
+         centred), `padding-right: 2px` (gap between icon and label, node
+         101:3113 `gap-[2px]`; overrides stock's 6px in iconlabel.css).
+       - `.tab > .tab-actions` `width: 20px`, `margin-left: 4px`,
+         `margin-right: 6px` (drops stock's 28px container to the close
+         button's actual 20px width; adds the 4px text-to-close gap from
+         101:3112 and the 6px pill right-padding from 101:3111).
+       - `.tab > .tab-actions .action-label.codicon` `font-size: 14px`,
+         `padding: 3px`, `width: 14px`, `height: 14px`, `border-radius:
+         6px` (close button glyph 14px and 6px hover-bg radius per 101:3120;
+         padding back-solves to 3px so the outer box closes to 20×20).
+
+Close-button-on-inactive-tab hover behaviour is unchanged from PR #210
+(hidden on inactive non-hovered, sticky and dirty tabs still show the
+indicator).
 
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
-@@ -582,7 +582,7 @@
+@@ -582,31 +582,25 @@
   * PRO-5562 active-bg correction). Do not hardcode hex values here.
   */
  .monaco-workbench .part.editor > .content .editor-group-container > .title {
@@ -72,10 +101,31 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
  }
  
  /*
-@@ -599,17 +599,6 @@
- }
- 
- /*
+- * Tighter inner padding per Figma. Stock's
+- * `.tab.close-action-off.dirty:not(.dirty-border-top):not(.sticky-compact)
+- * { padding-right: 0 }` rule above (line 488) has higher specificity (extra
+- * .close-action-off, .dirty, and two :not()s), so dirty tabs in
+- * close-action-off mode will keep their stock 0 right-padding. That edge
+- * case is academic for code-server (close-action is on by default), and
+- * preserving the stock exception there is the safer outcome anyway.
++ * Tab wrapper inner padding per Figma Dev Mode on the active tab wrapper
++ * (node 101:3110, Frame 41521): `padding: 8px 4px`. The inactive tab wrapper
++ * (node 101:3122) uses the same padding. With --editor-group-tab-height: 36px
++ * this leaves a 20px content area, which exactly matches the inner "pill"
++ * height Figma reports on node 101:3111 (`height: 20px`). VS Code's stock
++ * flex layout centres the icon+label+close horizontally within that area.
++ *
++ * Note: stock's `.tab.close-action-off.dirty:not(.dirty-border-top):not(
++ * .sticky-compact) { padding-right: 0 }` rule (line 488) has higher
++ * specificity (extra .close-action-off, .dirty, and two :not()s), so dirty
++ * tabs in close-action-off mode will keep their stock 0 right-padding. That
++ * edge case is academic for code-server (close-action is on by default).
+  */
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
+-	padding: 0 6px;
+-}
+-
+-/*
 - * Hide the filetype icon on tab strip per Figma. The icon is rendered as a
 - * ::before pseudo on .monaco-icon-label (the element that also carries the
 - * .tab-label class on tabs). This selector is narrowly scoped to tabs inside
@@ -84,13 +134,11 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 - */
 -.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
 -	display: none;
--}
--
--/*
-  * Hide close button on inactive tabs by default; reveal on hover. We use
-  * visibility: hidden (not display: none) so layout space is preserved and
-  * tabs do not reflow when the user mouses over.
-@@ -624,3 +613,52 @@
++	padding: 8px 4px;
+ }
+ 
+ /*
+@@ -624,3 +618,131 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
  	visibility: hidden;
  }
@@ -123,15 +171,94 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 + * URL-encoded for the data URL. Every tab icon in the design uses this blue,
 + * regardless of file type or active state.
 + */
++/*
++ * Close button (tab-actions) styling per Figma Dev Mode on the close-button
++ * component instance inside the active tab (node 101:3120). Figma reports a
++ * 20×20 outer box with `padding: 4px`, `border-radius: 6px`, and a 14×14
++ * icon glyph. Stock VS Code renders this as 20×20 outer (16px icon + 2px
++ * padding × 2) at line ~439-445 — same outer dimensions, but a chunkier 16px
++ * glyph with no border-radius. Re-tune so the codicon glyph reads at 14px
++ * (matches Figma) and the hover background draws with a 6px rounded
++ * corner. (Outer box stays 20×20: 14 + 3 × 2 = 20.)
++ *
++ * Note Figma's "padding: 4px" + "icon 14px" doesn't arithmetically fit a
++ * 20×20 outer (4+14+4=22). The outer dimension is the constraint, the icon
++ * is the visible glyph; the padding number Figma reports is approximate
++ * auto-layout slack, not a CSS value to copy verbatim. We back-solve to
++ * `padding: 3px` so the box closes to 20×20 with a 14px glyph.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions .action-label.codicon {
++	font-size: 14px !important;
++	padding: 3px !important;
++	width: 14px !important;
++	height: 14px !important;
++	border-radius: 6px !important;
++}
++
++/*
++ * Inner "pill" left padding. Figma structures the active tab as an outer
++ * wrapper (101:3110) with `padding: 8px 4px`, an inner pill (101:3111)
++ * with `padding: 4px 6px 4px 4px` and `border-radius: 6px`, then the
++ * icon+text+close container. VS Code's DOM has no equivalent pill wrapper
++ * — `.tab` directly contains `.monaco-icon-label.tab-label` (icon+label)
++ * and `.tab-actions` (close button). We simulate the pill's horizontal
++ * padding by pushing the icon-label inward by 4px (matches Figma's pill
++ * `pl-[4px]`) and pulling the close button inward by 6px (Figma `pr-[6px]`)
++ * — see the .tab-actions rule a few blocks down. The pill's 6px corner
++ * radius isn't visible in the idle state because the wrapper already paints
++ * the same white as the pill would, so it's intentionally not simulated.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label {
++	padding-left: 4px !important;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions {
++	/*
++	 * Tighten the close-button container. Stock width is 28px (line 397
++	 * above) so that the 20×20 close button sits centred inside an 8px
++	 * cushion. Figma's close button (node 101:3120) is 20×20 flush, with the
++	 * separation from the filename coming from the icon+text-to-close gap
++	 * on node 101:3112 (`gap: 4px`) and the pill's right padding on node
++	 * 101:3111 (`pr-[6px]`). Drop the 28px container width to 20px so we can
++	 * model those two gaps explicitly with margin-left/right and the active
++	 * tab width matches Figma instead of running ~8px wider.
++	 */
++	width: 20px !important;
++	margin-left: 4px !important;
++	margin-right: 6px !important;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions > .monaco-action-bar {
++	width: 20px !important;
++}
++
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
 +	content: "" !important;
 +	background-image: url("data:image/svg+xml;utf8,<svg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M12.2759 4.276L10.3906 2.39067C10.1406 2.14067 9.80125 2 9.44792 2H4.66659C3.92992 2 3.33325 2.59667 3.33325 3.33333V12.6667C3.33325 13.4033 3.92992 14 4.66659 14H11.3333C12.0699 14 12.6666 13.4033 12.6666 12.6667V5.21867C12.6666 4.86533 12.5259 4.526 12.2759 4.276V4.276Z' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/><path d='M12.6667 5.33333H9.99999C9.63199 5.33333 9.33333 5.03467 9.33333 4.66667V2' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
 +	background-repeat: no-repeat !important;
 +	background-position: center !important;
 +	background-size: 16px 16px !important;
-+	width: 16px !important;
-+	height: 16px !important;
++	/*
++	 * Icon wrapper is 20×20 in Figma (node 101:3114), with a 16×16 visible
++	 * icon centred inside. The 4px of transparent margin built into the
++	 * wrapper provides 2px of breathing room on each side of the glyph,
++	 * which is what makes the icon read with the correct rhythm against the
++	 * filename. Setting width/height to 20px and background-size to 16px
++	 * with `background-position: center` reproduces that exactly without a
++	 * second DOM element.
++	 */
++	width: 20px !important;
++	height: 20px !important;
 +	display: inline-block !important;
++	/*
++	 * Icon-to-label gap. Figma Dev Mode on the icon+text container (node
++	 * 101:3113, Frame 41616) reports `gap: 2px`. Stock's iconlabel.css sets
++	 * `padding-right: 6px` on `.monaco-icon-label::before` to space the icon
++	 * away from the filename — override here to match Figma's tighter 2px
++	 * gap, scoped to editor tabs only so sidebar/explorer entries keep their
++	 * 6px breathing room.
++	 */
++	padding-right: 2px !important;
 +	/*
 +	 * Vertical-centre the icon against the filename text. Stock's
 +	 * .monaco-icon-label uses a baseline-aligned inline-block icon that
