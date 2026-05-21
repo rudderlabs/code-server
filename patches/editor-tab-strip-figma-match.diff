@@ -9,14 +9,24 @@ pair on the Profiles IDE board -- actually specifies:
   - Filetype icons visible on every tab (Figma shows them on both the
     active and inactive tab in the reference pair)
 
-PR #210 misread the height as 30 and was over-aggressive in hiding the
-icons. This patch fixes both: bumps `--editor-group-tab-height` from
-30px to 36px (still wins over VS Code's inline 35px default via
-`!important` on `.editor-group-container > .title`, same mechanism as
-PR #210), and removes the rule that hid `.monaco-icon-label.tab-label
-::before` so the file icon from the configured icon theme renders
-again on tabs. Sidebar/explorer/breadcrumb icons were never touched
-because the original hide rule was scoped to the editor part anyway.
+PR #210 misread both. This patch fixes them with:
+
+  1. multieditortabscontrol.css -- bump `--editor-group-tab-height`
+     from 30px to 36px (still wins over VS Code's inline 35px default
+     via the same `!important` on `.editor-group-container > .title`
+     mechanism PR #210 used), and drop the rule that hid
+     `.monaco-icon-label.tab-label::before` so a file icon renders on
+     tabs again. Sidebar/explorer/breadcrumb icons were never affected
+     because that selector was already scoped to the editor part.
+
+  2. webClientServer.ts configurationDefaults -- set
+     `workbench.iconTheme` to `null`, which selects VS Code's "no icon
+     theme" mode where every file (sidebar AND tab strip) renders the
+     generic codicon $(file) outline. That matches the Figma node's
+     uniform grey outline-document icon, instead of the Seti theme's
+     file-type-specific colourful icons. Users can still pick a
+     different icon theme via their personal user settings -- that
+     overrides this default.
 
 Close-button-on-inactive-tab hover behavior and tab inner padding are
 unchanged from PR #210 -- both already match the Figma (close is
@@ -56,3 +66,15 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
   * Hide close button on inactive tabs by default; reveal on hover. We use
   * visibility: hidden (not display: none) so layout space is preserved and
   * tabs do not reflow when the user mouses over.
+Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
++++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+@@ -405,6 +405,7 @@ export class WebClientServer {
+ 				'editor.stickyScroll.enabled': false, // PRO-5559: sticky scroll not in Figma
+ 				'telemetry.feedback.enabled': false, // PRO-5559: hide feedback / issue reporter surfaces
+ 				'workbench.editor.editorActionsLocation': 'hidden', // PRO-5559: hide split/more-actions icons on the editor tab strip
++				'workbench.iconTheme': null, // PRO-5562: Figma shows generic outline file icons everywhere (sidebar + tab strip), matching VS Code's no-icon-theme codicon fallback rather than Seti's type-specific colorful icons
+ 				'workbench.colorCustomizations': {
+ 					'sideBar.background': '#fafbfc',
+ 					'sideBar.foreground': '#353a44',
