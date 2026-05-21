@@ -1,0 +1,171 @@
+Suppress watermark during *_context.md auto-open (PRO-5526 follow-up)
+
+Follow-up to `open-context-md-on-first-visit.diff` (PRO-5526). That patch
+opens the alphabetically-first `*_context.md` at the workspace root as a
+rendered markdown preview when the workbench restores on a fresh visit.
+The trigger fires at `WorkbenchPhase.AfterRestored` and the actual
+`markdown.showPreview` call is awaited behind two extension-system
+awaits (`whenInstalledExtensionsRegistered()` then
+`activateByEvent('onLanguage:markdown')`).
+
+Between `AfterRestored` and the preview actually rendering, the editor
+group is still `.empty`, so the existing CSS rule
+`.editor-group-container:not(.empty) > .editor-group-watermark { display: none }`
+does NOT hide the watermark yet. The default "Welcome to Profiles
+Copilot" cards (from `editor-watermark.diff`) render in that window.
+On a slow build (cold extension activation on dev) the window is long
+enough that the user briefly sees the cards instead of the preview,
+and verified empirically: when the watermark is forced visible at the
+same time as the preview, the watermark visually wins.
+
+This patch closes that flash by gating the watermark on a body-level
+CSS class that the contribution toggles for the duration of its async
+work:
+
+  - `editorgroupview.css`: new rule hides
+    `.editor-group-watermark` while `body` has the class
+    `profiles-suppress-context-md-watermark` set.
+  - `openContextMdContribution.ts`: after the early-return checks pass
+    (storage flag not set, no restored editors, single-folder workspace
+    with a folder), add the class to `document.body`. The remainder of
+    the async work (file resolve, extension activation, showPreview) is
+    wrapped in `try { ... } finally { remove class }` so the class is
+    always removed even if an `await` throws. After the preview opens
+    the editor group becomes `:not(.empty)` and the original rule above
+    keeps the watermark hidden naturally; removing the class then has
+    no visible effect.
+
+Importantly the class is added AFTER the early returns -- if the
+contribution decides not to open (flag set, editors restored, no
+`*_context.md`), no flash is induced for no reason.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+@@ -43,6 +43,22 @@
+ 	display: none;
+ }
+ 
++/*
++ * PRO-5526: suppress the empty-editor watermark while
++ * `openContextMdContribution` is in flight. Without this, on a fresh
++ * workspace visit there is a brief window between `WorkbenchPhase.AfterRestored`
++ * (editor group is still empty) and `markdown.showPreview` actually completing
++ * its async work, during which the default "Welcome to Profiles Copilot"
++ * watermark renders and obscures the preview that is about to open. The
++ * contribution toggles `body.profiles-suppress-context-md-watermark` for the
++ * duration of its async work; this rule keeps the watermark hidden during
++ * that window. After the preview opens, the existing `:not(.empty)` rule
++ * above takes over and the watermark stays hidden naturally.
++ */
++body.profiles-suppress-context-md-watermark .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark {
++	display: none !important;
++}
++
+ .monaco-workbench .part.editor > .content:not(.empty) .editor-group-container.empty > .editor-group-watermark,
+ .monaco-workbench .part.editor > .content.auxiliary .editor-group-container.empty > .editor-group-watermark {
+ 	max-width: 200px;
+Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/openContextMdContribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/openContextMdContribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/openContextMdContribution.ts
+@@ -22,6 +22,15 @@ import { IExtensionService } from '../..
+ const STORAGE_KEY = 'code-server.profilesContextMd.firstVisitHandled';
+ // Matches any file whose name ends with `_context.md` (case-insensitive).
+ const CONTEXT_MD_PATTERN = /_context\.md$/i;
++// PRO-5526: gated CSS class on `<body>` that suppresses the empty-editor
++// watermark while this contribution's async work is in flight. Paired with a
++// rule in `editorgroupview.css` -- see that file for the matching selector.
++// Without this, on a fresh workspace visit the "Welcome to Profiles Copilot"
++// watermark renders during the window between `WorkbenchPhase.AfterRestored`
++// (group still empty) and `markdown.showPreview` actually completing, briefly
++// obscuring the preview that is about to open. On a slow build (cold extension
++// activation on dev) that window is long enough to be visible to the user.
++const SUPPRESS_WATERMARK_CLASS = 'profiles-suppress-context-md-watermark';
+ 
+ class OpenContextMdContribution extends Disposable implements IWorkbenchContribution {
+ 
+@@ -63,38 +72,51 @@ class OpenContextMdContribution extends
+ 			return;
+ 		}
+ 
+-		// List root-level entries and pick the alphabetically-first match.
+-		const stat = await this.fileService.resolve(folder.uri);
+-		const matches = (stat.children ?? [])
+-			.filter(c => !c.isDirectory && CONTEXT_MD_PATTERN.test(c.name))
+-			.sort((a, b) => a.name.localeCompare(b.name));
+-		if (matches.length === 0) {
+-			return;
++		// PRO-5526: suppress the empty-editor watermark for the rest of this
++		// async flow. We have to do this AFTER the early returns above (storage
++		// flag set, editors restored, no folder, wrong workbench state) -- if we
++		// armed the suppress earlier and then bailed, the watermark would have a
++		// brief "hide-then-show" flash for no reason. From here on every code
++		// path is wrapped in try/finally so the class is always removed on the
++		// way out, even if file resolution or command execution throws.
++		const body = document.body;
++		body.classList.add(SUPPRESS_WATERMARK_CLASS);
++		try {
++			// List root-level entries and pick the alphabetically-first match.
++			const stat = await this.fileService.resolve(folder.uri);
++			const matches = (stat.children ?? [])
++				.filter(c => !c.isDirectory && CONTEXT_MD_PATTERN.test(c.name))
++				.sort((a, b) => a.name.localeCompare(b.name));
++			if (matches.length === 0) {
++				return;
++			}
++			const target = matches[0].resource;
++
++			// `markdown.showPreview` lives in the markdown-language-features extension
++			// and is only registered after that extension activates. Its activation
++			// events (see `extensions/markdown-language-features/package.json`) are
++			// `onLanguage:markdown`, `onWebviewPanel:markdown.preview`, and a couple of
++			// `onCommand:markdown.api.*` — none of which fire from invoking
++			// `markdown.showPreview` itself. Without an explicit activation here the
++			// command is "not found" on cold-restore (no source editor is open yet, so
++			// `onLanguage:markdown` has not fired) and the preview never appears.
++			//
++			// `whenInstalledExtensionsRegistered()` waits for the extension registry
++			// to be populated; `activateByEvent('onLanguage:markdown')` then drives
++			// the markdown extension's `activate()` to run and register the command.
++			await this.extensionService.whenInstalledExtensionsRegistered();
++			await this.extensionService.activateByEvent('onLanguage:markdown');
++
++			// Open as rendered preview only (no accompanying source editor) via the
++			// built-in markdown-language-features command. Verified by reading
++			// `extensions/markdown-language-features/src/commands/showPreview.ts`:
++			// when called with an explicit URI and no active text editor, the command
++			// opens the preview in `vscode.ViewColumn.One` without creating a source
++			// editor.
++			await this.commandService.executeCommand('markdown.showPreview', target);
++		} finally {
++			body.classList.remove(SUPPRESS_WATERMARK_CLASS);
+ 		}
+-		const target = matches[0].resource;
+-
+-		// `markdown.showPreview` lives in the markdown-language-features extension
+-		// and is only registered after that extension activates. Its activation
+-		// events (see `extensions/markdown-language-features/package.json`) are
+-		// `onLanguage:markdown`, `onWebviewPanel:markdown.preview`, and a couple of
+-		// `onCommand:markdown.api.*` — none of which fire from invoking
+-		// `markdown.showPreview` itself. Without an explicit activation here the
+-		// command is "not found" on cold-restore (no source editor is open yet, so
+-		// `onLanguage:markdown` has not fired) and the preview never appears.
+-		//
+-		// `whenInstalledExtensionsRegistered()` waits for the extension registry
+-		// to be populated; `activateByEvent('onLanguage:markdown')` then drives
+-		// the markdown extension's `activate()` to run and register the command.
+-		await this.extensionService.whenInstalledExtensionsRegistered();
+-		await this.extensionService.activateByEvent('onLanguage:markdown');
+-
+-		// Open as rendered preview only (no accompanying source editor) via the
+-		// built-in markdown-language-features command. Verified by reading
+-		// `extensions/markdown-language-features/src/commands/showPreview.ts`:
+-		// when called with an explicit URI and no active text editor, the command
+-		// opens the preview in `vscode.ViewColumn.One` without creating a source
+-		// editor.
+-		await this.commandService.executeCommand('markdown.showPreview', target);
+ 	}
+ }
+ 
