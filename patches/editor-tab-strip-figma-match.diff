@@ -78,10 +78,22 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
   * Hide close button on inactive tabs by default; reveal on hover. We use
   * visibility: hidden (not display: none) so layout space is preserved and
   * tabs do not reflow when the user mouses over.
-@@ -624,3 +613,39 @@
+@@ -624,3 +613,51 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
  	visibility: hidden;
  }
++
++/*
++ * Make the active tab's filename semibold. Stock VS Code uses only colour to
++ * distinguish active vs inactive (`tab.activeForeground` vs
++ * `tab.inactiveForeground`); the Figma reference (node 101:3107) additionally
++ * gives the active tab a heavier text weight (~600) to make the active state
++ * pop. The `.tab-label > .label-name` element is the filename span; setting
++ * font-weight there leaves the close button, icon, and dirty indicator alone.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active > .monaco-icon-label.tab-label .label-name {
++	font-weight: 600;
++}
 +
 +/*
 + * Override the file-type-specific icon (whatever the icon theme renders, e.g.
