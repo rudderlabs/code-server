@@ -1,0 +1,311 @@
+Refine editor tab strip to match Figma reference exactly (PRO-5562)
+
+Follow-up on PR #210 (also PRO-5562). The Figma source-of-truth is
+node 101:3107 ("editor header strip inside default state") on the
+Profiles IDE board, with these inner nodes that the prior commits in
+this branch had to guess at:
+
+  - Header frame (101:3107)           — the 766x36 tab strip
+  - Active tab Frame 41616 (101:3113) — "engineering_org_context.md"
+  - Active tab text (101:3119)
+  - Inactive tab text (101:3131)
+  - File icon component (101:3118)    — Files/Documents, File, Blank
+
+With Figma Dev Mode + Inspect access available this revision, every
+value below is taken verbatim from the panel (or from "Copy as SVG"
+for the icon), not inferred from screenshots:
+
+  1. multieditortabscontrol.css
+     - `--editor-group-tab-height: 36px !important` — Header frame
+       height per Figma (matches existing).
+     - Drop the rule that hid `.tab-label::before`. Figma shows the
+       icon on every tab in the reference pair.
+     - Force every tab's `::before` to render the EXACT Figma file
+       icon, copy-pasted via "Copy as SVG" on the 101:3118 component
+       instance. Stroke is `%23105ED5` (Brand/blue-500), which is the
+       blue every icon uses in the design regardless of file type.
+       `!important` is necessary because icon themes (Seti, etc.) set
+       `background-image` on the same `::before` with full file-
+       extension specificity.
+     - Active tab `.label-name` `font-weight: 500` — Figma Dev Mode
+       on node 101:3119 reports 500 (medium), NOT 600 (semibold) as
+       earlier in this branch. Inactive (101:3131) is 400.
+
+  2. webClientServer.ts configurationDefaults
+     - `editorGroupHeader.tabsBorder` -> `#ebeef1`. Figma Dev Mode
+       on the Header frame reports `border-bottom: 1px solid
+       var(--Nuetral-grey-75, #EBEEF1)`. An earlier commit on this
+       branch removed this line based on a screenshot read; Dev Mode
+       confirms it should stay.
+     - `tab.activeBackground` -> `#ffffff`. Figma Dev Mode on the
+       active tab wrapper (Frame 41521, node 101:3110) reports
+       `background: var(--Nuetral-grey-0, #FFF)`. A brief detour
+       through `#fafbfc` came from inspecting the INNER content frame
+       (Frame 41616) which has no fill of its own — the WRAPPER does.
+       Active tab is white (matches editor body for a "tab connected
+       to content" look); inactive tab wrapper has no fill so it
+       inherits the Header strip colour.
+     - `tab.activeBorder` -> transparent. Figma shows no bottom
+       indicator under the active tab; the only horizontal line is
+       the `tabsBorder` below all tabs.
+     - `tab.border` -> `#ebeef1`. Figma Dev Mode on the active tab
+       wrapper reports `border-right: 1px solid #EBEEF1` — VS Code
+       renders this as the vertical line between tabs via `tab.border`.
+       An earlier "no separator" interpretation removed it; Dev Mode
+       confirms the line is present.
+     - `tab.activeBorderTop` -> transparent (unchanged).
+
+  3. Inner layout to match Figma's "wrapper + pill" structure exactly.
+     Figma's 101:3110 active tab has `padding: 8px 4px` (outer wrapper);
+     101:3111 is an inner pill with `padding: 4px 6px 4px 4px` and
+     `border-radius: 6px`; 101:3113 is the icon+text container with
+     `gap: 2px`; 101:3114 is a 20×20 icon wrapper holding a 16×16 glyph;
+     101:3120 is a 20×20 close button with `padding: 4px`, `rounded-[6px]`
+     and a 14×14 icon. VS Code's flat DOM (.tab → .tab-label + .tab-actions)
+     can't host the inner pill as a separate element without invasive
+     changes, so we simulate it with CSS:
+
+       - `.tab` `padding: 8px 4px` (outer wrapper, node 101:3110).
+       - `.tab > .monaco-icon-label.tab-label` `padding-left: 4px` (pill
+         left padding, node 101:3111 `pl-[4px]`). The pill's 6px corner
+         radius isn't simulated — it's not visible because the wrapper
+         already paints the same white as the pill would.
+       - `.tab > .monaco-icon-label.tab-label::before` `width: 20px`,
+         `height: 20px`, `background-size: 16px`, `background-position:
+         center` (20×20 icon wrapper from 101:3114 with the 16×16 glyph
+         centred), `padding-right: 2px` (gap between icon and label, node
+         101:3113 `gap-[2px]`; overrides stock's 6px in iconlabel.css).
+       - `.tab > .tab-actions` `width: 20px`, `margin-left: 4px`,
+         `margin-right: 6px` (drops stock's 28px container to the close
+         button's actual 20px width; adds the 4px text-to-close gap from
+         101:3112 and the 6px pill right-padding from 101:3111).
+       - `.tab > .tab-actions .action-label.codicon` `font-size: 14px`,
+         `padding: 3px`, `width: 14px`, `height: 14px`, `border-radius:
+         6px` (close button glyph 14px and 6px hover-bg radius per 101:3120;
+         padding back-solves to 3px so the outer box closes to 20×20).
+
+Close-button-on-inactive-tab hover behaviour is unchanged from PR #210
+(hidden on inactive non-hovered, sticky and dirty tabs still show the
+indicator).
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+@@ -582,31 +582,25 @@
+  * PRO-5562 active-bg correction). Do not hardcode hex values here.
+  */
+ .monaco-workbench .part.editor > .content .editor-group-container > .title {
+-	--editor-group-tab-height: 30px !important;
++	--editor-group-tab-height: 36px !important;
+ }
+ 
+ /*
+- * Tighter inner padding per Figma. Stock's
+- * `.tab.close-action-off.dirty:not(.dirty-border-top):not(.sticky-compact)
+- * { padding-right: 0 }` rule above (line 488) has higher specificity (extra
+- * .close-action-off, .dirty, and two :not()s), so dirty tabs in
+- * close-action-off mode will keep their stock 0 right-padding. That edge
+- * case is academic for code-server (close-action is on by default), and
+- * preserving the stock exception there is the safer outcome anyway.
++ * Tab wrapper inner padding per Figma Dev Mode on the active tab wrapper
++ * (node 101:3110, Frame 41521): `padding: 8px 4px`. The inactive tab wrapper
++ * (node 101:3122) uses the same padding. With --editor-group-tab-height: 36px
++ * this leaves a 20px content area, which exactly matches the inner "pill"
++ * height Figma reports on node 101:3111 (`height: 20px`). VS Code's stock
++ * flex layout centres the icon+label+close horizontally within that area.
++ *
++ * Note: stock's `.tab.close-action-off.dirty:not(.dirty-border-top):not(
++ * .sticky-compact) { padding-right: 0 }` rule (line 488) has higher
++ * specificity (extra .close-action-off, .dirty, and two :not()s), so dirty
++ * tabs in close-action-off mode will keep their stock 0 right-padding. That
++ * edge case is academic for code-server (close-action is on by default).
+  */
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
+-	padding: 0 6px;
+-}
+-
+-/*
+- * Hide the filetype icon on tab strip per Figma. The icon is rendered as a
+- * ::before pseudo on .monaco-icon-label (the element that also carries the
+- * .tab-label class on tabs). This selector is narrowly scoped to tabs inside
+- * the editor part so sidebar/explorer/breadcrumb icons are not affected
+- * (their .monaco-icon-label lives in a different DOM scope).
+- */
+-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
+-	display: none;
++	padding: 8px 4px;
+ }
+ 
+ /*
+@@ -624,3 +618,146 @@
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
+ 	visibility: hidden;
+ }
++
++/*
++ * Active tab filename weight. Figma Dev Mode (node 101:3119, "engineering_org_
++ * context.md" text in the active tab) reports `font-weight: 500` (medium), not
++ * 600 (semibold). Inactive tabs (node 101:3131) report `font-weight: 400`. The
++ * VS Code default is 400 for both, so this rule bumps the active tab to 500
++ * to match Figma exactly. Targeting `.label-name` (the filename span) leaves
++ * the close button, icon, and dirty indicator alone.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active > .monaco-icon-label.tab-label .label-name {
++	font-weight: 500;
++}
++
++/*
++ * Override the file-type-specific icon (whatever the icon theme renders, e.g.
++ * Seti's down-arrow for .md or {} for .json) with the exact "Files/Documents,
++ * File, Blank" component instance Figma uses on every tab (node 101:3118 on
++ * the active tab; the inactive tab uses the same component). The SVG is
++ * copy-pasted verbatim via Figma Dev Mode's "Copy as SVG" so the path data
++ * matches the design pixel-for-pixel. `!important` is necessary because icon
++ * themes (Seti, etc.) set background-image on the same `::before` with full
++ * file-extension specificity (e.g. `.ext-file-icon.md-lang-file-icon::before`);
++ * without !important the theme's type-specific rule would win on a per-
++ * extension basis.
++ *
++ * Stroke colour is `%23105ED5` — Brand/blue-500 from the Figma color system,
++ * URL-encoded for the data URL. Every tab icon in the design uses this blue,
++ * regardless of file type or active state.
++ */
++/*
++ * Close button (tab-actions) styling per Figma Dev Mode on the close-button
++ * component instance inside the active tab (node 101:3120). Figma reports a
++ * 20×20 outer box with `padding: 4px`, `border-radius: 6px`, and a 14×14
++ * icon glyph. Stock VS Code renders this as 20×20 outer (16px icon + 2px
++ * padding × 2) at line ~439-445 — same outer dimensions, but a chunkier 16px
++ * glyph with no border-radius. Re-tune so the codicon glyph reads at 14px
++ * (matches Figma) and the hover background draws with a 6px rounded
++ * corner. (Outer box stays 20×20: 14 + 3 × 2 = 20.)
++ *
++ * Note Figma's "padding: 4px" + "icon 14px" doesn't arithmetically fit a
++ * 20×20 outer (4+14+4=22). The outer dimension is the constraint, the icon
++ * is the visible glyph; the padding number Figma reports is approximate
++ * auto-layout slack, not a CSS value to copy verbatim. We back-solve to
++ * `padding: 3px` so the box closes to 20×20 with a 14px glyph.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions .action-label.codicon {
++	font-size: 14px !important;
++	padding: 3px !important;
++	width: 14px !important;
++	height: 14px !important;
++	border-radius: 6px !important;
++}
++
++/*
++ * Inner "pill" left padding. Figma structures the active tab as an outer
++ * wrapper (101:3110) with `padding: 8px 4px`, an inner pill (101:3111)
++ * with `padding: 4px 6px 4px 4px` and `border-radius: 6px`, then the
++ * icon+text+close container. VS Code's DOM has no equivalent pill wrapper
++ * — `.tab` directly contains `.monaco-icon-label.tab-label` (icon+label)
++ * and `.tab-actions` (close button). We simulate the pill's horizontal
++ * padding by pushing the icon-label inward by 4px (matches Figma's pill
++ * `pl-[4px]`) and pulling the close button inward by 6px (Figma `pr-[6px]`)
++ * — see the .tab-actions rule a few blocks down. The pill's 6px corner
++ * radius isn't visible in the idle state because the wrapper already paints
++ * the same white as the pill would, so it's intentionally not simulated.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label {
++	padding-left: 4px !important;
++	/*
++	 * Constrain the tab-label's line-height to the 20px inner content area
++	 * (36px tab height − 8px top − 8px bottom padding). Stock VS Code sets
++	 * `line-height: var(--editor-group-tab-height)` on the .tab itself for
++	 * legacy single-line vertical centring of the filename; that 36px line-
++	 * height inherits down into `.monaco-icon-label.tab-label` and inflates
++	 * the label flex item to 37px, which then overflows the 20px content
++	 * area and pushes the icon+text ~8px BELOW the tab's vertical centre
++	 * while the close button (.tab-actions, 20px tall) stays at the top of
++	 * the content area. Result without this rule: close X visibly higher
++	 * than the filename it's attached to. Setting line-height to 20px makes
++	 * the label flex item exactly fill the content area, so icon, text and
++	 * close all share the same vertical centreline.
++	 */
++	line-height: 20px !important;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions {
++	/*
++	 * Tighten the close-button container. Stock width is 28px (line 397
++	 * above) so that the 20×20 close button sits centred inside an 8px
++	 * cushion. Figma's close button (node 101:3120) is 20×20 flush, with the
++	 * separation from the filename coming from the icon+text-to-close gap
++	 * on node 101:3112 (`gap: 4px`) and the pill's right padding on node
++	 * 101:3111 (`pr-[6px]`). Drop the 28px container width to 20px so we can
++	 * model those two gaps explicitly with margin-left/right and the active
++	 * tab width matches Figma instead of running ~8px wider.
++	 */
++	width: 20px !important;
++	margin-left: 4px !important;
++	margin-right: 6px !important;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions > .monaco-action-bar {
++	width: 20px !important;
++}
++
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
++	content: "" !important;
++	background-image: url("data:image/svg+xml;utf8,<svg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M12.2759 4.276L10.3906 2.39067C10.1406 2.14067 9.80125 2 9.44792 2H4.66659C3.92992 2 3.33325 2.59667 3.33325 3.33333V12.6667C3.33325 13.4033 3.92992 14 4.66659 14H11.3333C12.0699 14 12.6666 13.4033 12.6666 12.6667V5.21867C12.6666 4.86533 12.5259 4.526 12.2759 4.276V4.276Z' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/><path d='M12.6667 5.33333H9.99999C9.63199 5.33333 9.33333 5.03467 9.33333 4.66667V2' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
++	background-repeat: no-repeat !important;
++	background-position: center !important;
++	background-size: 16px 16px !important;
++	/*
++	 * Icon wrapper is 20×20 in Figma (node 101:3114), with a 16×16 visible
++	 * icon centred inside. The 4px of transparent margin built into the
++	 * wrapper provides 2px of breathing room on each side of the glyph,
++	 * which is what makes the icon read with the correct rhythm against the
++	 * filename. Setting width/height to 20px and background-size to 16px
++	 * with `background-position: center` reproduces that exactly without a
++	 * second DOM element.
++	 */
++	width: 20px !important;
++	height: 20px !important;
++	display: inline-block !important;
++	/*
++	 * Icon-to-label gap. Figma Dev Mode on the icon+text container (node
++	 * 101:3113, Frame 41616) reports `gap: 2px`. Stock's iconlabel.css sets
++	 * `padding-right: 6px` on `.monaco-icon-label::before` to space the icon
++	 * away from the filename — override here to match Figma's tighter 2px
++	 * gap, scoped to editor tabs only so sidebar/explorer entries keep their
++	 * 6px breathing room.
++	 */
++	padding-right: 2px !important;
++	/*
++	 * Vertical-centre the icon against the filename text. Stock's
++	 * .monaco-icon-label uses a baseline-aligned inline-block icon that
++	 * inherits the parent's font metrics, which in our 36px tab puts the
++	 * icon too high relative to the text. flex parents respect align-self;
++	 * inline-flow parents respect vertical-align. Set both so the icon
++	 * lands on the text middle in either layout mode.
++	 */
++	vertical-align: middle !important;
++	align-self: center !important;
++}
+Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
++++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
+@@ -420,11 +420,14 @@ export class WebClientServer {
+ 					'editor.background': '#ffffff',
+ 					'editorGroup.border': '#ebeef1',
+ 					'editorGroupHeader.tabsBackground': '#fafbfc',
+-					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
+-					'tab.activeForeground': '#353a44',
+-					'tab.inactiveBackground': '#fafbfc',
+-					'tab.inactiveForeground': '#6c7688',
+-					'tab.border': '#ebeef1',
++					'editorGroupHeader.tabsBorder': '#ebeef1', // PRO-5562: Figma Dev Mode on the Header frame (node 101:3107) reports `border-bottom: 1px solid var(--Nuetral-grey-75, #EBEEF1)`. An earlier interpretation removed this line; verified by Dev Mode it should stay.
++					'tab.activeBackground': '#ffffff', // PRO-5562: Figma Dev Mode on the active tab wrapper (node 101:3110, Frame 41521) reports `background: var(--Nuetral-grey-0, #FFF)`. The active tab is white — matching the editor body — so it reads as "tab connected to content". A brief detour through #fafbfc came from inspecting the inner content frame which has no fill; the wrapper has the fill.
++					'tab.activeForeground': '#353a44', // PRO-5562: Figma Dev Mode (node 101:3119) → color: var(--Nuetral-grey-800, #353A44).
++					'tab.activeBorderTop': '#00000000', // PRO-5562: Figma Dev Mode shows no top-of-tab accent line on the active tab. Default would draw the focusBorder (blue) here.
++					'tab.activeBorder': '#00000000', // PRO-5562: Figma shows no bottom indicator under the active tab either; the only horizontal line in the tab strip area is the `editorGroupHeader.tabsBorder` below all tabs.
++					'tab.inactiveBackground': '#fafbfc', // PRO-5562: matches `tabsBackground` — inactive tab wrapper has no fill in Figma, so it inherits the Header strip colour.
++					'tab.inactiveForeground': '#6c7688', // PRO-5562: Figma Dev Mode (node 101:3131) → color: var(--Nuetral-grey-500, #6C7688).
++					'tab.border': '#ebeef1', // PRO-5562: Figma Dev Mode on the active tab wrapper (node 101:3110) reports `border-right: 1px solid var(--Nuetral-grey-75, #EBEEF1)`. VS Code renders this as `tab.border` (the 1px vertical line between adjacent tabs). An earlier interpretation removed it; verified by Dev Mode it should stay.
+ 					'statusBar.background': '#fafbfc',
+ 					'statusBar.foreground': '#596171',
+ 					'statusBar.border': '#ebeef1',
