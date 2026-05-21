@@ -1,0 +1,58 @@
+Refine editor tab strip to match Figma reference exactly (PRO-5562)
+
+Follow-up on PR #210 (also PRO-5562) which restyled the tab strip to
+be compact (30px) with hidden filetype icons. The Figma source-of-
+truth node 101:3107 -- the "editor header strip inside default state"
+pair on the Profiles IDE board -- actually specifies:
+
+  - 36px tab row height (the 772x36 frame badge in Figma, not 30px)
+  - Filetype icons visible on every tab (Figma shows them on both the
+    active and inactive tab in the reference pair)
+
+PR #210 misread the height as 30 and was over-aggressive in hiding the
+icons. This patch fixes both: bumps `--editor-group-tab-height` from
+30px to 36px (still wins over VS Code's inline 35px default via
+`!important` on `.editor-group-container > .title`, same mechanism as
+PR #210), and removes the rule that hid `.monaco-icon-label.tab-label
+::before` so the file icon from the configured icon theme renders
+again on tabs. Sidebar/explorer/breadcrumb icons were never touched
+because the original hide rule was scoped to the editor part anyway.
+
+Close-button-on-inactive-tab hover behavior and tab inner padding are
+unchanged from PR #210 -- both already match the Figma (close is
+hidden on inactive non-hovered tabs, vertical padding is 0). Active
+tab background still comes from the
+`workbench.colorCustomizations.tab.activeBackground` default set by
+correct-tab-active-bg.diff (PRO-5562), which the Figma also uses.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
+@@ -582,7 +582,7 @@
+  * PRO-5562 active-bg correction). Do not hardcode hex values here.
+  */
+ .monaco-workbench .part.editor > .content .editor-group-container > .title {
+-	--editor-group-tab-height: 30px !important;
++	--editor-group-tab-height: 36px !important;
+ }
+ 
+ /*
+@@ -599,17 +599,6 @@
+ }
+ 
+ /*
+- * Hide the filetype icon on tab strip per Figma. The icon is rendered as a
+- * ::before pseudo on .monaco-icon-label (the element that also carries the
+- * .tab-label class on tabs). This selector is narrowly scoped to tabs inside
+- * the editor part so sidebar/explorer/breadcrumb icons are not affected
+- * (their .monaco-icon-label lives in a different DOM scope).
+- */
+-.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
+-	display: none;
+-}
+-
+-/*
+  * Hide close button on inactive tabs by default; reveal on hover. We use
+  * visibility: hidden (not display: none) so layout space is preserved and
+  * tabs do not reflow when the user mouses over.
