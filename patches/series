@@ -47,3 +47,4 @@ open-context-md-on-first-visit.diff
 aux-bar-fill-on-empty.diff
 readdir-virtiofs-fallback.diff
 editor-tab-strip-figma-match.diff
+aux-bar-fill-on-empty-cold-start.diff
