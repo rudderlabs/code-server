@@ -1,0 +1,234 @@
+Expand AuxiliaryBar on cold-start empty workbench (PRO-5561 follow-up)
+
+Follow-up to `aux-bar-fill-on-empty.diff` (PRO-5561, PR #212). That
+patch expands the AuxiliaryBar (Cline / Rudder AI) over the editor
+area when the user closes the last tab. It gated the takeover on a
+session-scoped `hasOpenedEditor` flag so it only fired on a
+*transition* from >0 editors to 0.
+
+That left the cold-start case broken: a workbench that boots with
+zero editors restored -- a fresh workspace, OR a reload after the
+user previously closed everything -- never armed the flag, so the
+takeover never fired and the user saw a blank editor area instead of
+the AI panel. Reported after testing on the deployed dev image.
+
+This patch drops the `hasOpenedEditor` gate. The takeover now fires
+whenever editor count is 0 AND the aux bar is visible, including at
+construction time (registered at `WorkbenchPhase.AfterRestored`).
+
+Priority vs. the PR #211 `*_context.md` auto-open contribution:
+when a workspace is visited for the first time and has a
+`*_context.md` at root, PR #211 opens it as a markdown preview. That
+preview should own the editor area, not the aux bar. Both
+contributions register at `AfterRestored` and run async, so
+registration order alone cannot decide the winner. This patch makes
+the aux-bar contribution do its own pre-flight check that mirrors the
+open-context-md gate (workspace storage flag unset + folder root has
+`*_context.md`); if a preview is pending it DEFERS the initial-paint
+takeover behind a 5s fallback timer:
+
+  - If the preview opens, `onDidEditorsChange` fires, editor count
+    becomes > 0, and the deferred `update()` short-circuits -- the
+    takeover never happens.
+  - If the preview never opens (extension host disconnected,
+    `markdown.showPreview` failed), the 5s fallback fires and the
+    aux bar takes over so the user never sees a permanently blank
+    area.
+
+When no `*_context.md` auto-open is pending, the takeover fires
+immediately on cold-start with no flash.
+
+The contribution now also injects `IWorkspaceContextService`,
+`IFileService` and `IStorageService` for the pre-flight check, and
+the registration phase moves from `Eventually` to `AfterRestored`
+so the initial-paint takeover lands as close to grid layout as
+possible.
+
+Index: code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
++++ code-server/lib/vscode/src/vs/workbench/contrib/codeServerProfiles/browser/auxBarExpandOnEmpty.contribution.ts
+@@ -1,61 +1,127 @@
+ /* eslint-disable header/header */
+ /*---------------------------------------------------------------------------------------------
+- *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area after the user
+- *  has closed every editor they opened in this workbench session.
++ *  code-server: PRO-5561 expand AuxiliaryBar to fill the editor area whenever the
++ *  editor count is 0 AND the AuxiliaryBar is visible.
+  *
+- *  Trigger: editor count *transitions* from >0 to 0 within this session. We do NOT
+- *  fire on a workbench that simply starts empty (fresh workspace, or a reload where
+- *  no editors were restored from the previous session) -- in that case VS Code's
+- *  default empty-editor state (the Copilot welcome watermark) renders normally.
++ *  Previously this contribution only fired on a transition from >0 editors to 0,
++ *  gated by a session-scoped `hasOpenedEditor` flag. That left the cold-start
++ *  case broken: a workbench that boots with zero editors restored (fresh
++ *  workspace OR a reload after the user previously closed everything) would
++ *  see the default empty-editor watermark / blank area instead of the AI
++ *  panel takeover. This revision drops the gate so the takeover fires
++ *  whenever the conditions are true at construction time too.
+  *
+- *  Implementation: a session-scoped `hasOpenedEditor` flag arms on the first
+- *  onDidEditorsChange event that sees `count > 0`. Once armed, a subsequent drop to
+- *  `count === 0` calls the patched
+- *    setAuxiliaryBarMaximized(true, { keepSideBar: true })
+- *  so VS Code's own grid hands the editor + panel space to the AuxiliaryBar (which
+- *  hosts the Rudder AI panel) while the left sidebar stays put. When an editor
+- *  re-opens, VS Code's own `setEditorHidden(false)` path auto-unmaximizes via
+- *  `layout.ts:1780`, so we do not need to do anything on the return trip.
++ *  Priority with the PR #211 `*_context.md` auto-open contribution
++ *  (PRO-5526): if the workbench is about to auto-open a markdown preview on
++ *  first visit, the preview should own the editor area, NOT the aux bar.
++ *  Because both contributions register at `AfterRestored` and run async, we
++ *  cannot rely on registration order alone. Instead this contribution does
++ *  its own pre-flight check (storage flag + folder root has `*_context.md`)
++ *  that mirrors the open-context-md gate; if the gate would let a preview
++ *  open, we DEFER the initial-paint takeover behind a fallback timeout. If
++ *  the preview actually opens, `onDidEditorsChange` fires, `count > 0`, and
++ *  the takeover never fires. If something goes wrong and the preview never
++ *  opens (e.g. extension host disconnected, command failed), the fallback
++ *  timer fires after a few seconds so the user never sees a permanently
++ *  blank editor area.
+  *
+- *  The flag is also seeded from `editorService.count` at construction so a workbench
+- *  that starts with editors restored from the previous session arms correctly --
+- *  closing all those restored tabs in this session still triggers the takeover.
++ *  Behavior:
+  *
+- *  The check is deferred via `queueMicrotask`: `onDidEditorsChange` fires during the
+- *  close transition, before `IEditorService.count` is updated, so reading the count
+- *  synchronously yields the pre-close value and the empty-editor trigger never sees
+- *  `count === 0` on a close. Deferring to the next microtask gives the service time
+- *  to settle. Multiple bursty events in the same tick (a single openEditor fires
+- *  three onDidEditorsChange in one tick) collapse into a single update via
+- *  `updateScheduled`.
++ *   - On construction (registered at `WorkbenchPhase.AfterRestored`):
++ *      * if a `*_context.md` auto-open is pending → set a fallback timer
++ *        and rely on the editor-change listener to fire `update()` once
++ *        the preview opens.
++ *      * otherwise → schedule an immediate `update()`.
++ *   - On every `onDidEditorsChange` event, schedule another `update()`.
++ *   - `update()` calls
++ *       setAuxiliaryBarMaximized(true, { keepSideBar: true })
++ *     iff aux bar is visible AND editor count is 0 AND not already maximized.
++ *     The `keepSideBar` option (added by the parent `aux-bar-fill-on-empty.diff`
++ *     patch) skips the default `setSideBarHidden(true)` call inside the API so
++ *     the left sidebar stays put per the Figma reference.
++ *   - When an editor re-opens, VS Code's own `setEditorHidden(false)` path at
++ *     `layout.ts:1780` invokes `setAuxiliaryBarMaximized(false)` for us; the
++ *     re-opened editor reappears and the aux bar shrinks back automatically.
+  *
+- *  Matches the Figma "All tabs closed" state at node 108:1233.
++ *  Matches the Figma "All tabs closed" state at node 108:1233 and the
++ *  Profiles IDE expectation that the AI panel always owns the empty area.
+  *--------------------------------------------------------------------------------------------*/
+ 
+-import { Disposable } from '../../../../base/common/lifecycle.js';
++import { Disposable, toDisposable } from '../../../../base/common/lifecycle.js';
++import { IFileService } from '../../../../platform/files/common/files.js';
++import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
++import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
+ import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
+ import { IEditorService } from '../../../services/editor/common/editorService.js';
+ import { IWorkbenchLayoutService, Parts } from '../../../services/layout/browser/layoutService.js';
+ 
++// Mirror of `openContextMdContribution.ts` (PRO-5526) constants. Duplicated
++// rather than imported so this contribution's patch remains independent of
++// the open-context-md patch in the series.
++const PRO_5526_STORAGE_KEY = 'code-server.profilesContextMd.firstVisitHandled';
++const PRO_5526_CONTEXT_MD_PATTERN = /_context\.md$/i;
++
++// Fallback timeout for the case where a `*_context.md` auto-open is
++// expected but never delivers a preview (extension host disconnect,
++// `markdown.showPreview` failure, etc.). 5 seconds is a balance between
++// giving the preview enough time to open on a slow build and not leaving
++// the user with a blank area for too long.
++const CONTEXT_MD_OPEN_FALLBACK_MS = 5000;
++
+ class AuxBarExpandOnEmptyContribution extends Disposable implements IWorkbenchContribution {
+ 
+-	private hasOpenedEditor = false;
+ 	private updateScheduled = false;
+ 
+ 	constructor(
+ 		@IEditorService private readonly editorService: IEditorService,
+ 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
++		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
++		@IFileService private readonly fileService: IFileService,
++		@IStorageService private readonly storageService: IStorageService,
+ 	) {
+ 		super();
++		this._register(this.editorService.onDidEditorsChange(() => this.scheduleUpdate()));
++		this.maybeInitialUpdate().catch(err => console.error('[code-server PRO-5561] initial update failed:', err));
++	}
+ 
+-		// Seed the flag from restored state: if the workbench came back with editors
+-		// already open (VS Code's normal session restore), treat that as already-armed
+-		// so a close-all in this session still triggers the takeover. If it starts
+-		// empty, leave the flag false -- the watermark renders normally and only an
+-		// explicit open-then-close-all in this session arms the trigger.
+-		this.hasOpenedEditor = this.editorService.count > 0;
++	private async maybeInitialUpdate(): Promise<void> {
++		const pending = await this.isContextMdAutoOpenPending();
++		if (pending) {
++			// Defer: let the PRO-5526 contribution open the preview. If it does,
++			// our editor-change listener catches it and update() short-circuits
++			// (count > 0). If it doesn't (extension host disconnected, command
++			// failed), the fallback timer fires and the takeover kicks in.
++			const handle = setTimeout(() => this.scheduleUpdate(), CONTEXT_MD_OPEN_FALLBACK_MS);
++			this._register(toDisposable(() => clearTimeout(handle)));
++			return;
++		}
++		this.scheduleUpdate();
++	}
+ 
+-		this._register(this.editorService.onDidEditorsChange(() => this.scheduleUpdate()));
++	/**
++	 * Returns true if the workbench will auto-open a `*_context.md` preview on
++	 * this visit. Mirrors the gate in `openContextMdContribution.maybeOpenContextMd`:
++	 *   - workspace storage flag must NOT be set,
++	 *   - workspace must be a single-folder workspace with a folder,
++	 *   - workspace root must contain at least one `*_context.md`.
++	 */
++	private async isContextMdAutoOpenPending(): Promise<boolean> {
++		if (this.storageService.getBoolean(PRO_5526_STORAGE_KEY, StorageScope.WORKSPACE, false)) {
++			return false;
++		}
++		if (this.workspaceContextService.getWorkbenchState() !== WorkbenchState.FOLDER) {
++			return false;
++		}
++		const folder = this.workspaceContextService.getWorkspace().folders[0];
++		if (!folder) {
++			return false;
++		}
++		try {
++			const stat = await this.fileService.resolve(folder.uri);
++			return (stat.children ?? []).some(c => !c.isDirectory && PRO_5526_CONTEXT_MD_PATTERN.test(c.name));
++		} catch {
++			return false;
++		}
+ 	}
+ 
+ 	private scheduleUpdate(): void {
+@@ -75,15 +141,16 @@ class AuxBarExpandOnEmptyContribution ex
+ 			return;
+ 		}
+ 		if (this.editorService.count > 0) {
+-			// First editor of this session arms the trigger; subsequent count>0 events
+-			// are idempotent. The takeover only fires once count drops to 0 below.
+-			this.hasOpenedEditor = true;
++			// Editors are open -- editor part owns the layout. If we previously
++			// maximised the aux bar, VS Code's own setEditorHidden(false) path
++			// at layout.ts:1780 has already auto-unmaximised it, so nothing to
++			// do here.
+ 			return;
+ 		}
+-		if (this.hasOpenedEditor && !this.layoutService.isAuxiliaryBarMaximized()) {
++		if (!this.layoutService.isAuxiliaryBarMaximized()) {
+ 			this.layoutService.setAuxiliaryBarMaximized(true, { keepSideBar: true });
+ 		}
+ 	}
+ }
+ 
+-registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.auxBarExpandOnEmpty', AuxBarExpandOnEmptyContribution, WorkbenchPhase.Eventually);
++registerWorkbenchContribution2('workbench.contrib.codeServerProfiles.auxBarExpandOnEmpty', AuxBarExpandOnEmptyContribution, WorkbenchPhase.AfterRestored);

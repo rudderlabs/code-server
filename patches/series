@@ -48,3 +48,4 @@ aux-bar-fill-on-empty.diff
 readdir-virtiofs-fallback.diff
 editor-tab-strip-figma-match.diff
 remove-copilot-welcome-watermark.diff
+aux-bar-fill-on-empty-cold-start.diff
