@@ -1,47 +1,54 @@
 Refine editor tab strip to match Figma reference exactly (PRO-5562)
 
-Follow-up on PR #210 (also PRO-5562) which restyled the tab strip to
-be compact (30px) with hidden filetype icons. The Figma source-of-
-truth node 101:3107 -- the "editor header strip inside default state"
-pair on the Profiles IDE board -- actually specifies:
+Follow-up on PR #210 (also PRO-5562). The Figma source-of-truth is
+node 101:3107 ("editor header strip inside default state") on the
+Profiles IDE board, with these inner nodes that the prior commits in
+this branch had to guess at:
 
-  - 36px tab row height (the 772x36 frame badge in Figma, not 30px)
-  - Filetype icons visible on every tab (Figma shows them on both the
-    active and inactive tab in the reference pair)
+  - Header frame (101:3107)           — the 766x36 tab strip
+  - Active tab Frame 41616 (101:3113) — "engineering_org_context.md"
+  - Active tab text (101:3119)
+  - Inactive tab text (101:3131)
+  - File icon component (101:3118)    — Files/Documents, File, Blank
 
-PR #210 misread both. correct-tab-active-bg.diff (PRO-5562) also
-misread the active tab background, and the default tab borders
-visible-by-default mismatched the Figma. This patch corrects all of
-those together:
+With Figma Dev Mode + Inspect access available this revision, every
+value below is taken verbatim from the panel (or from "Copy as SVG"
+for the icon), not inferred from screenshots:
 
   1. multieditortabscontrol.css
-     - Bump `--editor-group-tab-height` from 30px to 36px (still
-       wins over VS Code's inline 35px default via the same
-       `!important` on `.editor-group-container > .title` mechanism
-       PR #210 used).
-     - Drop the rule that hid `.monaco-icon-label.tab-label::before`.
-     - Force every tab's `::before` to render the SAME outline
-       document SVG (data-URL-embedded), regardless of file type or
-       icon theme. The Figma reference uses one uniform grey outline
-       on every tab; Seti and other themes render distinct icons per
-       extension. `!important` is necessary because icon themes set
-       `background-image` on the same `::before` with high
-       extension-specific specificity. SVG colour matches
-       `tab.inactiveForeground` (#6c7688) so the icon is tonally
-       consistent with the rest of the strip.
+     - `--editor-group-tab-height: 36px !important` — Header frame
+       height per Figma (matches existing).
+     - Drop the rule that hid `.tab-label::before`. Figma shows the
+       icon on every tab in the reference pair.
+     - Force every tab's `::before` to render the EXACT Figma file
+       icon, copy-pasted via "Copy as SVG" on the 101:3118 component
+       instance. Stroke is `%23105ED5` (Brand/blue-500), which is the
+       blue every icon uses in the design regardless of file type.
+       `!important` is necessary because icon themes (Seti, etc.) set
+       `background-image` on the same `::before` with full file-
+       extension specificity.
+     - Active tab `.label-name` `font-weight: 500` — Figma Dev Mode
+       on node 101:3119 reports 500 (medium), NOT 600 (semibold) as
+       earlier in this branch. Inactive (101:3131) is 400.
 
   2. webClientServer.ts configurationDefaults
-     - `editorGroupHeader.tabsBorder` -> transparent. The Figma has
-       no visible line between the tab strip and the editor body;
-       without this, VS Code draws a 1px contrast border there.
-     - `tab.activeBackground` -> `#ffffff` (was `#ebf3fd` from
-       correct-tab-active-bg.diff). Side-by-side review confirmed the
-       Figma's active tab is the editor body colour (white) so it
-       reads as "tab connected to content"; the inactive tab is on the
-       slightly darker `editorGroupHeader.tabsBackground` strip.
-     - `tab.activeBorderTop` -> transparent. The Figma has no top-of-
-       tab accent line on the active tab; the default focusBorder
-       (blue) is drawn here otherwise.
+     - `editorGroupHeader.tabsBorder` -> `#ebeef1`. Figma Dev Mode
+       on the Header frame reports `border-bottom: 1px solid
+       var(--Nuetral-grey-75, #EBEEF1)`. An earlier commit on this
+       branch removed this line based on a screenshot read; Dev Mode
+       confirms it should stay.
+     - `tab.activeBackground` -> `#fafbfc` (matches
+       `tabsBackground`). Figma Dev Mode on the active tab frame
+       shows no fill — tabs are transparent over the Header. The
+       active tab is differentiated from inactive only by text colour
+       and weight, not background. Earlier values (`#ffffff`,
+       `#ebf3fd`) were screenshot misreads.
+     - `tab.activeBorder` -> transparent. Figma shows no bottom
+       indicator under the active tab; the only horizontal line is
+       the `tabsBorder` below all tabs.
+     - `tab.border` -> transparent. Figma shows no vertical separator
+       between adjacent tabs.
+     - `tab.activeBorderTop` -> transparent (unchanged).
 
 Close-button-on-inactive-tab hover behaviour and tab inner padding
 are unchanged from PR #210 -- both already match the Figma (close is
@@ -78,41 +85,42 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
   * Hide close button on inactive tabs by default; reveal on hover. We use
   * visibility: hidden (not display: none) so layout space is preserved and
   * tabs do not reflow when the user mouses over.
-@@ -624,3 +613,51 @@
+@@ -624,3 +613,52 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
  	visibility: hidden;
  }
 +
 +/*
-+ * Make the active tab's filename semibold. Stock VS Code uses only colour to
-+ * distinguish active vs inactive (`tab.activeForeground` vs
-+ * `tab.inactiveForeground`); the Figma reference (node 101:3107) additionally
-+ * gives the active tab a heavier text weight (~600) to make the active state
-+ * pop. The `.tab-label > .label-name` element is the filename span; setting
-+ * font-weight there leaves the close button, icon, and dirty indicator alone.
++ * Active tab filename weight. Figma Dev Mode (node 101:3119, "engineering_org_
++ * context.md" text in the active tab) reports `font-weight: 500` (medium), not
++ * 600 (semibold). Inactive tabs (node 101:3131) report `font-weight: 400`. The
++ * VS Code default is 400 for both, so this rule bumps the active tab to 500
++ * to match Figma exactly. Targeting `.label-name` (the filename span) leaves
++ * the close button, icon, and dirty indicator alone.
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active > .monaco-icon-label.tab-label .label-name {
-+	font-weight: 600;
++	font-weight: 500;
 +}
 +
 +/*
 + * Override the file-type-specific icon (whatever the icon theme renders, e.g.
-+ * Seti's down-arrow for .md or {} for .json) with a single uniform Figma-style
-+ * grey outline document icon. The Figma reference (node 101:3107) shows the
-+ * same document outline on every tab regardless of file type, so we force one
-+ * SVG via the ::before that the icon theme also targets. `!important` is
-+ * necessary because icon themes (Seti, etc.) set background-image on the same
-+ * pseudo-element with full file-extension specificity (e.g.
-+ * `.ext-file-icon.md-lang-file-icon::before`); without !important the theme's
-+ * type-specific rule would win on a per-extension basis.
++ * Seti's down-arrow for .md or {} for .json) with the exact "Files/Documents,
++ * File, Blank" component instance Figma uses on every tab (node 101:3118 on
++ * the active tab; the inactive tab uses the same component). The SVG is
++ * copy-pasted verbatim via Figma Dev Mode's "Copy as SVG" so the path data
++ * matches the design pixel-for-pixel. `!important` is necessary because icon
++ * themes (Seti, etc.) set background-image on the same `::before` with full
++ * file-extension specificity (e.g. `.ext-file-icon.md-lang-file-icon::before`);
++ * without !important the theme's type-specific rule would win on a per-
++ * extension basis.
 + *
-+ * The SVG is the standard "document with folded corner" outline at the same
-+ * stroke colour as `tab.inactiveForeground` (#6c7688), keeping the icon
-+ * tonally consistent with the rest of the strip.
++ * Stroke colour is `%23105ED5` — Brand/blue-500 from the Figma color system,
++ * URL-encoded for the data URL. Every tab icon in the design uses this blue,
++ * regardless of file type or active state.
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
 +	content: "" !important;
-+	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c7688' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>") !important;
++	background-image: url("data:image/svg+xml;utf8,<svg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M12.2759 4.276L10.3906 2.39067C10.1406 2.14067 9.80125 2 9.44792 2H4.66659C3.92992 2 3.33325 2.59667 3.33325 3.33333V12.6667C3.33325 13.4033 3.92992 14 4.66659 14H11.3333C12.0699 14 12.6666 13.4033 12.6666 12.6667V5.21867C12.6666 4.86533 12.5259 4.526 12.2759 4.276V4.276Z' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/><path d='M12.6667 5.33333H9.99999C9.63199 5.33333 9.33333 5.03467 9.33333 4.66667V2' stroke='%23105ED5' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
 +	background-repeat: no-repeat !important;
 +	background-position: center !important;
 +	background-size: 16px 16px !important;
@@ -134,15 +142,23 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -420,8 +420,10 @@ export class WebClientServer {
+@@ -420,11 +420,14 @@ export class WebClientServer {
  					'editor.background': '#ffffff',
  					'editorGroup.border': '#ebeef1',
  					'editorGroupHeader.tabsBackground': '#fafbfc',
 -					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
-+					'editorGroupHeader.tabsBorder': '#00000000', // PRO-5562: Figma node 101:3107 shows no line between tab strip and editor body (active tab visually merges into the editor). Default would draw a 1px border here.
-+					'tab.activeBackground': '#ffffff', // PRO-5562: Figma node 101:3107 active tab is white (matches editor body for a "tab connected to content" look). Was #ebf3fd from earlier interpretation; corrected after side-by-side review.
- 					'tab.activeForeground': '#353a44',
-+					'tab.activeBorderTop': '#00000000', // PRO-5562: Figma node 101:3107 has no top-of-tab accent line on the active tab. Default would draw the focusBorder (blue) here.
- 					'tab.inactiveBackground': '#fafbfc',
- 					'tab.inactiveForeground': '#6c7688',
- 					'tab.border': '#ebeef1',
+-					'tab.activeForeground': '#353a44',
+-					'tab.inactiveBackground': '#fafbfc',
+-					'tab.inactiveForeground': '#6c7688',
+-					'tab.border': '#ebeef1',
++					'editorGroupHeader.tabsBorder': '#ebeef1', // PRO-5562: Figma Dev Mode on the Header frame (node 101:3107) reports `border-bottom: 1px solid var(--Nuetral-grey-75, #EBEEF1)`. An earlier interpretation removed this line; verified by Dev Mode it should stay.
++					'tab.activeBackground': '#fafbfc', // PRO-5562: Figma Dev Mode on the active tab frame (node 101:3113) shows no fill — the tab sits transparent on the Header (`tabsBackground` #fafbfc), differentiated from inactive only by text colour and weight. Active and inactive tabs share the same background colour in the design.
++					'tab.activeForeground': '#353a44', // PRO-5562: Figma Dev Mode (node 101:3119) → color: var(--Nuetral-grey-800, #353A44).
++					'tab.activeBorderTop': '#00000000', // PRO-5562: Figma Dev Mode shows no top-of-tab accent line on the active tab. Default would draw the focusBorder (blue) here.
++					'tab.activeBorder': '#00000000', // PRO-5562: Figma Dev Mode shows no bottom indicator under the active tab either; the only horizontal line in the tab strip area is the `editorGroupHeader.tabsBorder` below all tabs.
++					'tab.inactiveBackground': '#fafbfc', // PRO-5562: matches `tabsBackground` per Figma (tabs are transparent over the strip).
++					'tab.inactiveForeground': '#6c7688', // PRO-5562: Figma Dev Mode (node 101:3131) → color: var(--Nuetral-grey-500, #6C7688).
++					'tab.border': '#00000000', // PRO-5562: Figma Dev Mode shows no vertical separator between adjacent tabs; tabs sit flush with `gap: 2px` only. Default `#ebeef1` would draw a visible 1px line between tabs.
+ 					'statusBar.background': '#fafbfc',
+ 					'statusBar.foreground': '#596171',
+ 					'statusBar.border': '#ebeef1',
