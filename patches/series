@@ -45,3 +45,4 @@ editor-tab-strip.diff
 correct-tab-active-bg.diff
 open-context-md-on-first-visit.diff
 aux-bar-fill-on-empty.diff
+readdir-virtiofs-fallback.diff
