@@ -1,0 +1,91 @@
+Remove the empty-editor "Welcome to Profiles Copilot" watermark (PRO-5526)
+
+`editor-watermark.diff` adds a custom "Welcome to Profiles Copilot"
+content block (rocket emoji header, Customer 360 / Identity Stitching /
+Update Profiles Goals buttons, "Hey there!" / "Quick heads up" cards)
+to VS Code's empty-editor watermark. It renders whenever
+`.editor-group-container.empty` is true.
+
+With the rest of the Profiles IDE behavior in place, the empty-editor
+area now always has something better to show than the welcome cards:
+
+  - PR #211 (`open-context-md-on-first-visit.diff`) auto-opens
+    `*_context.md` as a markdown preview on first visit, so the
+    user lands in the preview, not in the watermark.
+  - PR #212 (`aux-bar-fill-on-empty.diff`) expands the AuxiliaryBar
+    (Cline / Rudder AI) over the editor area whenever zero tabs are
+    open, so closing-all-tabs likewise reveals the AI panel, not the
+    watermark.
+
+Beyond redundancy, the watermark was actively harmful on cold-start:
+between `WorkbenchPhase.AfterRestored` and `markdown.showPreview`
+actually returning, the editor group is still `.empty` and the
+watermark renders. On a slow build (cold extension-host activation on
+dev) that window can be long enough to be visible to the user — they
+see the Copilot cards flash before the markdown preview takes over.
+The PR #224 attempt to gate the watermark on a body-level CSS class
+during the contribution's async window was abandoned because it
+required the contribution itself to be reliable on every code path,
+which we could not guarantee. Hiding the watermark element at all
+times is the simpler and more robust fix.
+
+This is a one-rule CSS change in `editorgroupview.css`: the existing
+`display: flex` on `.editor-group-watermark` becomes
+`display: none !important`. The other watermark rules are untouched
+(they keep working should the watermark ever be re-enabled), and the
+upstream `editorGroupWatermark.ts` DOM construction and Copilot HTML
+fetch are unchanged — only the visual presentation is suppressed.
+
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/editorgroupview.css
+@@ -29,8 +29,23 @@
+ 
+ /* Watermark & shortcuts */
+ 
++/*
++ * code-server PRO-5526: hide the empty-editor watermark entirely.
++ * Previously the watermark rendered the custom "Welcome to Profiles Copilot"
++ * cards (added by `editor-watermark.diff`) whenever the editor group was
++ * empty. With the PR #211 contribution auto-opening `*_context.md` on first
++ * visit AND PR #212 (`aux-bar-fill-on-empty.diff`) expanding the AuxiliaryBar
++ * over the editor when there are zero tabs, the watermark is now redundant —
++ * either the context preview fills the area, or the AI panel does. It was
++ * also actively harmful: a brief window between `AfterRestored` and
++ * `markdown.showPreview` letting the Copilot cards flash on cold-start when
++ * the auto-open is about to fire. Forcing the watermark element to
++ * `display: none` at all times eliminates both problems with a one-rule
++ * change. The `!important` is necessary because the rule below
++ * (`:not(.empty)` → `display: none`) sets a less-specific display.
++ */
+ .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark  {
+-	display: flex;
++	display: none !important;
+ 	height: 100%;
+ 	max-width: 290px;
+ 	margin: auto;
+Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+===================================================================
+--- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
++++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
+@@ -118,9 +118,18 @@ export class EditorGroupWatermark extend
+ 		this.copilotContent = elements.copilotContent;
+ 
+ 		// Build Profiles Copilot custom content
++		// PRO-5526: short-circuit the entire Copilot watermark setup. The watermark
++		// element is also hidden via CSS (`display: none !important` on
++		// `.editor-group-watermark` in editorgroupview.css), but bailing out here
++		// also skips the network fetch of `copilot-welcome.html`, the DOM
++		// `innerHTML` injection, button query / display toggling, click + wheel
++		// event listeners, and the `[Copilot]` console log spam. Replacing the
++		// condition with `false` keeps the surrounding patch intact (so reverting
++		// this single line restores all the prior behavior) without removing the
++		// `IsEnabledCoderGettingStarted` import or the dependent symbols.
+ 		console.log('[Copilot] Initializing Profiles Copilot watermark');
+ 		console.log('[Copilot] Context key check:', this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted));
+-		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
++		if (false && this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
+ 			console.log('[Copilot] Profiles Copilot is ENABLED - starting setup');
+ 			// Add class to root element for styling
+ 			this.watermarkRoot.classList.add('copilot-enabled');
