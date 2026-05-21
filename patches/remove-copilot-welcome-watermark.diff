@@ -69,7 +69,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
 +++ code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupWatermark.ts
-@@ -118,9 +118,18 @@ export class EditorGroupWatermark extend
+@@ -118,9 +118,20 @@ export class EditorGroupWatermark extend
  		this.copilotContent = elements.copilotContent;
  
  		// Build Profiles Copilot custom content
@@ -78,14 +78,16 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/editorGroupW
 +		// `.editor-group-watermark` in editorgroupview.css), but bailing out here
 +		// also skips the network fetch of `copilot-welcome.html`, the DOM
 +		// `innerHTML` injection, button query / display toggling, click + wheel
-+		// event listeners, and the `[Copilot]` console log spam. Replacing the
-+		// condition with `false` keeps the surrounding patch intact (so reverting
-+		// this single line restores all the prior behavior) without removing the
-+		// `IsEnabledCoderGettingStarted` import or the dependent symbols.
++		// event listeners, and the `[Copilot]` console log spam. The
++		// `PRO_5526_HIDE_COPILOT_WATERMARK` constant gates the original predicate
++		// without flipping the literal `false &&` form (which trips
++		// `allowUnreachableCode: false` in tsconfig.base.json). To re-enable the
++		// Copilot watermark, set the constant to `false` (single-line revert).
++		const PRO_5526_HIDE_COPILOT_WATERMARK: boolean = true;
  		console.log('[Copilot] Initializing Profiles Copilot watermark');
  		console.log('[Copilot] Context key check:', this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted));
 -		if (this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
-+		if (false && this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
++		if (!PRO_5526_HIDE_COPILOT_WATERMARK && this.contextKeyService.contextMatchesRules(IsEnabledCoderGettingStarted)) {
  			console.log('[Copilot] Profiles Copilot is ENABLED - starting setup');
  			// Add class to root element for styling
  			this.watermarkRoot.classList.add('copilot-enabled');
