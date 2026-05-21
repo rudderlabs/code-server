@@ -78,7 +78,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
   * Hide close button on inactive tabs by default; reveal on hover. We use
   * visibility: hidden (not display: none) so layout space is preserved and
   * tabs do not reflow when the user mouses over.
-@@ -624,3 +613,29 @@
+@@ -624,3 +613,39 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
  	visibility: hidden;
  }
@@ -107,6 +107,16 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 +	width: 16px !important;
 +	height: 16px !important;
 +	display: inline-block !important;
++	/*
++	 * Vertical-centre the icon against the filename text. Stock's
++	 * .monaco-icon-label uses a baseline-aligned inline-block icon that
++	 * inherits the parent's font metrics, which in our 36px tab puts the
++	 * icon too high relative to the text. flex parents respect align-self;
++	 * inline-flow parents respect vertical-align. Set both so the icon
++	 * lands on the text middle in either layout mode.
++	 */
++	vertical-align: middle !important;
++	align-self: center !important;
 +}
 Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
