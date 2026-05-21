@@ -138,7 +138,7 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
  }
  
  /*
-@@ -624,3 +618,131 @@
+@@ -624,3 +618,146 @@
  .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
  	visibility: hidden;
  }
@@ -210,6 +210,21 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
 + */
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label {
 +	padding-left: 4px !important;
++	/*
++	 * Constrain the tab-label's line-height to the 20px inner content area
++	 * (36px tab height − 8px top − 8px bottom padding). Stock VS Code sets
++	 * `line-height: var(--editor-group-tab-height)` on the .tab itself for
++	 * legacy single-line vertical centring of the filename; that 36px line-
++	 * height inherits down into `.monaco-icon-label.tab-label` and inflates
++	 * the label flex item to 37px, which then overflows the 20px content
++	 * area and pushes the icon+text ~8px BELOW the tab's vertical centre
++	 * while the close button (.tab-actions, 20px tall) stays at the top of
++	 * the content area. Result without this rule: close X visibly higher
++	 * than the filename it's attached to. Setting line-height to 20px makes
++	 * the label flex item exactly fill the content area, so icon, text and
++	 * close all share the same vertical centreline.
++	 */
++	line-height: 20px !important;
 +}
 +
 +.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-actions {
