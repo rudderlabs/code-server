@@ -9,26 +9,39 @@ pair on the Profiles IDE board -- actually specifies:
   - Filetype icons visible on every tab (Figma shows them on both the
     active and inactive tab in the reference pair)
 
-PR #210 misread both, and the companion correct-tab-active-bg.diff
-also misread the active tab colour. This patch fixes all three:
+PR #210 misread both. correct-tab-active-bg.diff (PRO-5562) also
+misread the active tab background, and the default tab borders
+visible-by-default mismatched the Figma. This patch corrects all of
+those together:
 
-  1. multieditortabscontrol.css -- bump `--editor-group-tab-height`
-     from 30px to 36px (still wins over VS Code's inline 35px default
-     via the same `!important` on `.editor-group-container > .title`
-     mechanism PR #210 used), and drop the rule that hid
-     `.monaco-icon-label.tab-label::before` so a file icon renders on
-     tabs again. Sidebar/explorer/breadcrumb icons were never affected
-     because that selector was already scoped to the editor part.
+  1. multieditortabscontrol.css
+     - Bump `--editor-group-tab-height` from 30px to 36px (still
+       wins over VS Code's inline 35px default via the same
+       `!important` on `.editor-group-container > .title` mechanism
+       PR #210 used).
+     - Drop the rule that hid `.monaco-icon-label.tab-label::before`.
+     - Force every tab's `::before` to render the SAME outline
+       document SVG (data-URL-embedded), regardless of file type or
+       icon theme. The Figma reference uses one uniform grey outline
+       on every tab; Seti and other themes render distinct icons per
+       extension. `!important` is necessary because icon themes set
+       `background-image` on the same `::before` with high
+       extension-specific specificity. SVG colour matches
+       `tab.inactiveForeground` (#6c7688) so the icon is tonally
+       consistent with the rest of the strip.
 
-  2. webClientServer.ts configurationDefaults -- change
-     `tab.activeBackground` from `#ebf3fd` (blue-50, set by
-     correct-tab-active-bg.diff) back to `#ffffff` (white). Side-by-
-     side review against Figma node 101:3107 confirmed the active tab
-     uses the editor body colour (white) for the "tab connected to
-     content" look, not a blue tint. With the active tab at #ffffff
-     and `editorGroupHeader.tabsBackground` at #fafbfc, the inactive
-     tab is the darker one and the active stands out as lighter --
-     matching the Figma.
+  2. webClientServer.ts configurationDefaults
+     - `editorGroupHeader.tabsBorder` -> transparent. The Figma has
+       no visible line between the tab strip and the editor body;
+       without this, VS Code draws a 1px contrast border there.
+     - `tab.activeBackground` -> `#ffffff` (was `#ebf3fd` from
+       correct-tab-active-bg.diff). Side-by-side review confirmed the
+       Figma's active tab is the editor body colour (white) so it
+       reads as "tab connected to content"; the inactive tab is on the
+       slightly darker `editorGroupHeader.tabsBackground` strip.
+     - `tab.activeBorderTop` -> transparent. The Figma has no top-of-
+       tab accent line on the active tab; the default focusBorder
+       (blue) is drawn here otherwise.
 
 Close-button-on-inactive-tab hover behaviour and tab inner padding
 are unchanged from PR #210 -- both already match the Figma (close is
@@ -65,16 +78,49 @@ Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multie
   * Hide close button on inactive tabs by default; reveal on hover. We use
   * visibility: hidden (not display: none) so layout space is preserved and
   * tabs do not reflow when the user mouses over.
+@@ -624,3 +613,29 @@
+ .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab:not(.active):not(:hover):not(.dirty):not(.sticky) > .tab-actions {
+ 	visibility: hidden;
+ }
++
++/*
++ * Override the file-type-specific icon (whatever the icon theme renders, e.g.
++ * Seti's down-arrow for .md or {} for .json) with a single uniform Figma-style
++ * grey outline document icon. The Figma reference (node 101:3107) shows the
++ * same document outline on every tab regardless of file type, so we force one
++ * SVG via the ::before that the icon theme also targets. `!important` is
++ * necessary because icon themes (Seti, etc.) set background-image on the same
++ * pseudo-element with full file-extension specificity (e.g.
++ * `.ext-file-icon.md-lang-file-icon::before`); without !important the theme's
++ * type-specific rule would win on a per-extension basis.
++ *
++ * The SVG is the standard "document with folded corner" outline at the same
++ * stroke colour as `tab.inactiveForeground` (#6c7688), keeping the icon
++ * tonally consistent with the rest of the strip.
++ */
++.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .monaco-icon-label.tab-label::before {
++	content: "" !important;
++	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c7688' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>") !important;
++	background-repeat: no-repeat !important;
++	background-position: center !important;
++	background-size: 16px 16px !important;
++	width: 16px !important;
++	height: 16px !important;
++	display: inline-block !important;
++}
 Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -420,7 +420,7 @@ export class WebClientServer {
+@@ -420,8 +420,10 @@ export class WebClientServer {
  					'editor.background': '#ffffff',
  					'editorGroup.border': '#ebeef1',
  					'editorGroupHeader.tabsBackground': '#fafbfc',
 -					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
++					'editorGroupHeader.tabsBorder': '#00000000', // PRO-5562: Figma node 101:3107 shows no line between tab strip and editor body (active tab visually merges into the editor). Default would draw a 1px border here.
 +					'tab.activeBackground': '#ffffff', // PRO-5562: Figma node 101:3107 active tab is white (matches editor body for a "tab connected to content" look). Was #ebf3fd from earlier interpretation; corrected after side-by-side review.
  					'tab.activeForeground': '#353a44',
++					'tab.activeBorderTop': '#00000000', // PRO-5562: Figma node 101:3107 has no top-of-tab accent line on the active tab. Default would draw the focusBorder (blue) here.
  					'tab.inactiveBackground': '#fafbfc',
  					'tab.inactiveForeground': '#6c7688',
+ 					'tab.border': '#ebeef1',
