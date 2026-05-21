@@ -9,7 +9,8 @@ pair on the Profiles IDE board -- actually specifies:
   - Filetype icons visible on every tab (Figma shows them on both the
     active and inactive tab in the reference pair)
 
-PR #210 misread both. This patch fixes them with:
+PR #210 misread both, and the companion correct-tab-active-bg.diff
+also misread the active tab colour. This patch fixes all three:
 
   1. multieditortabscontrol.css -- bump `--editor-group-tab-height`
      from 30px to 36px (still wins over VS Code's inline 35px default
@@ -19,21 +20,19 @@ PR #210 misread both. This patch fixes them with:
      tabs again. Sidebar/explorer/breadcrumb icons were never affected
      because that selector was already scoped to the editor part.
 
-  2. webClientServer.ts configurationDefaults -- set
-     `workbench.iconTheme` to `null`, which selects VS Code's "no icon
-     theme" mode where every file (sidebar AND tab strip) renders the
-     generic codicon $(file) outline. That matches the Figma node's
-     uniform grey outline-document icon, instead of the Seti theme's
-     file-type-specific colourful icons. Users can still pick a
-     different icon theme via their personal user settings -- that
-     overrides this default.
+  2. webClientServer.ts configurationDefaults -- change
+     `tab.activeBackground` from `#ebf3fd` (blue-50, set by
+     correct-tab-active-bg.diff) back to `#ffffff` (white). Side-by-
+     side review against Figma node 101:3107 confirmed the active tab
+     uses the editor body colour (white) for the "tab connected to
+     content" look, not a blue tint. With the active tab at #ffffff
+     and `editorGroupHeader.tabsBackground` at #fafbfc, the inactive
+     tab is the darker one and the active stands out as lighter --
+     matching the Figma.
 
-Close-button-on-inactive-tab hover behavior and tab inner padding are
-unchanged from PR #210 -- both already match the Figma (close is
-hidden on inactive non-hovered tabs, vertical padding is 0). Active
-tab background still comes from the
-`workbench.colorCustomizations.tab.activeBackground` default set by
-correct-tab-active-bg.diff (PRO-5562), which the Figma also uses.
+Close-button-on-inactive-tab hover behaviour and tab inner padding
+are unchanged from PR #210 -- both already match the Figma (close is
+hidden on inactive non-hovered tabs, vertical padding is 0).
 
 Index: code-server/lib/vscode/src/vs/workbench/browser/parts/editor/media/multieditortabscontrol.css
 ===================================================================
@@ -70,11 +69,12 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -405,6 +405,7 @@ export class WebClientServer {
- 				'editor.stickyScroll.enabled': false, // PRO-5559: sticky scroll not in Figma
- 				'telemetry.feedback.enabled': false, // PRO-5559: hide feedback / issue reporter surfaces
- 				'workbench.editor.editorActionsLocation': 'hidden', // PRO-5559: hide split/more-actions icons on the editor tab strip
-+				'workbench.iconTheme': null, // PRO-5562: Figma shows generic outline file icons everywhere (sidebar + tab strip), matching VS Code's no-icon-theme codicon fallback rather than Seti's type-specific colorful icons
- 				'workbench.colorCustomizations': {
- 					'sideBar.background': '#fafbfc',
- 					'sideBar.foreground': '#353a44',
+@@ -420,7 +420,7 @@ export class WebClientServer {
+ 					'editor.background': '#ffffff',
+ 					'editorGroup.border': '#ebeef1',
+ 					'editorGroupHeader.tabsBackground': '#fafbfc',
+-					'tab.activeBackground': '#ebf3fd', // PRO-5562: blue-50 active tab background per Figma (was incorrectly white in PRO-5511)
++					'tab.activeBackground': '#ffffff', // PRO-5562: Figma node 101:3107 active tab is white (matches editor body for a "tab connected to content" look). Was #ebf3fd from earlier interpretation; corrected after side-by-side review.
+ 					'tab.activeForeground': '#353a44',
+ 					'tab.inactiveBackground': '#fafbfc',
+ 					'tab.inactiveForeground': '#6c7688',
