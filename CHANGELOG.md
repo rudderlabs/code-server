@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.0](https://github.com/rudderlabs/code-server/compare/v1.19.0...v1.20.0) (2026-05-22)
+
+
+### Features
+
+* **PRO-5561:** expand AuxiliaryBar to fill editor when all tabs are closed ([#212](https://github.com/rudderlabs/code-server/issues/212)) ([3861edf](https://github.com/rudderlabs/code-server/commit/3861edf219120ee4e7af1048ba374e1169b76572))
+* **PRO-5562:** match Figma editor tab strip exactly (36px height + file icons) ([#221](https://github.com/rudderlabs/code-server/issues/221)) ([08964e8](https://github.com/rudderlabs/code-server/commit/08964e8d166f374af2ec3d903c14a4f419e29f9d))
+
+
+### Bug Fixes
+
+* add virtiofs readdir EINVAL fallback using ls ([#223](https://github.com/rudderlabs/code-server/issues/223)) ([34a5cf4](https://github.com/rudderlabs/code-server/commit/34a5cf4ac3d977645849404723d2201df657989d))
+* **PRO-5526/5561:** remove Copilot watermark + expand AuxiliaryBar on cold-start empty workbench ([#225](https://github.com/rudderlabs/code-server/issues/225)) ([edb83d3](https://github.com/rudderlabs/code-server/commit/edb83d3dff2b74a792db42818278f206e10aa61a))
+* revert virtiofs readdir EINVAL fallback using ls ([#223](https://github.com/rudderlabs/code-server/issues/223)) ([#226](https://github.com/rudderlabs/code-server/issues/226)) ([179fc7c](https://github.com/rudderlabs/code-server/commit/179fc7c1fd82e8a8fd985714d44c6b83eb18c09d))
+
 ## [1.19.0](https://github.com/rudderlabs/code-server/compare/v1.18.2...v1.19.0) (2026-05-20)
 
 
