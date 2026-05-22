@@ -46,3 +46,5 @@ correct-tab-active-bg.diff
 open-context-md-on-first-visit.diff
 aux-bar-fill-on-empty.diff
 editor-tab-strip-figma-match.diff
+remove-copilot-welcome-watermark.diff
+aux-bar-fill-on-empty-cold-start.diff
