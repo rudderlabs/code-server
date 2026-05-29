@@ -29,6 +29,11 @@ jobs:
     name: Test installer on Ubuntu
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -43,6 +48,11 @@ jobs:
     runs-on: ubuntu-latest
     container: "alpine:3.17"
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -66,6 +76,11 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
