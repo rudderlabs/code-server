@@ -40,10 +40,7 @@ jobs:
     uses: ./.github/workflows/build-vscode.yaml
     with:
       upload-artifact: true
-    secrets:
-      PAT: ${{ secrets.PAT }}
-      VSCODE_CACHE_VERSION: ${{ secrets.VSCODE_CACHE_VERSION }}
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    secrets: inherit
 
   # ==============================================================================
   # STAGE 2: PACKAGE CODE-SERVER
@@ -313,6 +310,16 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+          repositories: |
+            cline
+            wht
+
       - name: checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
@@ -320,7 +327,7 @@ jobs:
 
       - name: Download Cline Extension
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           CLINE_REF=$(cat .cline-version | tr -d '[:space:]')
           echo "Cline reference: ${CLINE_REF}"
@@ -367,7 +374,7 @@ jobs:
 
       - name: Download pb-proxy binary
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           PB_PROXY_REF=$(cat .pb-proxy-version | tr -d '[:space:]')
           echo "pb-proxy reference: ${PB_PROXY_REF}"

@@ -119,7 +119,7 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - run: helm plugin install https://github.com/instrumenta/helm-kubeval
       - run: helm kubeval ci/helm-chart
 
@@ -199,10 +199,7 @@ jobs:
     uses: ./.github/workflows/build-vscode.yaml
     with:
       upload-artifact: true
-    secrets:
-      PAT: ${{ secrets.PAT }}
-      VSCODE_CACHE_VERSION: ${{ secrets.VSCODE_CACHE_VERSION }}
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    secrets: inherit
 
   test-e2e:
     name: Run e2e tests
@@ -283,7 +280,7 @@ jobs:
           key: cache-caddy-2.5.2
       - name: Install Caddy
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: steps.caddy-cache.outputs.cache-hit != 'true'
         run: |
           gh release download v2.5.2 --repo caddyserver/caddy --pattern "caddy_2.5.2_linux_amd64.tar.gz"

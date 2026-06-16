@@ -58,7 +58,7 @@ jobs:
       - run: npm run publish:npm
         env:
           VERSION: ${{ env.VERSION }}
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_ENVIRONMENT: "production"
 
@@ -196,7 +196,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Strip out the v (v4.9.1 -> 4.9.1).
       - name: Get and set VERSION

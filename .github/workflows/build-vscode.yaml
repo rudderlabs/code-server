@@ -8,13 +8,6 @@ on:
         required: false
         type: boolean
         default: true
-    secrets:
-      PAT:
-        required: true
-      VSCODE_CACHE_VERSION:
-        required: true
-      CODECOV_TOKEN:
-        required: true
 
 permissions:
   contents: read
@@ -52,7 +45,7 @@ jobs:
       - run: SKIP_SUBMODULE_DEPS=1 npm ci
       - run: npm run build
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Get Code's git hash. When this changes it means the content is
       # different and we need to rebuild.
       - name: Get latest lib/vscode rev
