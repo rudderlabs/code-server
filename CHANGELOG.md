@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.2](https://github.com/rudderlabs/code-server/compare/v1.20.1...v1.20.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* **PRO-5787:** allow rm in lshell to enable file deletion in terminal ([#234](https://github.com/rudderlabs/code-server/issues/234)) ([d87ef1c](https://github.com/rudderlabs/code-server/commit/d87ef1c202a6f6f9d8975963079aa8ffe4c23161))
+
+
+### Miscellaneous Chores
+
+* **ci:** refresh CI credentials (SEC-343) ([#232](https://github.com/rudderlabs/code-server/issues/232)) ([7234163](https://github.com/rudderlabs/code-server/commit/7234163af4c4c370d1337104b4229ebd2ec5aa78))
+
 ## [1.20.1](https://github.com/rudderlabs/code-server/compare/v1.20.0...v1.20.1) (2026-05-22)
 
 
