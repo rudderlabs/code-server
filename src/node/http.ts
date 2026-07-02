@@ -390,7 +390,7 @@ export function authenticateOrigin(req: express.Request): void {
   }
 
   const trustedOrigins = req.args["trusted-origins"] || []
-  if (trustedOrigins.includes(origin) || trustedOrigins.includes("*")) {
+  if (trustedOrigins.includes(origin)) {
     return
   }
 
