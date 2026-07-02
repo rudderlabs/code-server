@@ -24,6 +24,12 @@ describe("http", () => {
       {
         origin: "",
         host: "",
+        expected: "missing Origin",
+      },
+      {
+        origin: "",
+        host: "localhost:8080",
+        expected: "missing Origin",
       },
       {
         origin: "http://localhost:8080",
