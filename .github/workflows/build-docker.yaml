@@ -210,6 +210,12 @@ jobs:
       - if: steps.should-run.outputs.run == 'true'
         run: tar -xzf package.tar.gz
       - if: steps.should-run.outputs.run == 'true'
+        # GITHUB_TOKEN keeps @vscode/ripgrep's postinstall (re-run during the
+        # standalone install) from hitting the GitHub API anonymously, which
+        # rate-limits on shared runners. The build step in build-vscode.yaml
+        # already passes it for the same reason.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run release:standalone
 
       - name: Replace node with cross-compile equivalent
