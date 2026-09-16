@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.3](https://github.com/rudderlabs/code-server/compare/v1.20.2...v1.20.3) (2026-09-16)
+
+
+### Bug Fixes
+
+* pin pb-proxy to released v0.26.2 ([#236](https://github.com/rudderlabs/code-server/issues/236)) ([096806e](https://github.com/rudderlabs/code-server/commit/096806e23351ca48e9a1b89f8a4abcef37472919))
+
+
+### Miscellaneous Chores
+
+* apply security best practices from step security ([#231](https://github.com/rudderlabs/code-server/issues/231)) ([8182231](https://github.com/rudderlabs/code-server/commit/8182231301c6ef155e7b4452ad435c08d831e70d))
+
 ## [1.20.2](https://github.com/rudderlabs/code-server/compare/v1.20.1...v1.20.2) (2026-06-29)
 
 
