@@ -6,8 +6,11 @@ FROM ubuntu:22.04@sha256:09506232a8004baa32c47d68f1e5c307d648fdd59f5e7eaa42aaf87
 ARG TARGETARCH=amd64
 
 # Install Python, pip, git, curl, and wget
+# apt-get upgrade takes the patched ca-certificates (20260816 or newer drops the
+# compromised eMudhra emSign roots) and other security updates over the base digest.
 RUN apt-get update && \
-  apt-get install -y python3.10 python3-pip git curl wget sudo && \
+  DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+  apt-get install -y python3.10 python3-pip git curl wget sudo ca-certificates && \
   apt-get clean
 
 
@@ -33,7 +36,9 @@ RUN useradd -m -u 1000 -s /usr/local/bin/lshell codeuser
 # Copy requirements.txt first
 COPY requirements.txt .
 
-RUN pip3 install --upgrade pip
+# pip 26.2.2 and certifi 2026.10.19 are the first releases whose CA bundles reject
+# the eMudhra chains. /usr/local/bin/pip shadows Ubuntu's pip on PATH.
+RUN pip3 install --no-cache-dir 'pip>=26.2.2' 'certifi>=2026.10.19'
 RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
     pip3 install --no-cache-dir \
       -i https://$(cat /run/secrets/PYPI_CONNECTION_STRING) \
@@ -90,6 +95,15 @@ RUN git clone --branch v1.4.0 https://github.com/rudderlabs/profiles-mcp
 # Set up the Python script
 RUN echo '#!/usr/bin/env python3' > /home/codeuser/profiles-mcp/scripts/update_mcp_config.py
 COPY --chown=codeuser:codeuser profiles-mcp.env /home/codeuser/profiles-mcp/.env
+
+# setup.sh installs uv from astral.sh only when uv is missing, so a pinned uv here
+# replaces that unpinned install. The bundled roots of uv 0.13.4 reject the eMudhra
+# chains. UV_SYSTEM_CERTS stays unset so uv keeps the pinned roots, not the OS store.
+COPY --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b /uv /uvx /usr/local/bin/
+
+# The profiles-mcp v1.4.0 lock pins certifi 2025.04.26, which trusts the eMudhra
+# chains. Raise it in the lock so setup.sh and start.sh (uv run) keep the new one.
+RUN cd /home/codeuser/profiles-mcp && uv lock --upgrade-package 'certifi>=2026.10.19'
 
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
