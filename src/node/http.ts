@@ -375,11 +375,12 @@ export function ensureOrigin(req: express.Request, _?: express.Response, next?: 
  * Authenticate the request origin against the host.  Throw if invalid.
  */
 export function authenticateOrigin(req: express.Request): void {
-  // A missing origin probably means the source is non-browser.  Not sure we
-  // have a use case for this but let it through.
+  // Browsers always send Origin on WebSocket upgrades (RFC 6455 §10.2), and
+  // `ensureOrigin` only guards WS routes. A missing Origin therefore signals
+  // either a non-browser client or a forged upgrade attempt — reject both.
   const originRaw = getFirstHeader(req, "origin")
   if (!originRaw) {
-    return
+    throw new Error("missing Origin header")
   }
 
   let origin: string
