@@ -36,9 +36,9 @@ RUN useradd -m -u 1000 -s /usr/local/bin/lshell codeuser
 # Copy requirements.txt first
 COPY requirements.txt .
 
-# pip 26.2.2 and certifi 2026.10.19 are the first releases whose CA bundles reject
-# the eMudhra chains. /usr/local/bin/pip shadows Ubuntu's pip on PATH.
-RUN pip3 install --no-cache-dir 'pip>=26.2.2' 'certifi>=2026.10.19'
+# pip 26.2.2 rejects the eMudhra chains. certifi 2026.10.23 also drops emSign C1 and C3.
+# /usr/local/bin/pip shadows Ubuntu's pip on PATH.
+RUN pip3 install --no-cache-dir 'pip>=26.2.2' 'certifi>=2026.10.23'
 RUN --mount=type=secret,id=PYPI_CONNECTION_STRING \
     pip3 install --no-cache-dir \
       -i https://$(cat /run/secrets/PYPI_CONNECTION_STRING) \
@@ -103,7 +103,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f
 
 # The profiles-mcp v1.4.0 lock pins certifi 2025.04.26, which trusts the eMudhra
 # chains. Raise it in the lock so setup.sh and start.sh (uv run) keep the new one.
-RUN cd /home/codeuser/profiles-mcp && uv lock --upgrade-package 'certifi>=2026.10.19'
+RUN cd /home/codeuser/profiles-mcp && uv lock --upgrade-package 'certifi>=2026.10.23'
 
 # Run setup as codeuser
 RUN cd /home/codeuser/profiles-mcp && bash setup.sh
