@@ -220,6 +220,7 @@ jobs:
 
       - name: Replace node with cross-compile equivalent
         if: steps.should-run.outputs.run == 'true'
+        shell: bash
         # Sums from Node v22.23.4's signed SHASUMS256.txt must change with .node-version.
         run: |
           set -euo pipefail
