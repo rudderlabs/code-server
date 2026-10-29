@@ -220,10 +220,26 @@ jobs:
 
       - name: Replace node with cross-compile equivalent
         if: steps.should-run.outputs.run == 'true'
+        shell: bash
+        # Sums from Node v22.23.4's signed SHASUMS256.txt must change with .node-version.
         run: |
+          set -euo pipefail
+          pinned=v22.23.4
           node_version=$(node --version)
-          wget https://nodejs.org/dist/${node_version}/node-${node_version}-linux-${npm_config_arch}.tar.xz
-          tar -xf node-${node_version}-linux-${npm_config_arch}.tar.xz node-${node_version}-linux-${npm_config_arch}/bin/node --strip-components=2
+          if [ "$node_version" != "$pinned" ]; then
+            echo "Node version $node_version differs from $pinned; update pinned and SHA-256 sums with .node-version." >&2
+            exit 1
+          fi
+          case "$npm_config_arch" in
+            x64) sum=1805bcd35e6815559bd2eb97db438d3fdb0eb3a5e6a977b7c1badca76337e9ce ;;
+            arm64) sum=6287aa46b6c375d816e63ae66d024fbbfd70404825aabdfdf898a970871d2f4b ;;
+            armv7l) sum=c9057c6a3b8fbb9651ed115c1e96d4a7281b7b9c9ca89fa05865c98ed7ffd437 ;;
+            *) echo "Unsupported architecture: $npm_config_arch" >&2; exit 1 ;;
+          esac
+          file="node-${pinned}-linux-${npm_config_arch}.tar.xz"
+          wget -q "https://nodejs.org/dist/${pinned}/${file}"
+          echo "$sum  $file" | sha256sum -c -
+          tar -xf "$file" "node-${pinned}-linux-${npm_config_arch}/bin/node" --strip-components=2
           mv ./node ./release-standalone/lib/node
 
       - name: Build packages with nfpm
