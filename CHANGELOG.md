@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.4](https://github.com/rudderlabs/code-server/compare/v1.20.3...v1.20.4) (2026-10-31)
+
+
+### Bug Fixes
+
+* **deps:** bundle Node 22.23.4 in profiles code-server [SEC-782] ([#240](https://github.com/rudderlabs/code-server/issues/240)) ([1ec43f3](https://github.com/rudderlabs/code-server/commit/1ec43f332c0afe6e7551456154d5880825788b0a))
+* **docker:** pin pip, uv and certifi to reject the eMudhra chains ([#239](https://github.com/rudderlabs/code-server/issues/239)) ([40199ee](https://github.com/rudderlabs/code-server/commit/40199ee367864cb55c404d8557ab9ebe34de1e3a))
+
 ## [1.20.3](https://github.com/rudderlabs/code-server/compare/v1.20.2...v1.20.3) (2026-09-16)
 
 
