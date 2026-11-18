@@ -99,14 +99,17 @@ COPY --chown=codeuser:codeuser profiles-mcp.env /home/codeuser/profiles-mcp/.env
 # setup.sh installs uv from astral.sh only when uv is missing, so a pinned uv here
 # replaces that unpinned install. The bundled roots of uv 0.13.4 reject the eMudhra
 # chains. UV_SYSTEM_CERTS stays unset so uv keeps the pinned roots, not the OS store.
-COPY --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b /uv /uvx /usr/local/bin/
+# uv goes in ~/.local/bin, where the astral.sh installer put it before: the landrun
+# policy in rudder-sources allows execute on $HOME/.local/bin/uv and fails closed
+# when that path is missing. setup.sh writes the uv directory into start.sh's PATH.
+COPY --chown=codeuser:codeuser --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b /uv /uvx /home/codeuser/.local/bin/
 
 # The profiles-mcp v1.4.0 lock pins certifi 2025.04.26, which trusts the eMudhra
 # chains. Raise it in the lock so setup.sh and start.sh (uv run) keep the new one.
-RUN cd /home/codeuser/profiles-mcp && uv lock --upgrade-package 'certifi>=2026.10.23'
+RUN cd /home/codeuser/profiles-mcp && PATH="/home/codeuser/.local/bin:$PATH" uv lock --upgrade-package 'certifi>=2026.10.23'
 
 # Run setup as codeuser
-RUN cd /home/codeuser/profiles-mcp && bash setup.sh
+RUN cd /home/codeuser/profiles-mcp && PATH="/home/codeuser/.local/bin:$PATH" bash setup.sh
 
 # Create MCP settings directory and filprofiles-qa-rudderstack-sources-manager-profiles-qa-rudderstack-sources-manager-00e
 RUN mkdir -p /home/codeuser/.local/share/code-server/User/globalStorage/saoudrizwan.claude-dev/settings/
