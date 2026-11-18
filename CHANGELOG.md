@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.6](https://github.com/rudderlabs/code-server/compare/v1.20.5...v1.20.6) (2026-11-18)
+
+
+### Bug Fixes
+
+* **docker:** install pinned uv in ~/.local/bin for the landrun policy ([#245](https://github.com/rudderlabs/code-server/issues/245)) ([b93b5d9](https://github.com/rudderlabs/code-server/commit/b93b5d93be798091af83302125cedce3660540e2))
+
 ## [1.20.5](https://github.com/rudderlabs/code-server/compare/v1.20.4...v1.20.5) (2026-11-18)
 
 
