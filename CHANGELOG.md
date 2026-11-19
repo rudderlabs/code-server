@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.7](https://github.com/rudderlabs/code-server/compare/v1.20.6...v1.20.7) (2026-11-19)
+
+
+### Bug Fixes
+
+* **deps:** bump pb-proxy to v0.26.10 ([#247](https://github.com/rudderlabs/code-server/issues/247)) ([e7881eb](https://github.com/rudderlabs/code-server/commit/e7881ebb540d58234150bd1e11f6e210dd8b36b7))
+
 ## [1.20.6](https://github.com/rudderlabs/code-server/compare/v1.20.5...v1.20.6) (2026-11-18)
 
 
