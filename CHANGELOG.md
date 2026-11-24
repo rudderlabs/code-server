@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Example:
 
+## [1.20.8](https://github.com/rudderlabs/code-server/compare/v1.20.7...v1.20.8) (2026-11-24)
+
+
+### Miscellaneous Chores
+
+* **ci:** bump build-scan-push-action to v2.4.0 ([#249](https://github.com/rudderlabs/code-server/issues/249)) ([d321d6a](https://github.com/rudderlabs/code-server/commit/d321d6a7006f1bb1a1ec91149ff143a6d5e1145c))
+
 ## [1.20.7](https://github.com/rudderlabs/code-server/compare/v1.20.6...v1.20.7) (2026-11-19)
 
 
