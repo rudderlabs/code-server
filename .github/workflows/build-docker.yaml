@@ -498,7 +498,7 @@ jobs:
           fi
 
       - name: docker build
-        uses: rudderlabs/build-scan-push-action@865b4253caa57f8f20cd109e0efc1affe3a64939 # v2.2.0
+        uses: rudderlabs/build-scan-push-action@c47115e5eab78162efec1b4961cba4063dfd8d5f # v2.4.0
         with:
           context: .
           platforms: linux/${{ matrix.arch }}
