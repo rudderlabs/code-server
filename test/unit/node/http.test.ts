@@ -80,6 +80,30 @@ describe("http", () => {
         })
       })
     })
+
+    it("should not treat '*' in trusted-origins as a wildcard bypass", () => {
+      const req = getMockReq({
+        originalUrl: "localhost:8080",
+        headers: {
+          origin: "http://evil.example.com",
+          host: "localhost:8080",
+        },
+        args: { "trusted-origins": ["*"] },
+      })
+      expect(() => http.authenticateOrigin(req)).toThrow("does not match")
+    })
+
+    it("should accept an exact match in trusted-origins", () => {
+      const req = getMockReq({
+        originalUrl: "localhost:8080",
+        headers: {
+          origin: "http://trusted.example.com",
+          host: "localhost:8080",
+        },
+        args: { "trusted-origins": ["trusted.example.com"] },
+      })
+      expect(() => http.authenticateOrigin(req)).not.toThrow()
+    })
   })
 
   describe("constructRedirectPath", () => {
